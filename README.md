@@ -1,4 +1,6 @@
-# Favalon - An Interactive Shell Based on a Typed Lambda Calculus
+# Favalon
+
+[![Favalon CI build](https://github.com/kekyo/Favalon/workflows/.NET%20Core/badge.svg)](https://github.com/kekyo/Favalon/actions)
 
 Still under construction.
 
