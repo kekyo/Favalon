@@ -1,16 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks Condition="'$(MSBuildRuntimeType)' == 'Core'">net40;net45;netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
-    <TargetFrameworks Condition="'$(MSBuildRuntimeType)' != 'Core'">net35;net40;net45;netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>net40;net45;netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
     <LangVersion>8.0</LangVersion>
     <Nullable>enable</Nullable>
     <RootNamespace>Favalet</RootNamespace>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net35'">
-    <TargetFrameworkIdentifier>.NETFramework</TargetFrameworkIdentifier>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)' == 'net40'">
@@ -18,7 +12,7 @@
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
   </PropertyGroup>
 
-  <ItemGroup Condition="$(TargetFrameworkVersion) != 'v3.5' And $(TargetFrameworkVersion) != 'v4.0'">
+  <ItemGroup Condition="$(TargetFrameworkVersion) != 'v4.0'">
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
   </ItemGroup>
 

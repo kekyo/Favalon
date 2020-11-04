@@ -1,17 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks Condition="'$(MSBuildRuntimeType)' == 'Core'">net40-client;net45;netstandard1.1;netstandard2.0;netstandard2.1</TargetFrameworks>
-    <TargetFrameworks Condition="'$(MSBuildRuntimeType)' != 'Core'">net35-client;net40-client;net45;netstandard1.1;netstandard2.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>net40-client;net45;netstandard1.1;netstandard2.0;netstandard2.1</TargetFrameworks>
     <LangVersion>8.0</LangVersion>
     <Nullable>enable</Nullable>
     <RootNamespace>Favalet</RootNamespace>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net35-client'">
-    <TargetFrameworkIdentifier>.NETFramework</TargetFrameworkIdentifier>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)' == 'net40-client'">

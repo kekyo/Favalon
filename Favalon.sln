@@ -7,7 +7,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Favalet.Core", "Favalet.Cor
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Favalet.Core.Tests", "Favalet.Core.Tests\Favalet.Core.Tests.csproj", "{2CD58D99-3617-4396-9E1A-EAA9D8063899}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Favalet.CLR.Core", "Favalet.CLR.Core\Favalet.CLR.Core.csproj", "{98644F4B-4F53-4420-8AEA-486CE2335162}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Favalet.CLR.Core", "Favalet.CLR.Core\Favalet.CLR.Core.csproj", "{98644F4B-4F53-4420-8AEA-486CE2335162}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D88D26C1-C08E-429C-874F-3AD0E10833B8}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		Favalon.sln.licenseheader = Favalon.sln.licenseheader
+		LICENSE = LICENSE
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
