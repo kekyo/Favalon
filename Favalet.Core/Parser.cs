@@ -70,8 +70,9 @@ namespace Favalet
                             break;
                     }
 
+#if DEBUG
                     Debug.WriteLine($"{index - 1}: '{token}': {context}");
-
+#endif
                     context.SetLastToken(token);
                 },
                 observer.OnError,
