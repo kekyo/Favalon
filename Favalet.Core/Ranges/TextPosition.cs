@@ -24,36 +24,37 @@ using System.Diagnostics;
 namespace Favalet.Ranges
 {
     [DebuggerStepThrough]
-    public struct Position : IEquatable<Position>, IComparable<Position>, IComparable
+    public readonly struct TextPosition :
+        IEquatable<TextPosition>, IComparable<TextPosition>, IComparable
     {
-        public static readonly Position Unknown = new Position(-1, -1);
-        public static readonly Position Zero = new Position(0, 0);
-        public static readonly Position MaxValue = new Position(int.MaxValue, int.MaxValue);
+        public static readonly TextPosition Unknown = new TextPosition(-1, -1);
+        // public static readonly TextPosition Zero = new TextPosition(0, 0);
+        // public static readonly TextPosition MaxValue = new TextPosition(int.MaxValue, int.MaxValue);
 
         public readonly int Line;
         public readonly int Column;
 
-        private Position(int line, int column)
+        private TextPosition(int line, int column)
         {
             this.Line = line;
             this.Column = column;
         }
 
-        public Position MoveColumn(int forwardChars) =>
-            new Position(this.Line, this.Column + forwardChars);
-        public Position MoveLine(int forwardLines, int newColumn = 0) =>
-            new Position(this.Line + forwardLines, newColumn);
+        public TextPosition MoveColumn(int forwardChars) =>
+            new TextPosition(this.Line, this.Column + forwardChars);
+        public TextPosition MoveLine(int forwardLines, int newColumn = 0) =>
+            new TextPosition(this.Line + forwardLines, newColumn);
 
         public override int GetHashCode() =>
             this.Line.GetHashCode() ^ this.Column.GetHashCode();
 
-        public bool Equals(Position other) =>
+        public bool Equals(TextPosition other) =>
             (this.Line == other.Line) && (this.Column == other.Column);
 
         public override bool Equals(object obj) =>
-            obj is Position position ? this.Equals(position) : false;
+            obj is TextPosition position && this.Equals(position);
 
-        public int CompareTo(Position position) =>
+        public int CompareTo(TextPosition position) =>
             this.Line.CompareTo(position.Line) switch
             {
                 0 => this.Column.CompareTo(position.Column),
@@ -61,38 +62,37 @@ namespace Favalet.Ranges
             };
 
         int IComparable.CompareTo(object obj) =>
-            this.CompareTo((Position)obj);
+            this.CompareTo((TextPosition)obj);
 
         public override string ToString() =>
             $"{this.Line},{this.Column}";
 
-        [EditorBrowsable(EditorBrowsableState.Never)]
         public void Deconstruct(out int line, out int column)
         {
             line = this.Line;
             column = this.Column;
         }
 
-        public static Position Create(int line, int column) =>
-            new Position(line, column);
+        public static TextPosition Create(int line, int column) =>
+            new TextPosition(line, column);
 
 #if !NET40
-        public static implicit operator Position((int line, int column) position) =>
+        public static implicit operator TextPosition((int line, int column) position) =>
             Create(position.line, position.column);
 #endif
         
-        public static bool operator <(Position lhs, Position rhs) =>
+        public static bool operator <(TextPosition lhs, TextPosition rhs) =>
             lhs.CompareTo(rhs) < 0;
-        public static bool operator <=(Position lhs, Position rhs) =>
+        public static bool operator <=(TextPosition lhs, TextPosition rhs) =>
             lhs.CompareTo(rhs) <= 0;
-        public static bool operator >(Position lhs, Position rhs) =>
+        public static bool operator >(TextPosition lhs, TextPosition rhs) =>
             lhs.CompareTo(rhs) > 0;
-        public static bool operator >=(Position lhs, Position rhs) =>
+        public static bool operator >=(TextPosition lhs, TextPosition rhs) =>
             lhs.CompareTo(rhs) >= 0;
 
-        public static Position operator +(Position lhs, int value) =>
+        public static TextPosition operator +(TextPosition lhs, int value) =>
             lhs.MoveColumn(value);
-        public static Position operator +(int value, Position rhs) =>
+        public static TextPosition operator +(int value, TextPosition rhs) =>
             rhs.MoveColumn(value);
     }
 }

@@ -36,7 +36,7 @@ namespace Favalet.Lexers
             {
                 return LexRunnerResult.Create(
                     WaitingIgnoreSpaceRunner.Instance,
-                    WhiteSpaceToken.Instance);
+                    Token.WhiteSpace());
             }
             else if (char.IsDigit(ch))
             {

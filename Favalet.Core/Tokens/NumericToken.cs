@@ -18,15 +18,19 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using System;
+using System.Diagnostics;
+using Favalet.Ranges;
 
 namespace Favalet.Tokens
 {
+    [DebuggerStepThrough]
     public sealed class NumericToken :
         ValueToken, IEquatable<NumericToken?>
     {
         public readonly string Value;
 
-        internal NumericToken(string value) =>
+        internal NumericToken(string value, TextRange range) :
+            base(range) =>
             this.Value = value;
 
         public override int GetHashCode() =>
@@ -43,5 +47,13 @@ namespace Favalet.Tokens
 
         public void Deconstruct(out string value) =>
             value = this.Value;
+        public void Deconstruct(out string value, out TextRange range)
+        {
+            value = this.Value;
+            range = this.Range;
+        }
+ 
+        public static NumericToken Create(string value, TextRange range) =>
+            new NumericToken(value, range);
     }
 }

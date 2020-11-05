@@ -17,16 +17,23 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+using System.Diagnostics;
+using Favalet.Ranges;
+
 namespace Favalet.Tokens
 {
+    [DebuggerStepThrough]
     public sealed class CloseParenthesisToken :
         ParenthesisToken
     {
-        internal CloseParenthesisToken(ParenthesisPair parenthesis) :
-            base(parenthesis)
+        private CloseParenthesisToken(ParenthesisPair parenthesis, TextRange range) :
+            base(parenthesis, range)
         { }
 
         public override char Symbol =>
             this.Pair.Close;
+ 
+        public static CloseParenthesisToken Create(ParenthesisPair parenthesis, TextRange range) =>
+            new CloseParenthesisToken(parenthesis, range);
     }
 }

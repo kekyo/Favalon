@@ -17,12 +17,17 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+using System.Diagnostics;
+using Favalet.Ranges;
+
 namespace Favalet.Tokens
 {
+    [DebuggerStepThrough]
     public abstract class ValueToken :
         Token
     {
-        internal ValueToken()
+        internal ValueToken(TextRange range) :
+            base(range)
         { }
     }
 }

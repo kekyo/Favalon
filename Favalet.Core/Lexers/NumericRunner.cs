@@ -34,19 +34,19 @@ namespace Favalet.Lexers
         {
             var token = context.TokenBuffer.ToString();
             context.TokenBuffer.Clear();
-            return new NumericToken(token);
+            return Token.Numeric(token);
         }
 
         public override LexRunnerResult Run(LexRunnerContext context, char ch)
         {
             if (char.IsWhiteSpace(ch))
             {
-                var token = context.TokenBuffer.ToString();
+                var numeric = context.TokenBuffer.ToString();
                 context.TokenBuffer.Clear();
                 return LexRunnerResult.Create(
                     WaitingIgnoreSpaceRunner.Instance,
-                    new NumericToken(token),
-                    WhiteSpaceToken.Instance);
+                    Token.Numeric(numeric),
+                    Token.WhiteSpace());
             }
             else if (TokenUtilities.IsOpenParenthesis(ch) is ParenthesisPair)
             {

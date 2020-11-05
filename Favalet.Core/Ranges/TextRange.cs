@@ -24,108 +24,94 @@ using System.Diagnostics;
 namespace Favalet.Ranges
 {
     [DebuggerStepThrough]
-    public sealed class TextRange : IEquatable<TextRange>
+    public readonly struct TextRange
     {
-        private static readonly Uri unknown = new Uri("unknown.fav", UriKind.RelativeOrAbsolute);
+        public static readonly Uri UnknownText =
+            new Uri("unknown.fv", UriKind.RelativeOrAbsolute);
+        public static readonly TextRange Unknown =
+            new TextRange(UnknownText, TextPosition.Unknown, TextPosition.Unknown);
 
-        public static readonly TextRange Unknown = new TextRange(unknown, Range.Unknown);
+        public readonly Uri Text;
+        public readonly TextPosition First;
+        public readonly TextPosition Last;
 
-        public readonly Uri Target;
-        public readonly Range Range;
-
-        private TextRange(string target, Range range)
+        private TextRange(Uri text, TextPosition first, TextPosition last)
         {
-            this.Target = new Uri(target, UriKind.RelativeOrAbsolute);
-            this.Range = range;
-        }
-
-        private TextRange(Uri target, Range range)
-        {
-            this.Target = target;
-            this.Range = range;
+            this.Text = text;
+            this.First = first;
+            this.Last = last;
         }
 
         public bool Contains(TextRange inside) =>
-            this.Target.Equals(inside.Target) && this.Range.Contains(inside.Range);
+            this.Text.Equals(inside.Text) &&
+            ((this.First.Line < inside.First.Line) || ((this.First.Line == inside.First.Line) && (this.First.Column <= inside.First.Column))) &&
+            ((inside.Last.Line < this.Last.Line) || ((inside.Last.Line == this.Last.Line) && (inside.Last.Column <= this.Last.Column)));
 
-        public bool Overlaps(TextRange inside) =>
-            this.Target.Equals(inside.Target) && this.Range.Overlaps(inside.Range);
+        public bool Overlaps(TextRange rhs) =>
+            this.Text.Equals(rhs.Text) &&
+            (this.First <= rhs.Last) && (this.Last >= rhs.First);
 
-        public TextRange Combine(Range rhs) =>
-            new TextRange(this.Target, this.Range.Combine(rhs));
-        public TextRange Combine(Position first, Position last) =>
-            new TextRange(this.Target, this.Range.Combine(first, last));
-        public TextRange Combine(TextRange rhs) =>
-            this.Target.Equals(rhs.Target) ?
-                new TextRange(this.Target, this.Range.Combine(rhs.Range)) :
+        public TextRange Combine(TextRange range) =>
+            this.Text.Equals(range.Text) ?
+                this.Combine(range.First, range.Last) :
                 throw new InvalidOperationException();
+        public TextRange Combine(TextPosition first, TextPosition last) =>
+            new TextRange(
+                this.Text,
+                (this.First < first) ? this.First : first,
+                (this.Last < last) ? this.Last : last);
 
-        public TextRange Subtract(Range range) =>
-            new TextRange(this.Target, this.Range.Subtract(range));
-        public TextRange Subtract(Position first, Position last) =>
-            new TextRange(this.Target, this.Range.Subtract(first, last));
-        public TextRange Subtract(TextRange rhs) =>
-            this.Target.Equals(rhs.Target) ?
-                new TextRange(this.Target, this.Range.Subtract(rhs.Range)) :
+        public TextRange Subtract(TextRange range) =>
+            this.Text.Equals(range.Text) ?
+                this.Subtract(range.First, range.Last) :
                 throw new InvalidOperationException();
+        public TextRange Subtract(TextPosition first, TextPosition last) =>
+            new TextRange(
+                this.Text,
+                this.Contains(Create(this.Text, first)) ? first : this.First,
+                this.Contains(Create(this.Text, last)) ? last : this.Last);
 
+        public string NormalizedText =>
+            this.Text.Equals(UnknownText) ? string.Empty : this.Text.ToString();
+        
         public override string ToString() =>
-            $"{((this.Target.IsAbsoluteUri && this.Target.IsFile) ? this.Target.LocalPath : this.Target.ToString())}({this.Range})";
+            (this.First.Equals(this.Last)) ?
+                $"{this.NormalizedText}({this.First})" :
+                $"{this.NormalizedText}({this.First},{this.Last})";
 
-        public override int GetHashCode() =>
-            this.Target.GetHashCode() ^ this.Range.GetHashCode();
-
-        public bool Equals(TextRange other) =>
-            this.Target.Equals(other.Target) && this.Range.Equals(other.Range);
-
-        bool IEquatable<TextRange>.Equals(TextRange other) =>
-            this.Target.Equals(other.Target) && this.Range.Equals(other.Range);
-
-        public override bool Equals(object obj) =>
-            obj is TextRange textRange && this.Equals(textRange);
-
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public void Deconstruct(out Uri target, out Range range)
+        public void Deconstruct(out Uri text, out TextPosition first, out TextPosition last)
         {
-            target = this.Target;
-            range = this.Range;
+            text = this.Text;
+            first = this.First;
+            last = this.Last;
+        }
+        public void Deconstruct(out Uri text, out int lineFirst, out int columnFirst, out int lineLast, out int columnLast)
+        {
+            text = this.Text;
+            lineFirst = this.First.Line;
+            columnFirst = this.First.Column;
+            lineLast = this.Last.Line;
+            columnLast = this.Last.Column;
         }
 
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public void Deconstruct(out Uri target, out Position first, out Position last)
-        {
-            target = this.Target;
-            first = this.Range.First;
-            last = this.Range.Last;
-        }
-
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public void Deconstruct(out Uri target, out int lineFirst, out int columnFirst, out int lineLast, out int columnLast)
-        {
-            target = this.Target;
-            lineFirst = this.Range.First.Line;
-            columnFirst = this.Range.First.Column;
-            lineLast = this.Range.Last.Line;
-            columnLast = this.Range.Last.Column;
-        }
-
-        public static TextRange Create(string target, Range range) =>
-            new TextRange(target, range);
-        public static TextRange Create(Uri target, Range range) =>
-            new TextRange(target, range);
-        public static TextRange Create(Range range) =>
-            new TextRange(unknown, range);
+        public static TextRange Create(Uri text, TextPosition position) =>
+            new TextRange(text, position, position);
+        public static TextRange Create(Uri text, TextPosition first, TextPosition last) =>
+            new TextRange(text, first, last);
 
 #if !NET40
-        public static implicit operator TextRange((string target, int line, int column) textRange) =>
-            new TextRange(textRange.target, Range.Create(Position.Create(textRange.line, textRange.column)));
-        public static implicit operator TextRange((Uri target, int line, int column) textRange) =>
-           new TextRange(textRange.target, Range.Create(Position.Create(textRange.line, textRange.column)));
-
-        public static implicit operator TextRange((string target, int lineFirst, int columnFirst, int lineLast, int columnLast) textRange) =>
-            new TextRange(textRange.target, Range.Create(Position.Create(textRange.lineFirst, textRange.columnFirst), Position.Create(textRange.lineLast, textRange.columnLast)));
-        public static implicit operator TextRange((Uri target, int lineFirst, int columnFirst, int lineLast, int columnLast) textRange) =>
-            new TextRange(textRange.target, Range.Create(Position.Create(textRange.lineFirst, textRange.columnFirst), Position.Create(textRange.lineLast, textRange.columnLast)));
+        public static implicit operator TextRange((int line, int column) position) =>
+            Create(UnknownText, TextPosition.Create(position.line, position.column));
+        public static implicit operator TextRange((int lineFirst, int columnFirst, int lineLast, int columnLast) range) =>
+            Create(UnknownText, TextPosition.Create(range.lineFirst, range.columnFirst), TextPosition.Create(range.lineLast, range.columnLast));
+        public static implicit operator TextRange((Uri text, int line, int column) position) =>
+            Create(position.text, TextPosition.Create(position.line, position.column));
+        public static implicit operator TextRange((Uri text, int lineFirst, int columnFirst, int lineLast, int columnLast) range) =>
+            Create(range.text, TextPosition.Create(range.lineFirst, range.columnFirst), TextPosition.Create(range.lineLast, range.columnLast));
+        public static implicit operator TextRange((string text, int line, int column) position) =>
+            Create(new Uri(position.text, UriKind.RelativeOrAbsolute), TextPosition.Create(position.line, position.column));
+        public static implicit operator TextRange((string text, int lineFirst, int columnFirst, int lineLast, int columnLast) range) =>
+            Create(new Uri(range.text, UriKind.RelativeOrAbsolute), TextPosition.Create(range.lineFirst, range.columnFirst), TextPosition.Create(range.lineLast, range.columnLast));
 #endif
     }
 }

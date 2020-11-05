@@ -32,17 +32,17 @@ namespace Favalet.Lexers
 
         private static Token InternalFinish(LexRunnerContext context, bool forceIdentity)
         {
-            var token = context.TokenBuffer.ToString();
+            var sign = context.TokenBuffer.ToString();
             context.TokenBuffer.Clear();
-            if (!forceIdentity && (token.Length == 1) &&
-                TokenUtilities.IsNumericSign(token[0]) is NumericalSignes sign)
+            if (!forceIdentity && (sign.Length == 1) &&
+                TokenUtilities.IsNumericSign(sign[0]) is NumericalSignes s)
             {
-                return (sign == NumericalSignes.Plus) ?
-                    NumericalSignToken.Plus : NumericalSignToken.Minus;
+                return (s == NumericalSignes.Plus) ?
+                    Token.PlusSign() : Token.MinusSign();
             }
             else
             {
-                return new IdentityToken(token);
+                return Token.Identity(sign);
             }
         }
 
@@ -52,7 +52,7 @@ namespace Favalet.Lexers
             {
                 var token0 = InternalFinish(context, true);
                 context.TokenBuffer.Clear();
-                return LexRunnerResult.Create(WaitingIgnoreSpaceRunner.Instance, token0, WhiteSpaceToken.Instance);
+                return LexRunnerResult.Create(WaitingIgnoreSpaceRunner.Instance, token0, Token.WhiteSpace());
             }
             else if (char.IsDigit(ch))
             {

@@ -17,6 +17,9 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+using System.Diagnostics;
+using Favalet.Ranges;
+
 namespace Favalet.Tokens
 {
     public enum NumericalSignes
@@ -26,12 +29,14 @@ namespace Favalet.Tokens
         Minus = -1
     }
 
+    [DebuggerStepThrough]
     public sealed class NumericalSignToken :
         SymbolToken
     {
         public readonly NumericalSignes Sign;
 
-        private NumericalSignToken(NumericalSignes sign) =>
+        private NumericalSignToken(NumericalSignes sign, TextRange range) :
+            base(range) =>
             this.Sign = sign;
 
         public override char Symbol =>
@@ -53,10 +58,18 @@ namespace Favalet.Tokens
 
         public void Deconstruct(out NumericalSignes sign) =>
             sign = this.Sign;
+        public void Deconstruct(out NumericalSignes sign, out TextRange range)
+        {
+            sign = this.Sign;
+            range = this.Range;
+        }
 
-        internal static readonly NumericalSignToken Plus =
-            new NumericalSignToken(NumericalSignes.Plus);
-        internal static readonly NumericalSignToken Minus =
-            new NumericalSignToken(NumericalSignes.Minus);
+        public static NumericalSignToken Create(NumericalSignes sign, TextRange range) =>
+            new NumericalSignToken(sign, range);
+
+        public static NumericalSignToken Plus(TextRange range) =>
+            new NumericalSignToken(NumericalSignes.Plus, range);
+        public static NumericalSignToken Minus(TextRange range) =>
+            new NumericalSignToken(NumericalSignes.Minus, range);
     }
 }

@@ -34,7 +34,7 @@ namespace Favalet.Lexers
         {
             var token = context.TokenBuffer.ToString();
             context.TokenBuffer.Clear();
-            return new IdentityToken(token);
+            return Token.Identity(token);
         }
 
         public override LexRunnerResult Run(LexRunnerContext context, char ch)
@@ -43,7 +43,7 @@ namespace Favalet.Lexers
             {
                 var token = context.TokenBuffer.ToString();
                 context.TokenBuffer.Clear();
-                return LexRunnerResult.Create(WaitingIgnoreSpaceRunner.Instance, new IdentityToken(token), WhiteSpaceToken.Instance);
+                return LexRunnerResult.Create(WaitingIgnoreSpaceRunner.Instance, Token.Identity(token), Token.WhiteSpace());
             }
             else if (TokenUtilities.IsOpenParenthesis(ch) is ParenthesisPair)
             {

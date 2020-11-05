@@ -18,13 +18,17 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using System;
+using System.Diagnostics;
+using Favalet.Ranges;
 
 namespace Favalet.Tokens
 {
+    [DebuggerStepThrough]
     public sealed class WhiteSpaceToken :
         Token, IEquatable<WhiteSpaceToken?>
     {
-        private WhiteSpaceToken()
+        private WhiteSpaceToken(TextRange range) :
+            base(range)
         { }
 
         public override int GetHashCode() =>
@@ -39,7 +43,7 @@ namespace Favalet.Tokens
         public override string ToString() =>
             string.Empty;
 
-        internal static readonly WhiteSpaceToken Instance =
-            new WhiteSpaceToken();
+        public static WhiteSpaceToken Create(TextRange range) =>
+            new WhiteSpaceToken(range);
     }
 }

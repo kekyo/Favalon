@@ -18,15 +18,19 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using System;
+using System.Diagnostics;
+using Favalet.Ranges;
 
 namespace Favalet.Tokens
 {
+    [DebuggerStepThrough]
     public sealed class IdentityToken :
         ValueToken, IEquatable<IdentityToken?>
     {
         public new readonly string Identity;
 
-        internal IdentityToken(string identity) =>
+        private IdentityToken(string identity, TextRange range) :
+            base(range) =>
             this.Identity = identity;
 
         public override int GetHashCode() =>
@@ -43,5 +47,13 @@ namespace Favalet.Tokens
 
         public void Deconstruct(out string identity) =>
             identity = this.Identity;
+        public void Deconstruct(out string identity, out TextRange range)
+        {
+            identity = this.Identity;
+            range = this.Range;
+        }
+
+        public static IdentityToken Create(string identity, TextRange range) =>
+            new IdentityToken(identity, range);
     }
 }
