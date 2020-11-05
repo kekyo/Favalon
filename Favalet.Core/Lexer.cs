@@ -26,12 +26,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using Favalet.Ranges;
 
 namespace Favalet
 {
     public interface ILexer
     {
-        IObservable<Token> Analyze(IObservable<Input> chars);
+        IObservable<Token> Analyze(Uri uri, IObservable<Input> chars);
     }
     
     public sealed class Lexer : ILexer
@@ -42,11 +43,11 @@ namespace Favalet
         }
 
         [DebuggerStepThrough]
-        public IObservable<Token> Analyze(IObservable<Input> inputs) =>
+        public IObservable<Token> Analyze(Uri uri, IObservable<Input> inputs) =>
             Observable.Create<Token>(observer =>
             {
-                var context = LexRunnerContext.Create();
-                var runner = WaitingIgnoreSpaceRunner.Instance;
+                var context = LexRunnerContext.Create(uri);
+                var runner = WaitingRunner.Instance;
 
                 return inputs.Subscribe(Observer.Create<Input>(
                     input =>
@@ -87,13 +88,19 @@ namespace Favalet
     public static class LexerExtension
     {
         public static IObservable<Token> Analyze(this ILexer lexer, IEnumerable<Input> inputs) =>
-            lexer.Analyze(inputs.ToObservable());
+            lexer.Analyze(TextRange.UnknownUri, inputs.ToObservable());
+        public static IObservable<Token> Analyze(this ILexer lexer, Uri uri, IEnumerable<Input> inputs) =>
+            lexer.Analyze(uri, inputs.ToObservable());
 
         public static IObservable<Token> Analyze(this ILexer lexer, IEnumerable<char> chars) =>
-            lexer.Analyze(chars.Select(Input.Create));
+            lexer.Analyze(TextRange.UnknownUri, chars.Select(Input.Create));
+        public static IObservable<Token> Analyze(this ILexer lexer, Uri uri, IEnumerable<char> chars) =>
+            lexer.Analyze(uri, chars.Select(Input.Create));
 
         public static IObservable<Token> Analyze(this ILexer lexer, TextReader tr) =>
-            lexer.Analyze(Observable.Create<Input>(observer =>
+            lexer.Analyze(TextRange.UnknownUri, tr);
+        public static IObservable<Token> Analyze(this ILexer lexer, Uri uri, TextReader tr) =>
+            lexer.Analyze(uri, Observable.Create<Input>(observer =>
             {
                 while (true)
                 {

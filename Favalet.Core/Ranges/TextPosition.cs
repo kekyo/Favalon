@@ -90,6 +90,11 @@ namespace Favalet.Ranges
         public static bool operator >=(TextPosition lhs, TextPosition rhs) =>
             lhs.CompareTo(rhs) >= 0;
 
+        public static bool operator ==(TextPosition lhs, TextPosition rhs) =>
+            lhs.Equals(rhs);
+        public static bool operator !=(TextPosition lhs, TextPosition rhs) =>
+            !lhs.Equals(rhs);
+
         public static TextPosition operator +(TextPosition lhs, int value) =>
             lhs.MoveColumn(value);
         public static TextPosition operator +(int value, TextPosition rhs) =>

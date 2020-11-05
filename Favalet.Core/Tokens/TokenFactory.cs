@@ -26,17 +26,17 @@ namespace Favalet.Tokens
     partial class Token
     {
         public static Uri UnknownText() =>
-            Favalet.Ranges.TextRange.UnknownText;
+            Favalet.Ranges.TextRange.UnknownUri;
         public static TextRange UnknownTextRange() =>
             Favalet.Ranges.TextRange.Unknown;
 
         public static TextRange TextRange(TextPosition position) =>
             Favalet.Ranges.TextRange.Create(
-                Favalet.Ranges.TextRange.UnknownText,
+                Favalet.Ranges.TextRange.UnknownUri,
                 position);
         public static TextRange TextRange(TextPosition first, TextPosition last) =>
             Favalet.Ranges.TextRange.Create(
-                Favalet.Ranges.TextRange.UnknownText,
+                Favalet.Ranges.TextRange.UnknownUri,
                 first,
                 last);
         public static TextRange TextRange(Uri text, TextPosition position) =>
@@ -59,11 +59,11 @@ namespace Favalet.Tokens
                 last);
         public static TextRange TextRange(int line, int column) =>
             Favalet.Ranges.TextRange.Create(
-                Favalet.Ranges.TextRange.UnknownText,
+                Favalet.Ranges.TextRange.UnknownUri,
                 TextPosition.Create(line, column));
         public static TextRange TextRange(int firstLine, int firstColumn, int lastLine, int lastColumn) =>
             Favalet.Ranges.TextRange.Create(
-                Favalet.Ranges.TextRange.UnknownText,
+                Favalet.Ranges.TextRange.UnknownUri,
                 TextPosition.Create(firstLine, firstColumn),
                 TextPosition.Create(lastLine, lastColumn));
         public static TextRange TextRange(Uri text, int line, int column) =>

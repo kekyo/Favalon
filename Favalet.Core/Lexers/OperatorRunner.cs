@@ -32,57 +32,79 @@ namespace Favalet.Lexers
 
         private static Token InternalFinish(LexRunnerContext context, bool forceIdentity)
         {
-            var sign = context.TokenBuffer.ToString();
-            context.TokenBuffer.Clear();
-            if (!forceIdentity && (sign.Length == 1) &&
-                TokenUtilities.IsNumericSign(sign[0]) is NumericalSignes s)
+            var (signText, range0) = context.GetTokenTextAndClear();
+            if (!forceIdentity && (signText.Length == 1) &&
+                TokenUtilities.IsNumericSign(signText[0]) is NumericalSignes sign)
             {
-                return (s == NumericalSignes.Plus) ?
-                    Token.PlusSign() : Token.MinusSign();
+                return (sign == NumericalSignes.Plus) ?
+                    NumericalSignToken.Plus(range0) : NumericalSignToken.Minus(range0);
             }
             else
             {
-                return Token.Identity(sign);
+                return IdentityToken.Create(signText, range0);
             }
         }
 
         public override LexRunnerResult Run(LexRunnerContext context, Input input)
         {
-            if (char.IsWhiteSpace(input))
+            if (input.IsNextLine)
             {
                 var token0 = InternalFinish(context, true);
-                context.TokenBuffer.Clear();
-                return LexRunnerResult.Create(WaitingIgnoreSpaceRunner.Instance, token0, Token.WhiteSpace());
+                context.ForwardNextLine();
+                return LexRunnerResult.Create(
+                    WaitingIgnoreSpaceRunner.Instance,
+                    token0);
+            }
+            else if (input.IsDelimiterHint)
+            {
+                var token0 = InternalFinish(context, true);
+                return LexRunnerResult.Create(
+                    WaitingRunner.Instance,
+                    token0);
+            }
+            else if (char.IsWhiteSpace(input))
+            {
+                var token0 = InternalFinish(context, true);
+                context.ForwardOnly();
+                return LexRunnerResult.Create(
+                    WaitingIgnoreSpaceRunner.Instance,
+                    token0);
             }
             else if (char.IsDigit(input))
             {
                 var token0 = InternalFinish(context, false);
-                context.TokenBuffer.Append(input);
+                context.Append(input);
                 return LexRunnerResult.Create(NumericRunner.Instance, token0);
             }
-            else if (TokenUtilities.IsOpenParenthesis(input) is ParenthesisPair)
+            else if (TokenUtilities.IsOpenParenthesis(input) is ParenthesisPair openPair)
             {
+                var token0 = InternalFinish(context, true);
+                context.ForwardOnly();
+                var range1 = context.GetRangeAndClear();
                 return LexRunnerResult.Create(
                     WaitingRunner.Instance,
-                    InternalFinish(context, true),
-                    Token.Open(input));
+                    token0,
+                    OpenParenthesisToken.Create(openPair, range1));
             }
-            else if (TokenUtilities.IsCloseParenthesis(input) is ParenthesisPair)
+            else if (TokenUtilities.IsCloseParenthesis(input) is ParenthesisPair closePair)
             {
+                var token0 = InternalFinish(context, true);
+                context.ForwardOnly();
+                var range1 = context.GetRangeAndClear();
                 return LexRunnerResult.Create(
                     WaitingRunner.Instance,
-                    InternalFinish(context, true),
-                    Token.Close(input));
+                    token0,
+                    CloseParenthesisToken.Create(closePair, range1));
             }
             else if (TokenUtilities.IsOperator(input))
             {
-                context.TokenBuffer.Append(input);
+                context.Append(input);
                 return LexRunnerResult.Empty(this);
             }
             else if(!char.IsControl(input))
             {
                 var token0 = InternalFinish(context, true);
-                context.TokenBuffer.Append(input);
+                context.Append(input);
                 return LexRunnerResult.Create(IdentityRunner.Instance, token0);
             }
             else

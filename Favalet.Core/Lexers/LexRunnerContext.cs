@@ -17,28 +17,71 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Favalet.Ranges;
 
 namespace Favalet.Lexers
 {
+    [DebuggerStepThrough]
     internal sealed class LexRunnerContext
     {
-        public readonly StringBuilder TokenBuffer;
+        public readonly Uri Uri;
 
-#if NET45 || NETSTANDARD1_1
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        [DebuggerStepThrough]
-        private LexRunnerContext(StringBuilder tokenBuffer) =>
-            this.TokenBuffer = tokenBuffer;
+        private TextPosition start;
+        private int currentLine;
+        private int currentColumn;
+        private readonly StringBuilder tokenBuffer = new StringBuilder();
 
-#if NET45 || NETSTANDARD1_1
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        [DebuggerStepThrough]
-        public static LexRunnerContext Create() =>
-            new LexRunnerContext(new StringBuilder());
+        private LexRunnerContext(Uri uri) =>
+            this.Uri = uri;
+
+        public void Append(char inch)
+        {
+            this.currentColumn++;
+            this.tokenBuffer.Append(inch);
+        }
+
+        public (string tokenText, TextRange range) GetTokenTextAndClear()
+        {
+            var tokenText = this.tokenBuffer.ToString();
+            this.tokenBuffer.Clear();
+            
+            var first = this.start;
+            var last = TextPosition.Create(this.currentLine, this.currentColumn);
+            
+            this.currentColumn++;
+            this.start = TextPosition.Create(this.currentLine, this.currentColumn);
+            
+            return (tokenText, TextRange.Create(this.Uri, first, last));
+        }
+
+        public void ForwardOnly()
+        {
+            this.currentColumn++;
+        }
+
+        public void ForwardNextLine()
+        {
+            this.currentColumn = 0;
+            this.currentLine++;
+        }
+
+        public TextRange GetRangeAndClear()
+        {
+            Debug.Assert(this.tokenBuffer.Length == 0);
+
+            var first = this.start;
+            var last = TextPosition.Create(this.currentLine, this.currentColumn);
+
+            this.start = last;
+
+            return TextRange.Create(this.Uri, first, last);
+        }
+
+        public static LexRunnerContext Create(Uri uri) =>
+            new LexRunnerContext(uri);
     }
 }

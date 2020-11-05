@@ -33,20 +33,25 @@ namespace Favalet.Lexers
     [DebuggerStepThrough]
     public readonly struct Input
     {
-        public readonly char Inch;
-        public readonly InputTypes Type;
+        private readonly char inch;
+        private readonly InputTypes type;
 
         private Input(char inch, InputTypes type)
         {
-            this.Inch = inch;
-            this.Type = type;
+            this.inch = inch;
+            this.type = type;
         }
 
+        public bool IsNextLine =>
+            (this.type & InputTypes.NextLine) == InputTypes.NextLine;
+        public bool IsDelimiterHint =>
+            (this.type & InputTypes.DelimiterHint) == InputTypes.DelimiterHint;
+        
         public override string ToString() =>
-            this.Type switch
+            this.type switch
             {
-                InputTypes.UnicodeCharacter => $"'{this.Inch}'",
-                _ => $"[{this.Type}]"
+                InputTypes.UnicodeCharacter => $"'{this.inch}'",
+                _ => $"[{this.type}]"
             };
 
         public static Input Create(char inch) =>
@@ -54,10 +59,13 @@ namespace Favalet.Lexers
         public static Input Create(InputTypes type) =>
             new Input('\0', type);
 
-        public static implicit operator char(Input input) =>
-            input.Inch;
+        public static implicit operator char(Input input)
+        {
+            Debug.Assert(input.type == InputTypes.UnicodeCharacter);
+            return input.inch;
+        }
         public static implicit operator InputTypes(Input input) =>
-            input.Type;
+            input.type;
         public static implicit operator Input(char inch) =>
             new Input(inch, InputTypes.UnicodeCharacter);
         public static implicit operator Input(InputTypes type) =>

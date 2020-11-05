@@ -46,8 +46,8 @@ namespace Favalet.Ranges
         [Test]
         public void ToString3()
         {
-            var text = new Uri("foo.fv", UriKind.RelativeOrAbsolute);
-            var range = TextRange(text, TextPosition.Create(1, 2));
+            var uri = new Uri("foo.fv", UriKind.RelativeOrAbsolute);
+            var range = TextRange(uri, TextPosition.Create(1, 2));
 
             Assert.AreEqual("foo.fv(1,2)", range.ToString());
         }
@@ -55,8 +55,8 @@ namespace Favalet.Ranges
         [Test]
         public void ToString4()
         {
-            var text = new Uri("foo.fv", UriKind.RelativeOrAbsolute);
-            var range = TextRange(text, TextPosition.Create(1, 2), TextPosition.Create(3, 4));
+            var uri = new Uri("foo.fv", UriKind.RelativeOrAbsolute);
+            var range = TextRange(uri, TextPosition.Create(1, 2), TextPosition.Create(3, 4));
 
             Assert.AreEqual("foo.fv(1,2,3,4)", range.ToString());
         }
@@ -304,8 +304,8 @@ namespace Favalet.Ranges
         [Test]
         public void Tuple3()
         {
-            var text = new Uri("foo.fv", UriKind.RelativeOrAbsolute);
-            TextRange range = (text, 1, 2);
+            var uri = new Uri("foo.fv", UriKind.RelativeOrAbsolute);
+            TextRange range = (uri, 1, 2);
 
             Assert.AreEqual("foo.fv(1,2)", range.ToString());
         }
@@ -313,8 +313,8 @@ namespace Favalet.Ranges
         [Test]
         public void Tuple4()
         {
-            var text = new Uri("foo.fv", UriKind.RelativeOrAbsolute);
-            TextRange range = (text, 1, 2, 3, 4);
+            var uri = new Uri("foo.fv", UriKind.RelativeOrAbsolute);
+            TextRange range = (uri, 1, 2, 3, 4);
 
             Assert.AreEqual("foo.fv(1,2,3,4)", range.ToString());
         }
