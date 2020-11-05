@@ -25,12 +25,13 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 
 namespace Favalet
 {
     public interface ILexer
     {
-        IObservable<Token> Analyze(IObservable<char> chars);
+        IObservable<Token> Analyze(IObservable<Input> chars);
     }
     
     public sealed class Lexer : ILexer
@@ -41,16 +42,16 @@ namespace Favalet
         }
 
         [DebuggerStepThrough]
-        public IObservable<Token> Analyze(IObservable<char> chars) =>
+        public IObservable<Token> Analyze(IObservable<Input> inputs) =>
             Observable.Create<Token>(observer =>
             {
                 var context = LexRunnerContext.Create();
                 var runner = WaitingIgnoreSpaceRunner.Instance;
 
-                return chars.Subscribe(Observer.Create<char>(
-                    inch =>
+                return inputs.Subscribe(Observer.Create<Input>(
+                    input =>
                     {
-                        switch (runner.Run(context, inch))
+                        switch (runner.Run(context, input))
                         {
                             case LexRunnerResult(LexRunner next, Token token0, Token token1):
                                 observer.OnNext(token0);
@@ -85,11 +86,14 @@ namespace Favalet
     [DebuggerStepThrough]
     public static class LexerExtension
     {
+        public static IObservable<Token> Analyze(this ILexer lexer, IEnumerable<Input> inputs) =>
+            lexer.Analyze(inputs.ToObservable());
+
         public static IObservable<Token> Analyze(this ILexer lexer, IEnumerable<char> chars) =>
-            lexer.Analyze(chars.ToObservable());
+            lexer.Analyze(chars.Select(Input.Create));
 
         public static IObservable<Token> Analyze(this ILexer lexer, TextReader tr) =>
-            lexer.Analyze(Observable.Create<char>(observer =>
+            lexer.Analyze(Observable.Create<Input>(observer =>
             {
                 while (true)
                 {

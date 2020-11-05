@@ -46,48 +46,48 @@ namespace Favalet.Lexers
             }
         }
 
-        public override LexRunnerResult Run(LexRunnerContext context, char ch)
+        public override LexRunnerResult Run(LexRunnerContext context, Input input)
         {
-            if (char.IsWhiteSpace(ch))
+            if (char.IsWhiteSpace(input))
             {
                 var token0 = InternalFinish(context, true);
                 context.TokenBuffer.Clear();
                 return LexRunnerResult.Create(WaitingIgnoreSpaceRunner.Instance, token0, Token.WhiteSpace());
             }
-            else if (char.IsDigit(ch))
+            else if (char.IsDigit(input))
             {
                 var token0 = InternalFinish(context, false);
-                context.TokenBuffer.Append(ch);
+                context.TokenBuffer.Append(input);
                 return LexRunnerResult.Create(NumericRunner.Instance, token0);
             }
-            else if (TokenUtilities.IsOpenParenthesis(ch) is ParenthesisPair)
+            else if (TokenUtilities.IsOpenParenthesis(input) is ParenthesisPair)
             {
                 return LexRunnerResult.Create(
                     WaitingRunner.Instance,
                     InternalFinish(context, true),
-                    Token.Open(ch));
+                    Token.Open(input));
             }
-            else if (TokenUtilities.IsCloseParenthesis(ch) is ParenthesisPair)
+            else if (TokenUtilities.IsCloseParenthesis(input) is ParenthesisPair)
             {
                 return LexRunnerResult.Create(
                     WaitingRunner.Instance,
                     InternalFinish(context, true),
-                    Token.Close(ch));
+                    Token.Close(input));
             }
-            else if (TokenUtilities.IsOperator(ch))
+            else if (TokenUtilities.IsOperator(input))
             {
-                context.TokenBuffer.Append(ch);
+                context.TokenBuffer.Append(input);
                 return LexRunnerResult.Empty(this);
             }
-            else if(!char.IsControl(ch))
+            else if(!char.IsControl(input))
             {
                 var token0 = InternalFinish(context, true);
-                context.TokenBuffer.Append(ch);
+                context.TokenBuffer.Append(input);
                 return LexRunnerResult.Create(IdentityRunner.Instance, token0);
             }
             else
             {
-                throw new InvalidOperationException(ch.ToString());
+                throw new InvalidOperationException(input.ToString());
             }
         }
 

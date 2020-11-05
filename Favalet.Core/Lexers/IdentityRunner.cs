@@ -37,42 +37,42 @@ namespace Favalet.Lexers
             return Token.Identity(token);
         }
 
-        public override LexRunnerResult Run(LexRunnerContext context, char ch)
+        public override LexRunnerResult Run(LexRunnerContext context, Input input)
         {
-            if (char.IsWhiteSpace(ch))
+            if (char.IsWhiteSpace(input))
             {
                 var token = context.TokenBuffer.ToString();
                 context.TokenBuffer.Clear();
                 return LexRunnerResult.Create(WaitingIgnoreSpaceRunner.Instance, Token.Identity(token), Token.WhiteSpace());
             }
-            else if (TokenUtilities.IsOpenParenthesis(ch) is ParenthesisPair)
+            else if (TokenUtilities.IsOpenParenthesis(input) is ParenthesisPair)
             {
                 return LexRunnerResult.Create(
                     WaitingRunner.Instance,
                     InternalFinish(context),
-                    Token.Open(ch));
+                    Token.Open(input));
             }
-            else if (TokenUtilities.IsCloseParenthesis(ch) is ParenthesisPair)
+            else if (TokenUtilities.IsCloseParenthesis(input) is ParenthesisPair)
             {
                 return LexRunnerResult.Create(
                     WaitingRunner.Instance,
                     InternalFinish(context),
-                    Token.Close(ch));
+                    Token.Close(input));
             }
-            else if (TokenUtilities.IsOperator(ch))
+            else if (TokenUtilities.IsOperator(input))
             {
                 var token0 = InternalFinish(context);
-                context.TokenBuffer.Append(ch);
+                context.TokenBuffer.Append(input);
                 return LexRunnerResult.Create(OperatorRunner.Instance, token0);
             }
-            else if (!char.IsControl(ch))
+            else if (!char.IsControl(input))
             {
-                context.TokenBuffer.Append(ch);
+                context.TokenBuffer.Append(input);
                 return LexRunnerResult.Empty(this);
             }
             else
             {
-                throw new InvalidOperationException(ch.ToString());
+                throw new InvalidOperationException(input.ToString());
             }
         }
 

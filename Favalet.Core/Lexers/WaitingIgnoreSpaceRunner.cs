@@ -30,42 +30,42 @@ namespace Favalet.Lexers
         private WaitingIgnoreSpaceRunner()
         { }
 
-        public override LexRunnerResult Run(LexRunnerContext context, char ch)
+        public override LexRunnerResult Run(LexRunnerContext context, Input input)
         {
-            if (char.IsWhiteSpace(ch))
+            if (char.IsWhiteSpace(input))
             {
                 return LexRunnerResult.Empty(this);
             }
-            else if (char.IsDigit(ch))
+            else if (char.IsDigit(input))
             {
-                context.TokenBuffer.Append(ch);
+                context.TokenBuffer.Append(input);
                 return LexRunnerResult.Empty(NumericRunner.Instance);
             }
-            else if (TokenUtilities.IsOpenParenthesis(ch) is ParenthesisPair)
+            else if (TokenUtilities.IsOpenParenthesis(input) is ParenthesisPair)
             {
                 return LexRunnerResult.Create(
                     WaitingRunner.Instance,
-                    Token.Open(ch));
+                    Token.Open(input));
             }
-            else if (TokenUtilities.IsCloseParenthesis(ch) is ParenthesisPair)
+            else if (TokenUtilities.IsCloseParenthesis(input) is ParenthesisPair)
             {
                 return LexRunnerResult.Create(
                     WaitingRunner.Instance,
-                    Token.Close(ch));
+                    Token.Close(input));
             }
-            else if (TokenUtilities.IsOperator(ch))
+            else if (TokenUtilities.IsOperator(input))
             {
-                context.TokenBuffer.Append(ch);
+                context.TokenBuffer.Append(input);
                 return LexRunnerResult.Empty(OperatorRunner.Instance);
             }
-            else if (!char.IsControl(ch))
+            else if (!char.IsControl(input))
             {
-                context.TokenBuffer.Append(ch);
+                context.TokenBuffer.Append(input);
                 return LexRunnerResult.Empty(IdentityRunner.Instance);
             }
             else
             {
-                throw new InvalidOperationException(ch.ToString());
+                throw new InvalidOperationException(input.ToString());
             }
         }
 
