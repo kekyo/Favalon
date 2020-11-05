@@ -37,7 +37,7 @@ namespace Favalet.Parsers
             var sign = context.PreSignToken?.Sign == NumericalSignes.Minus ? -1 : 1;
             if (int.TryParse(numeric.Value, out var intValue))
             {
-                context.CombineAfter(ConstantTerm.From(intValue * sign));
+                context.CombineAfter(ConstantTerm.From(intValue * sign, numeric.Range));  // TODO: range
                 context.PreSignToken = null;
             }
             else

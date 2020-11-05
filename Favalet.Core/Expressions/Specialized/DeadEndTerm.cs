@@ -21,6 +21,7 @@ using Favalet.Contexts;
 using System.Collections;
 using System.Diagnostics;
 using System.Linq;
+using Favalet.Ranges;
 
 namespace Favalet.Expressions.Specialized
 {
@@ -28,7 +29,8 @@ namespace Favalet.Expressions.Specialized
     internal sealed class DeadEndTerm :
         Expression, IIgnoreUnificationTerm
     {
-        private DeadEndTerm()
+        private DeadEndTerm() :
+            base(TextRange.Unknown)
         { }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]

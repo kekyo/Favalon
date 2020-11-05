@@ -24,6 +24,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Favalet.Ranges;
 
 namespace Favalet.Expressions
 {
@@ -48,13 +49,14 @@ namespace Favalet.Expressions
                 this.fourth = this.OnCreate(
                     FourthTerm.Instance,
                     FourthTerm.Instance,
-                    DeadEndTerm.Instance);
+                    DeadEndTerm.Instance,
+                    TextRange.Unknown);
 
             protected abstract IFunctionExpression OnCreate(
-                IExpression parameter, IExpression result, IExpression higherOrder);
+                IExpression parameter, IExpression result, IExpression higherOrder, TextRange range);
             
             public IExpression Create(
-                IExpression parameter, IExpression result, Func<IExpression> higherOrder)
+                IExpression parameter, IExpression result, Func<IExpression> higherOrder, TextRange range)
             {
                 switch (parameter, result)
                 {
@@ -68,24 +70,27 @@ namespace Favalet.Expressions
                         return this.OnCreate(
                             parameter,
                             result,
-                            DeadEndTerm.Instance);
+                            DeadEndTerm.Instance,
+                            range);
                     default:
                         return this.OnCreate(
                             parameter,
                             result,
-                            higherOrder());
+                            higherOrder(),
+                            range);
                 };
             }
 
             public IFunctionExpression Create(
-                IExpression parameter, IExpression result, IFunctionExpression higherOrder) =>
+                IExpression parameter, IExpression result, IFunctionExpression higherOrder, TextRange range) =>
                 (IFunctionExpression)this.Create(
                     parameter,
                     result,
-                    () => higherOrder);
+                    () => higherOrder,
+                    range);
 
             private IExpression CreateRecursivity(
-                IExpression parameter, IExpression result) =>
+                IExpression parameter, IExpression result, TextRange range) =>
                 this.Create(
                     parameter,
                     result,
@@ -94,16 +99,17 @@ namespace Favalet.Expressions
                         (UnspecifiedTerm _, UnspecifiedTerm _) =>
                             DeadEndTerm.Instance,
                         (UnspecifiedTerm _, _) =>
-                            this.CreateRecursivity(UnspecifiedTerm.Instance, result.HigherOrder),
+                            this.CreateRecursivity(UnspecifiedTerm.Instance, result.HigherOrder, TextRange.Unknown),
                         (_, UnspecifiedTerm _) =>
-                            this.CreateRecursivity(parameter.HigherOrder, UnspecifiedTerm.Instance),
+                            this.CreateRecursivity(parameter.HigherOrder, UnspecifiedTerm.Instance, TextRange.Unknown),
                         _ =>
-                            this.CreateRecursivity(parameter.HigherOrder, result.HigherOrder)
-                    });
+                            this.CreateRecursivity(parameter.HigherOrder, result.HigherOrder, TextRange.Unknown)
+                    },
+                    range);
 
             public IFunctionExpression Create(
-                IExpression parameter, IExpression result) =>
-                (IFunctionExpression)this.CreateRecursivity(parameter, result);
+                IExpression parameter, IExpression result, TextRange range) =>
+                (IFunctionExpression)this.CreateRecursivity(parameter, result, range);
         }
         #endregion
         
@@ -114,7 +120,8 @@ namespace Favalet.Expressions
 
         [DebuggerStepThrough]
         private protected FunctionExpressionBase(
-            IExpression parameter, IExpression result, IExpression higherOrder)
+            IExpression parameter, IExpression result, IExpression higherOrder, TextRange range) :
+            base(range)
         {
             this.Parameter = parameter;
             this.Result = result;
@@ -159,8 +166,8 @@ namespace Favalet.Expressions
         }
 
         [DebuggerStepThrough]
-        IExpression IPairExpression.Create(IExpression left, IExpression right) =>
-            this.Factory.Create(left, right);
+        IExpression IPairExpression.Create(IExpression left, IExpression right, TextRange range) =>
+            this.Factory.Create(left, right, range);
 
         public override int GetHashCode() =>
             this.Parameter.GetHashCode() ^ this.Result.GetHashCode();
@@ -176,7 +183,8 @@ namespace Favalet.Expressions
             this.Factory.Create(
                 context.MakeRewritable(this.Parameter),
                 context.MakeRewritable(this.Result),
-                () => context.MakeRewritableHigherOrder(this.HigherOrder));
+                () => context.MakeRewritableHigherOrder(this.HigherOrder),
+                this.Range);
 
         protected override IExpression Infer(IInferContext context)
         {
@@ -198,7 +206,8 @@ namespace Favalet.Expressions
                     return this.Factory.Create(
                         parameter,
                         result,
-                        () => DeadEndTerm.Instance);
+                        () => DeadEndTerm.Instance,
+                        this.Range);
                 }
             }
             else
@@ -206,7 +215,7 @@ namespace Favalet.Expressions
                 var higherOrder = context.Infer(this.HigherOrder);
 
                 var functionHigherOrder = this.Factory.Create(
-                    parameter.HigherOrder, result.HigherOrder);
+                    parameter.HigherOrder, result.HigherOrder, this.Range);
 
                 context.Unify(functionHigherOrder, higherOrder, true);
 
@@ -221,7 +230,8 @@ namespace Favalet.Expressions
                     return this.Factory.Create(
                         parameter,
                         result,
-                        () => higherOrder);
+                        () => higherOrder,
+                        this.Range);
                 }
             }
         }
@@ -240,13 +250,13 @@ namespace Favalet.Expressions
             }
             else if (higherOrder is IFunctionExpression functionExpression)
             {
-                return this.Factory.Create(parameter, result, functionExpression);
+                return this.Factory.Create(parameter, result, functionExpression, this.Range);
             }
             else
             {
                 // TODO: Apply fixed up higher order.
                 //return InternalCreate(parameter, result, () => higherOrder);
-                return this.Factory.Create(parameter, result);
+                return this.Factory.Create(parameter, result, this.Range);
             }
         }
 
@@ -265,7 +275,8 @@ namespace Favalet.Expressions
                 return this.Factory.Create(
                     parameter,
                     result,
-                    () => this.HigherOrder);
+                    () => this.HigherOrder,
+                    this.Range);
             }
         }
 

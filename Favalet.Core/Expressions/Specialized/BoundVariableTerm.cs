@@ -21,6 +21,7 @@ using Favalet.Contexts;
 using System.Collections;
 using System.Diagnostics;
 using System.Xml.Linq;
+using Favalet.Ranges;
 
 namespace Favalet.Expressions.Specialized
 {
@@ -36,7 +37,8 @@ namespace Favalet.Expressions.Specialized
         public readonly string Symbol;
 
         [DebuggerStepThrough]
-        private BoundVariableTerm(string symbol, IExpression higherOrder)
+        private BoundVariableTerm(string symbol, IExpression higherOrder, TextRange range) :
+            base(range)
         {
             this.HigherOrder = higherOrder;
             this.Symbol = symbol;
@@ -54,7 +56,8 @@ namespace Favalet.Expressions.Specialized
         protected override IExpression MakeRewritable(IMakeRewritableContext context) =>
             new BoundVariableTerm(
                 this.Symbol,
-                context.MakeRewritableHigherOrder(this.HigherOrder));
+                context.MakeRewritableHigherOrder(this.HigherOrder),
+                this.Range);
 
         protected override IExpression Infer(IInferContext context)
         {
@@ -66,7 +69,7 @@ namespace Favalet.Expressions.Specialized
             }
             else
             {
-                return new BoundVariableTerm(this.Symbol, higherOrder);
+                return new BoundVariableTerm(this.Symbol, higherOrder, this.Range);
             }
         }
 
@@ -80,7 +83,7 @@ namespace Favalet.Expressions.Specialized
             }
             else
             {
-                return new BoundVariableTerm(this.Symbol, higherOrder);
+                return new BoundVariableTerm(this.Symbol, higherOrder, this.Range);
             }
         }
 
@@ -105,10 +108,10 @@ namespace Favalet.Expressions.Specialized
                 this.Symbol);
 
         [DebuggerStepThrough]
-        public static BoundVariableTerm Create(string symbol, IExpression higherOrder) =>
-            new BoundVariableTerm(symbol, higherOrder);
+        public static BoundVariableTerm Create(string symbol, IExpression higherOrder, TextRange range) =>
+            new BoundVariableTerm(symbol, higherOrder, range);
         [DebuggerStepThrough]
-        public static BoundVariableTerm Create(string symbol) =>
-            new BoundVariableTerm(symbol, UnspecifiedTerm.Instance);
+        public static BoundVariableTerm Create(string symbol, TextRange range) =>
+            new BoundVariableTerm(symbol, UnspecifiedTerm.Instance, range);
     }
 }

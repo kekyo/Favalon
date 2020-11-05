@@ -24,6 +24,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Favalet.Ranges;
 
 namespace Favalet.Expressions
 {
@@ -49,7 +50,9 @@ namespace Favalet.Expressions
         private ApplyExpression(
             IExpression function,
             IExpression argument,
-            IExpression higherOrder)
+            IExpression higherOrder,
+            TextRange range) :
+            base(range)
         {
             this.HigherOrder = higherOrder;
             this.Function = function;
@@ -95,8 +98,8 @@ namespace Favalet.Expressions
         }
 
         [DebuggerStepThrough]
-        IExpression IPairExpression.Create(IExpression left, IExpression right) =>
-            Create(left, right);
+        IExpression IPairExpression.Create(IExpression left, IExpression right, TextRange range) =>
+            Create(left, right, range);
 
         public override int GetHashCode() =>
             this.Function.GetHashCode() ^ this.Argument.GetHashCode();
@@ -112,7 +115,8 @@ namespace Favalet.Expressions
             new ApplyExpression(
                 context.MakeRewritable(this.Function),
                 context.MakeRewritable(this.Argument),
-                context.MakeRewritableHigherOrder(this.HigherOrder));
+                context.MakeRewritableHigherOrder(this.HigherOrder),
+                this.Range);
 
         protected override IExpression Infer(IInferContext context)
         {
@@ -121,7 +125,7 @@ namespace Favalet.Expressions
             var higherOrder = context.Infer(this.HigherOrder);
 
             var functionHigherOrder = AppliedFunctionExpression.Create(
-                argument.HigherOrder, higherOrder);
+                argument.HigherOrder, higherOrder, this.Range);  // TODO: range
 
             context.Unify(function.HigherOrder, functionHigherOrder, false);
 
@@ -133,7 +137,7 @@ namespace Favalet.Expressions
             }
             else
             {
-                return new ApplyExpression(function, argument, higherOrder);
+                return new ApplyExpression(function, argument, higherOrder, this.Range);
             }
         }
 
@@ -151,7 +155,7 @@ namespace Favalet.Expressions
             }
             else
             {
-                return new ApplyExpression(function, argument, higherOrder);
+                return new ApplyExpression(function, argument, higherOrder, this.Range);
             }
         }
 
@@ -189,7 +193,8 @@ namespace Favalet.Expressions
                         return new ApplyExpression(
                             reducedFunction,
                             argument,
-                            this.HigherOrder);
+                            this.HigherOrder,
+                            this.Range);
                     }
                 }
                 
@@ -199,7 +204,8 @@ namespace Favalet.Expressions
                     return new ApplyExpression(
                         reducedFunction,
                         argument,
-                        this.HigherOrder);
+                        this.HigherOrder,
+                        this.Range);
                 }
 
                 currentFunction = reducedFunction;
@@ -216,12 +222,12 @@ namespace Favalet.Expressions
 
         [DebuggerStepThrough]
         public static ApplyExpression Create(
-            IExpression function, IExpression argument, IExpression higherOrder) =>
-            new ApplyExpression(function, argument, higherOrder);
+            IExpression function, IExpression argument, IExpression higherOrder, TextRange range) =>
+            new ApplyExpression(function, argument, higherOrder, range);
         [DebuggerStepThrough]
         public static ApplyExpression Create(
-            IExpression function, IExpression argument) =>
-            new ApplyExpression(function, argument, UnspecifiedTerm.Instance);
+            IExpression function, IExpression argument, TextRange range) =>
+            new ApplyExpression(function, argument, UnspecifiedTerm.Instance, range);
     }
 
     [DebuggerStepThrough]

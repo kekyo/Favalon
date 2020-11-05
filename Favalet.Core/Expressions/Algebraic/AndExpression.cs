@@ -20,6 +20,7 @@
 using Favalet.Contexts;
 using Favalet.Expressions.Specialized;
 using System.Diagnostics;
+using Favalet.Ranges;
 
 namespace Favalet.Expressions.Algebraic
 {
@@ -33,14 +34,14 @@ namespace Favalet.Expressions.Algebraic
     {
         [DebuggerStepThrough]
         private AndExpression(
-            IExpression left, IExpression right, IExpression higherOrder) :
-            base(left, right, higherOrder)
+            IExpression left, IExpression right, IExpression higherOrder, TextRange range) :
+            base(left, right, higherOrder, range)
         { }
 
         [DebuggerStepThrough]
         internal override IExpression OnCreate(
-            IExpression left, IExpression right, IExpression higherOrder) =>
-            new AndExpression(left, right, higherOrder);
+            IExpression left, IExpression right, IExpression higherOrder, TextRange range) =>
+            new AndExpression(left, right, higherOrder, range);
 
         protected override string GetPrettyString(IPrettyStringContext context) =>
             context.FinalizePrettyString(
@@ -49,11 +50,11 @@ namespace Favalet.Expressions.Algebraic
 
         [DebuggerStepThrough]
         public static AndExpression Create(
-            IExpression left, IExpression right, IExpression higherOrder) =>
-            new AndExpression(left, right, higherOrder);
+            IExpression left, IExpression right, IExpression higherOrder, TextRange range) =>
+            new AndExpression(left, right, higherOrder, range);
         [DebuggerStepThrough]
         public static AndExpression Create(
-            IExpression left, IExpression right) =>
-            new AndExpression(left, right, UnspecifiedTerm.Instance);
+            IExpression left, IExpression right, TextRange range) =>
+            new AndExpression(left, right, UnspecifiedTerm.Instance, range);
     }
 }

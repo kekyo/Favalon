@@ -50,7 +50,8 @@ namespace Favalet.Parsers
             {
                 if (right != null)
                 {
-                    return ApplyExpression.Create(left, right);
+                    return ApplyExpression.Create(
+                        left, right, left.Range.Combine(right.Range));
                 }
                 else
                 {

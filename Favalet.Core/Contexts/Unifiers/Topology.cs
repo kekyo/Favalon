@@ -27,6 +27,7 @@ using Favalet.Expressions;
 using Favalet.Expressions.Algebraic;
 using Favalet.Expressions.Specialized;
 using Favalet.Internal;
+using Favalet.Ranges;
 
 namespace Favalet.Contexts.Unifiers
 {
@@ -268,7 +269,8 @@ namespace Favalet.Contexts.Unifiers
                             {
                                 // Narrow and replace
                                 var combined = AndExpression.Create(
-                                    target2, unification.Expression);
+                                    target2, unification.Expression,
+                                    TextRange.Unknown);   // TODO: range
                                 var calculated = calculator.Compute(combined);
                                 this.aliases[entry.Key] = calculated;
                             }
@@ -285,7 +287,8 @@ namespace Favalet.Contexts.Unifiers
                             {
                                 // Narrow and check
                                 var combined = AndExpression.Create(
-                                    target3, unification.Expression);
+                                    target3, unification.Expression,
+                                    TextRange.Unknown);  // TODO: range
                                 var calculated = calculator.Compute(combined);
                                 
                                 // Absorb?
@@ -304,7 +307,8 @@ namespace Favalet.Contexts.Unifiers
                             {
                                 // Narrow and check
                                 var combined = AndExpression.Create(
-                                    target4, unification.Expression);
+                                    target4, unification.Expression,
+                                    TextRange.Unknown);  // TODO: range
                                 var calculated = calculator.Compute(combined);
                                 
                                 // Absorb?
@@ -326,14 +330,14 @@ namespace Favalet.Contexts.Unifiers
         private sealed class ResolveContext
         {
             private readonly ITypeCalculator calculator;
-            private readonly Func<IExpression, IExpression, IExpression> creator;
+            private readonly Func<IExpression, IExpression, TextRange, IExpression> creator;
 
             public readonly UnificationPolarities Polarity;
 
             private ResolveContext(
                 ITypeCalculator calculator,
                 UnificationPolarities polarity, 
-                Func<IExpression, IExpression, IExpression> creator)
+                Func<IExpression, IExpression, TextRange, IExpression> creator)
             {
                 Debug.Assert(polarity != UnificationPolarities.Both);
                 
@@ -342,14 +346,14 @@ namespace Favalet.Contexts.Unifiers
                 this.creator = creator;
             }
 
-            public IExpression? Compute(IExpression[] expressions) =>
-                LogicalCalculator.ConstructNested(expressions, this.creator) is IExpression combined ?
+            public IExpression? Compute(IExpression[] expressions, TextRange range) =>
+                LogicalCalculator.ConstructNested(expressions, this.creator, range) is IExpression combined ?
                     this.calculator.Compute(combined) : null;
             
             public static ResolveContext Create(
                 ITypeCalculator calculator,
                 UnificationPolarities polarity, 
-                Func<IExpression, IExpression, IExpression> creator) =>
+                Func<IExpression, IExpression, TextRange, IExpression> creator) =>
                 new ResolveContext(calculator, polarity, creator);
         }
         
@@ -372,7 +376,8 @@ namespace Favalet.Contexts.Unifiers
                             case IPairExpression parent:
                                 return parent.Create(
                                     ResolveRecursive(parent.Left),
-                                    ResolveRecursive(parent.Right));
+                                    ResolveRecursive(parent.Right),
+                                    parent.Range);
                             default:
                                 return expression;
                         }
@@ -386,7 +391,7 @@ namespace Favalet.Contexts.Unifiers
                         ToArray();
                     if (expressions.Length >= 1)
                     {
-                        var calculated = context.Compute(expressions)!;
+                        var calculated = context.Compute(expressions, TextRange.Unknown)!;   // TODO: range
                         return calculated;
                     }
                 }
@@ -430,7 +435,7 @@ namespace Favalet.Contexts.Unifiers
                 default:
                     // Combine both expressions.
                     return calculator.Compute(
-                        AndExpression.Create(outMost0, inMost0));
+                        AndExpression.Create(outMost0, inMost0, placeholder.Range));  // TODO: range
             }
         }
         #endregion

@@ -25,6 +25,7 @@ using System.Collections;
 using System.Diagnostics;
 using System.Threading;
 using System.Xml.Linq;
+using Favalet.Ranges;
 
 namespace Favalet
 {
@@ -49,7 +50,8 @@ namespace Favalet
         {
             public readonly int Index;
 
-            public PseudoPlaceholderTerm(int index) =>
+            public PseudoPlaceholderTerm(int index) :
+                base(TextRange.Unknown) =>
                 this.Index = index;
 
             public override IExpression HigherOrder =>

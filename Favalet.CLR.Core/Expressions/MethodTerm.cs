@@ -24,6 +24,7 @@ using System.Collections;
 using System.Diagnostics;
 using System.Reflection;
 using System.Xml.Linq;
+using Favalet.Ranges;
 
 namespace Favalet.Expressions
 {
@@ -41,7 +42,8 @@ namespace Favalet.Expressions
         public readonly MethodBase RuntimeMethod;
 
         [DebuggerStepThrough]
-        private MethodTerm(MethodBase runtimeMethod, LazySlim<IExpression> higherOrder)
+        private MethodTerm(MethodBase runtimeMethod, LazySlim<IExpression> higherOrder, TextRange range) :
+            base(range)
         {
             this.RuntimeMethod = runtimeMethod;
             this.higherOrder = higherOrder;
@@ -72,7 +74,8 @@ namespace Favalet.Expressions
         protected override IExpression MakeRewritable(IMakeRewritableContext context) =>
             new MethodTerm(
                 this.RuntimeMethod,
-                LazySlim.Create(context.MakeRewritableHigherOrder(this.HigherOrder)));
+                LazySlim.Create(context.MakeRewritableHigherOrder(this.HigherOrder)),
+                this.Range);
 
         protected override IExpression Infer(IInferContext context) =>
             this;
@@ -90,13 +93,13 @@ namespace Favalet.Expressions
                 if (this.RuntimeMethod is ConstructorInfo constructor)
                 {
                     var result = constructor.Invoke(new[] { constant.Value });
-                    return ConstantTerm.From(result);
+                    return ConstantTerm.From(result, this.Range);
                 }
                 else
                 {
                     var method = (MethodInfo)this.RuntimeMethod;
                     var result = method.Invoke(null, new[] { constant.Value });
-                    return ConstantTerm.From(result);
+                    return ConstantTerm.From(result, this.Range);
                 }
             }
             else
@@ -114,17 +117,19 @@ namespace Favalet.Expressions
                 this.RuntimeMethod.GetReadableName());
 
         [DebuggerStepThrough]
-        private static IExpression CreateHigherOrder(MethodBase method) =>
-            FunctionExpression.Create(
-                TypeTerm.From(method.GetParameters()[0].ParameterType),
-                TypeTerm.From(
-                    method is MethodInfo mi ?
-                        mi.ReturnType :
-                        method.DeclaringType));
+        private static IExpression CreateHigherOrder(MethodBase method, TextRange range)
+        {
+            var parameterType0 = method.GetParameters()[0].ParameterType;
+            var returnType = (method is MethodInfo mi ? mi.ReturnType! : method.DeclaringType!) ?? typeof(void);
+            return FunctionExpression.Create(
+                TypeTerm.From(parameterType0,TextRange.From(parameterType0)),
+                TypeTerm.From(returnType, TextRange.From(returnType)),
+                range);
+        }
 
         [DebuggerStepThrough]
-        public static MethodTerm From(MethodBase method) =>
-            new MethodTerm(method, LazySlim.Create(() => CreateHigherOrder(method)));
+        public static MethodTerm From(MethodBase method, TextRange range) =>
+            new MethodTerm(method, LazySlim.Create(() => CreateHigherOrder(method, TextRange.Unknown)), range);  // TODO: range
     }
 
     public static class MethodTermExtension

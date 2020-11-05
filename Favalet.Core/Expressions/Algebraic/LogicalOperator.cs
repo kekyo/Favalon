@@ -23,6 +23,7 @@ using System.Collections;
 using System.Diagnostics;
 using System.Linq;
 using Favalet.Internal;
+using Favalet.Ranges;
 
 namespace Favalet.Expressions.Algebraic
 {
@@ -35,9 +36,10 @@ namespace Favalet.Expressions.Algebraic
         Expression, ILogicalOperator
     {
         private static readonly IExpression higherOrder =
-            FunctionExpression.Create(UnspecifiedTerm.Instance, UnspecifiedTerm.Instance);
+            FunctionExpression.Create(UnspecifiedTerm.Instance, UnspecifiedTerm.Instance, TextRange.Unknown);
 
-        private LogicalOperator()
+        private LogicalOperator(TextRange range) :
+            base(range)
         { }
 
         public override IExpression HigherOrder =>
@@ -71,6 +73,6 @@ namespace Favalet.Expressions.Algebraic
             "Logical";
 
         public static readonly LogicalOperator Instance =
-            new LogicalOperator();
+            new LogicalOperator(TextRange.Unknown);
     }
 }

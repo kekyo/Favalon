@@ -18,6 +18,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using System.Diagnostics;
+using Favalet.Ranges;
 
 namespace Favalet.Expressions
 {
@@ -35,8 +36,8 @@ namespace Favalet.Expressions
             }
 
             protected override IFunctionExpression OnCreate(
-                IExpression parameter, IExpression result, IExpression higherOrder) =>
-                new FunctionExpression(parameter, result, higherOrder);
+                IExpression parameter, IExpression result, IExpression higherOrder, TextRange range) =>
+                new FunctionExpression(parameter, result, higherOrder, range);
 
             public static readonly FunctionExpressionFactory Instance =
                 new FunctionExpressionFactory();
@@ -47,19 +48,19 @@ namespace Favalet.Expressions
             FunctionExpressionFactory.Instance;
         
         private FunctionExpression(
-            IExpression parameter, IExpression result, IExpression higherOrder) :
-            base(parameter, result, higherOrder)
+            IExpression parameter, IExpression result, IExpression higherOrder, TextRange range) :
+            base(parameter, result, higherOrder, range)
         {
         }
         
         public static FunctionExpression Create(
-            IExpression parameter, IExpression result, IFunctionExpression higherOrder) =>
+            IExpression parameter, IExpression result, IFunctionExpression higherOrder, TextRange range) =>
             (FunctionExpression)FunctionExpressionFactory.Instance.Create(
-                parameter, result, higherOrder);
+                parameter, result, higherOrder, range);
 
         public static FunctionExpression Create(
-            IExpression parameter, IExpression result) =>
+            IExpression parameter, IExpression result, TextRange range) =>
             (FunctionExpression)FunctionExpressionFactory.Instance.Create(
-                parameter, result);
+                parameter, result, range);
     }
 }

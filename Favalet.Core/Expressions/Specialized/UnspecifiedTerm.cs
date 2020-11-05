@@ -21,6 +21,7 @@ using Favalet.Contexts;
 using System.Collections;
 using System.Diagnostics;
 using System.Linq;
+using Favalet.Ranges;
 
 namespace Favalet.Expressions.Specialized
 {
@@ -28,7 +29,8 @@ namespace Favalet.Expressions.Specialized
     public sealed class UnspecifiedTerm :
         Expression, IIgnoreUnificationTerm
     {
-        private UnspecifiedTerm()
+        private UnspecifiedTerm(TextRange range) :
+            base(range)
         {
         }
 
@@ -61,6 +63,6 @@ namespace Favalet.Expressions.Specialized
             "_";
 
         public static readonly UnspecifiedTerm Instance =
-            new UnspecifiedTerm();
+            new UnspecifiedTerm(TextRange.Unknown);   // TODO: range
     }
 }

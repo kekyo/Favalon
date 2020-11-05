@@ -44,7 +44,7 @@ namespace Favalet.Parsers
                     return ParseRunnerResult.Empty(this);
                 
                 case IdentityToken identity:
-                    context.CombineAfter(VariableTerm.Create(identity.Identity));
+                    context.CombineAfter(VariableTerm.Create(identity.Identity, identity.Range));
                     return ParseRunnerResult.Empty(factory.Applying);
 
                 case OpenParenthesisToken parenthesis:

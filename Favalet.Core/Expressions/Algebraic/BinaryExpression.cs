@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Favalet.Expressions.Specialized;
+using Favalet.Ranges;
 
 namespace Favalet.Expressions.Algebraic
 {
@@ -42,7 +43,8 @@ namespace Favalet.Expressions.Algebraic
 
         [DebuggerStepThrough]
         protected BinaryExpression(
-            IExpression left, IExpression right, IExpression higherOrder)
+            IExpression left, IExpression right, IExpression higherOrder, TextRange range) :
+            base(range)
         {
             this.HigherOrder = higherOrder;
             this.Left = left;
@@ -87,17 +89,18 @@ namespace Favalet.Expressions.Algebraic
         }
 
         [DebuggerStepThrough]
-        IExpression IPairExpression.Create(IExpression left, IExpression right) =>
-            this.OnCreate(left, right, UnspecifiedTerm.Instance);
+        IExpression IPairExpression.Create(IExpression left, IExpression right, TextRange range) =>
+            this.OnCreate(left, right, UnspecifiedTerm.Instance, range);
         
         internal abstract IExpression OnCreate(
-            IExpression left, IExpression right, IExpression higherOrder);
+            IExpression left, IExpression right, IExpression higherOrder, TextRange range);
 
         protected sealed override IExpression MakeRewritable(IMakeRewritableContext context) =>
             this.OnCreate(
                 context.MakeRewritable(this.Left),
                 context.MakeRewritable(this.Right),
-                context.MakeRewritableHigherOrder(this.HigherOrder));
+                context.MakeRewritableHigherOrder(this.HigherOrder),
+                this.Range);
 
         protected sealed override IExpression Infer(IInferContext context)
         {
@@ -118,7 +121,7 @@ namespace Favalet.Expressions.Algebraic
             }
             else
             {
-                return this.OnCreate(left, right, higherOrder);
+                return this.OnCreate(left, right, higherOrder, this.Range);
             }
         }
 
@@ -136,7 +139,7 @@ namespace Favalet.Expressions.Algebraic
             }
             else
             {
-                return this.OnCreate(left, right, higherOrder);
+                return this.OnCreate(left, right, higherOrder, this.Range);
             }
         }
 
@@ -152,7 +155,7 @@ namespace Favalet.Expressions.Algebraic
             }
             else
             {
-                return this.OnCreate(left, right, this.HigherOrder);
+                return this.OnCreate(left, right, this.HigherOrder, this.Range);
             }
         }
 

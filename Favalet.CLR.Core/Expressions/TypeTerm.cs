@@ -24,6 +24,7 @@ using System;
 using System.Collections;
 using System.Diagnostics;
 using System.Xml.Linq;
+using Favalet.Ranges;
 
 namespace Favalet.Expressions
 {
@@ -36,10 +37,13 @@ namespace Favalet.Expressions
     public sealed class TypeTerm :
         Expression, ITypeTerm
     {
+        private static readonly Type runtimeType = typeof(object).GetType();
+        
         public readonly Type RuntimeType;
 
         [DebuggerStepThrough]
-        private TypeTerm(Type runtimeType) =>
+        private TypeTerm(Type runtimeType, TextRange range) :
+            base(range) =>
             this.RuntimeType = runtimeType;
 
         public override IExpression HigherOrder
@@ -85,15 +89,15 @@ namespace Favalet.Expressions
                 this.RuntimeType.GetReadableName());
 
         [DebuggerStepThrough]
-        public static ITerm From(Type type)
+        public static ITerm From(Type type, TextRange range)
         {
-            if (type.Equals(typeof(object).GetType()))
+            if (type.Equals(runtimeType))
             {
                 return Generator.Kind();
             }
             else
             {
-                return new TypeTerm(type);
+                return new TypeTerm(type, range);
             }
         }
     }

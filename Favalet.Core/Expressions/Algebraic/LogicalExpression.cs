@@ -22,6 +22,7 @@ using Favalet.Expressions.Specialized;
 using System.Collections;
 using System.Diagnostics;
 using Favalet.Internal;
+using Favalet.Ranges;
 
 namespace Favalet.Expressions.Algebraic
 {
@@ -37,7 +38,8 @@ namespace Favalet.Expressions.Algebraic
 
         [DebuggerStepThrough]
         private LogicalExpression(
-            IExpression operand, IExpression higherOrder)
+            IExpression operand, IExpression higherOrder, TextRange range) :
+            base(range)
         {
             this.HigherOrder = higherOrder;
             this.Operand = operand;
@@ -64,7 +66,8 @@ namespace Favalet.Expressions.Algebraic
         protected override IExpression MakeRewritable(IMakeRewritableContext context) =>
             new LogicalExpression(
                 context.MakeRewritable(this.Operand),
-                context.MakeRewritable(this.HigherOrder));
+                context.MakeRewritable(this.HigherOrder),
+                this.Range);
 
         protected override IExpression Infer(IInferContext context)
         {
@@ -80,7 +83,7 @@ namespace Favalet.Expressions.Algebraic
             }
             else
             {
-                return new LogicalExpression(operand, higherOrder);
+                return new LogicalExpression(operand, higherOrder, this.Range);
             }
         }
 
@@ -96,7 +99,7 @@ namespace Favalet.Expressions.Algebraic
             }
             else
             {
-                return new LogicalExpression(operand, higherOrder);
+                return new LogicalExpression(operand, higherOrder, this.Range);
             }
         }
 
@@ -113,11 +116,11 @@ namespace Favalet.Expressions.Algebraic
 
         [DebuggerStepThrough]
         public static LogicalExpression Create(
-            IExpression operand, IExpression higherOrder) =>
-            new LogicalExpression(operand, higherOrder);
+            IExpression operand, IExpression higherOrder, TextRange range) =>
+            new LogicalExpression(operand, higherOrder, range);
         [DebuggerStepThrough]
         public static LogicalExpression Create(
-            IExpression operand) =>
-            new LogicalExpression(operand, UnspecifiedTerm.Instance);
+            IExpression operand, TextRange range) =>
+            new LogicalExpression(operand, UnspecifiedTerm.Instance, range);
     }
 }

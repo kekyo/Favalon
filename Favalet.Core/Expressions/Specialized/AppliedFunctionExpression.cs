@@ -18,6 +18,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using System.Diagnostics;
+using Favalet.Ranges;
 
 namespace Favalet.Expressions.Specialized
 {
@@ -40,8 +41,8 @@ namespace Favalet.Expressions.Specialized
             }
 
             protected override IFunctionExpression OnCreate(
-                IExpression parameter, IExpression result, IExpression higherOrder) =>
-                new AppliedFunctionExpression(parameter, result, higherOrder);
+                IExpression parameter, IExpression result, IExpression higherOrder, TextRange range) =>
+                new AppliedFunctionExpression(parameter, result, higherOrder, range);
 
             public static readonly AppliedFunctionExpressionFactory Instance =
                 new AppliedFunctionExpressionFactory();
@@ -52,14 +53,14 @@ namespace Favalet.Expressions.Specialized
             AppliedFunctionExpressionFactory.Instance;
         
         private AppliedFunctionExpression(
-            IExpression parameter, IExpression result, IExpression higherOrder) :
-            base(parameter, result, higherOrder)
+            IExpression parameter, IExpression result, IExpression higherOrder, TextRange range) :
+            base(parameter, result, higherOrder, range)
         {
         }
  
         public static AppliedFunctionExpression Create(
-            IExpression parameter, IExpression result) =>
+            IExpression parameter, IExpression result, TextRange range) =>
             (AppliedFunctionExpression)AppliedFunctionExpressionFactory.Instance.Create(
-                parameter, result);
+                parameter, result, range);
     }
 }

@@ -60,7 +60,7 @@ namespace Favalet.Parsers
                     else
                     {
                         context.CombineAfter(
-                            VariableTerm.Create(numericSign.Symbol.ToString()));
+                            VariableTerm.Create(numericSign.Symbol.ToString(), numericSign.Range));
                         return ParseRunnerResult.Empty(this);
                     }
 

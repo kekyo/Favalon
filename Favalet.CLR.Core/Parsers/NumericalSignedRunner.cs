@@ -52,10 +52,9 @@ namespace Favalet.Parsers
                 // "-abc"
                 case IdentityToken identity:
                     // Will make binary op
-                    context!.CombineAfter(VariableTerm.Create(
-                        ((CLRParseRunnerContext)context!).PreSignToken!.Symbol.ToString()));
-                    context.CombineAfter(
-                        VariableTerm.Create(identity.Identity));
+                    var sign = ((CLRParseRunnerContext) context!).PreSignToken!;
+                    context!.CombineAfter(VariableTerm.Create(sign.Symbol.ToString(), sign.Range));
+                    context.CombineAfter(VariableTerm.Create(identity.Identity, identity.Range));
                     ((CLRParseRunnerContext)context!).PreSignToken = null;
                     return ParseRunnerResult.Empty(
                         factory.Applying);

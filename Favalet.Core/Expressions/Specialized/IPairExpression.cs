@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Favalet.Ranges;
 
 namespace Favalet.Expressions.Specialized
 {
@@ -31,7 +32,7 @@ namespace Favalet.Expressions.Specialized
         
         Type IdentityType { get; }
 
-        IExpression Create(IExpression left, IExpression right);
+        IExpression Create(IExpression left, IExpression right, TextRange range);
     }
 
     public static class PairExpressionExtension
@@ -42,11 +43,14 @@ namespace Favalet.Expressions.Specialized
             yield return pair.Right;
         }
         
-        public static IExpression? Create(this IPairExpression pair, IEnumerable<IExpression> children) =>
+        public static IExpression? Create(
+            this IPairExpression pair,
+            IEnumerable<IExpression> children,
+            TextRange range) =>
             children.ToArray() switch
             {
                 IExpression[] arr when arr.Length == 2 =>
-                    pair.Create(arr[0], arr[1]),
+                    pair.Create(arr[0], arr[1], range),
                 _ =>
                     throw new InvalidOperationException()
             };

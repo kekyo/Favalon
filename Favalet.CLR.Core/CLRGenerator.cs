@@ -18,12 +18,15 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using Favalet.Expressions;
+using Favalet.Ranges;
 using System;
 using System.Diagnostics;
 using System.Reflection;
 
 namespace Favalet
 {
+    // TODO: range
+    
     [DebuggerStepThrough]
     public static class CLRGenerator
     {
@@ -37,14 +40,14 @@ namespace Favalet
             Favalet.Environments.Create(CLRTypeCalculator.Instance, saveLastTopology);
 
         public static ITerm Type<T>() =>
-            TypeTerm.From(typeof(T));
+            TypeTerm.From(typeof(T), TextRange.From(typeof(T)));
         public static ITerm Type(Type runtimeType) =>
-            TypeTerm.From(runtimeType);
+            TypeTerm.From(runtimeType, TextRange.From(runtimeType));
 
         public static MethodTerm Method(MethodBase runtimeMethod) =>
-            MethodTerm.From(runtimeMethod);
+            MethodTerm.From(runtimeMethod, TextRange.From(runtimeMethod));
 
         public static ConstantTerm Constant(object value) =>
-            ConstantTerm.From(value);
+            ConstantTerm.From(value, TextRange.Unknown);
     }
 }

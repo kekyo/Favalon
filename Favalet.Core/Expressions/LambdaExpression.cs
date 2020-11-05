@@ -24,6 +24,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Favalet.Ranges;
 
 namespace Favalet.Expressions
 {
@@ -43,7 +44,8 @@ namespace Favalet.Expressions
 
         [DebuggerStepThrough]
         private LambdaExpression(
-            IBoundVariableTerm parameter, IExpression body, IExpression higherOrder)
+            IBoundVariableTerm parameter, IExpression body, IExpression higherOrder, TextRange range) :
+            base(range)
         {
             this.Parameter = parameter;
             this.Body = body;
@@ -88,9 +90,9 @@ namespace Favalet.Expressions
         }
 
         [DebuggerStepThrough]
-        IExpression IPairExpression.Create(IExpression left, IExpression right) =>
+        IExpression IPairExpression.Create(IExpression left, IExpression right, TextRange range) =>
             left is IBoundVariableTerm bound ?
-                Create(bound, right) :
+                Create(bound, right, range) :
                 throw new InvalidOperationException();
         
         public override int GetHashCode() =>
@@ -107,7 +109,7 @@ namespace Favalet.Expressions
             new LambdaExpression(
                 (IBoundVariableTerm)context.MakeRewritable(this.Parameter),
                 context.MakeRewritable(this.Body),
-                context.MakeRewritableHigherOrder(this.HigherOrder));
+                context.MakeRewritableHigherOrder(this.HigherOrder), this.Range);
 
         protected override IExpression Infer(IInferContext context)
         {
@@ -119,7 +121,7 @@ namespace Favalet.Expressions
             var body = newScope.Infer(this.Body);
 
             var lambdaHigherOrder = FunctionExpression.Create(
-                parameter.HigherOrder, body.HigherOrder);
+                parameter.HigherOrder, body.HigherOrder, this.Range);
             
             context.Unify(lambdaHigherOrder, higherOrder, true);
 
@@ -134,7 +136,8 @@ namespace Favalet.Expressions
                 return new LambdaExpression(
                     parameter,
                     body,
-                    higherOrder);
+                    higherOrder,
+                    this.Range);
             }
         }
 
@@ -152,13 +155,13 @@ namespace Favalet.Expressions
             }
             else if (higherOrder is IFunctionExpression functionHigherOrder)
             {
-                return Create(parameter, body, functionHigherOrder);
+                return Create(parameter, body, functionHigherOrder, this.Range);
             }
             else
             {
                 // TODO: Apply fixed up higher order.
                 //return new LambdaExpression(parameter, body, higherOrder);
-                return Create(parameter, body);
+                return Create(parameter, body, this.Range);
             }
         }
 
@@ -177,7 +180,8 @@ namespace Favalet.Expressions
                 return new LambdaExpression(
                     parameter,
                     body,
-                    this.HigherOrder);
+                    this.HigherOrder,
+                    this.Range);
             }
         }
 
@@ -196,15 +200,16 @@ namespace Favalet.Expressions
 
         [DebuggerStepThrough]
         public static LambdaExpression Create(
-            IBoundVariableTerm parameter, IExpression body, IFunctionExpression higherOrder) =>
-            new LambdaExpression(parameter, body, higherOrder);
+            IBoundVariableTerm parameter, IExpression body, IFunctionExpression higherOrder, TextRange range) =>
+            new LambdaExpression(parameter, body, higherOrder, range);
         [DebuggerStepThrough]
         public static LambdaExpression Create(
-            IBoundVariableTerm parameter, IExpression body) =>
+            IBoundVariableTerm parameter, IExpression body, TextRange range) =>
             new LambdaExpression(
                 parameter,
                 body,
-                FunctionExpression.Create(parameter.HigherOrder, body.HigherOrder));
+                FunctionExpression.Create(parameter.HigherOrder, body.HigherOrder, TextRange.Unknown),  // TODO: range
+                range);
     }
 
     [DebuggerStepThrough]
