@@ -30,44 +30,56 @@ namespace Favalet.Lexers
         private WaitingRunner()
         { }
 
-        public override LexRunnerResult Run(LexRunnerContext context, char ch)
+        public override LexRunnerResult Run(LexRunnerContext context, Input input)
         {
-            if (char.IsWhiteSpace(ch))
+            if (input.IsNextLine)
             {
-                return LexRunnerResult.Create(
-                    WaitingIgnoreSpaceRunner.Instance,
-                    WhiteSpaceToken.Instance);
+                context.ForwardNextLine();
+                return LexRunnerResult.Empty(WaitingIgnoreSpaceRunner.Instance);
             }
-            else if (char.IsDigit(ch))
+            else if (input.IsDelimiterHint)
             {
-                context.TokenBuffer.Append(ch);
+                return LexRunnerResult.Empty(this);
+            }
+            else if (char.IsWhiteSpace(input))
+            {
+                context.ForwardOnly();
+                return LexRunnerResult.Empty(WaitingIgnoreSpaceRunner.Instance);
+            }
+            else if (char.IsDigit(input))
+            {
+                context.Append(input);
                 return LexRunnerResult.Empty(NumericRunner.Instance);
             }
-            else if (TokenUtilities.IsOpenParenthesis(ch) is ParenthesisPair)
+            else if (TokenUtilities.IsOpenParenthesis(input) is ParenthesisPair openPair)
             {
+                context.ForwardOnly();
+                var range0 = context.GetRangeAndClear();
                 return LexRunnerResult.Create(
                     this,
-                    Token.Open(ch));
+                    OpenParenthesisToken.Create(openPair, range0));
             }
-            else if (TokenUtilities.IsCloseParenthesis(ch) is ParenthesisPair)
+            else if (TokenUtilities.IsCloseParenthesis(input) is ParenthesisPair closePair)
             {
+                context.ForwardOnly();
+                var range0 = context.GetRangeAndClear();
                 return LexRunnerResult.Create(
                     this,
-                    Token.Close(ch));
+                    CloseParenthesisToken.Create(closePair, range0));
             }
-            else if (TokenUtilities.IsOperator(ch))
+            else if (TokenUtilities.IsOperator(input))
             {
-                context.TokenBuffer.Append(ch);
+                context.Append(input);
                 return LexRunnerResult.Empty(OperatorRunner.Instance);
             }
-            else if (!char.IsControl(ch))
+            else if (!char.IsControl(input))
             {
-                context.TokenBuffer.Append(ch);
+                context.Append(input);
                 return LexRunnerResult.Empty(IdentityRunner.Instance);
             }
             else
             {
-                throw new InvalidOperationException(ch.ToString());
+                throw new InvalidOperationException(input.ToString());
             }
         }
 

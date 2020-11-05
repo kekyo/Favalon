@@ -22,9 +22,12 @@ using Favalet.Expressions.Algebraic;
 using Favalet.Expressions.Specialized;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using Favalet.Ranges;
 
 namespace Favalet
 {
+    // TODO: range
+    
     [DebuggerStepThrough]
     public static class Generator
     {
@@ -32,7 +35,7 @@ namespace Favalet
             Favalet.Environments.Create(TypeCalculator.Instance);
 
         internal static readonly VariableTerm kind =
-            VariableTerm.Create("*", FourthTerm.Instance);
+            VariableTerm.Create("*", FourthTerm.Instance, TextRange.Internal);
 
 #if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -40,7 +43,7 @@ namespace Favalet
         public static VariableTerm Kind() =>
             kind;
         public static VariableTerm Kind(string symbol) =>
-            VariableTerm.Create(symbol, FourthTerm.Instance);
+            VariableTerm.Create(symbol, FourthTerm.Instance, TextRange.Unknown);
 
 #if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -49,17 +52,17 @@ namespace Favalet
             UnspecifiedTerm.Instance;
 
         public static VariableTerm Variable(string symbol) =>
-            VariableTerm.Create(symbol);
+            VariableTerm.Create(symbol, TextRange.Unknown);
         public static VariableTerm Variable(string symbol, IExpression higherOrder) =>
-            VariableTerm.Create(symbol, higherOrder);
+            VariableTerm.Create(symbol, higherOrder, TextRange.Unknown);
 
         public static BoundVariableTerm BoundVariable(string symbol) =>
-            BoundVariableTerm.Create(symbol);
+            BoundVariableTerm.Create(symbol, TextRange.Unknown);
         public static BoundVariableTerm BoundVariable(string symbol, IExpression higherOrder) =>
-            BoundVariableTerm.Create(symbol, higherOrder);
+            BoundVariableTerm.Create(symbol, higherOrder, TextRange.Unknown);
 
         public static LogicalExpression Logical(IBinaryExpression operand) =>
-            LogicalExpression.Create(operand);
+            LogicalExpression.Create(operand, TextRange.Unknown);
 #if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
@@ -67,46 +70,46 @@ namespace Favalet
             LogicalOperator.Instance;
 
         public static AndExpression And(IExpression lhs, IExpression rhs) =>
-            AndExpression.Create(lhs, rhs);
+            AndExpression.Create(lhs, rhs, TextRange.Unknown);
         public static AndExpression And(IExpression lhs, IExpression rhs, IExpression higherOrder) =>
-            AndExpression.Create(lhs, rhs, higherOrder);
+            AndExpression.Create(lhs, rhs, higherOrder, TextRange.Unknown);
 
         public static IExpression? AndExpressions(params IExpression[] expressions) =>
-            LogicalCalculator.ConstructNested(expressions, AndExpression.Create);
+            LogicalCalculator.ConstructNested(expressions, AndExpression.Create, TextRange.Unknown);
 
         public static OrExpression Or(IExpression lhs, IExpression rhs) =>
-            OrExpression.Create(lhs, rhs);
+            OrExpression.Create(lhs, rhs, TextRange.Unknown);
         public static OrExpression Or(IExpression lhs, IExpression rhs, IExpression higherOrder) =>
-            OrExpression.Create(lhs, rhs, higherOrder);
+            OrExpression.Create(lhs, rhs, higherOrder, TextRange.Unknown);
 
         public static IExpression? OrExpressions(params IExpression[] expressions) =>
-            LogicalCalculator.ConstructNested(expressions, OrExpression.Create);
+            LogicalCalculator.ConstructNested(expressions, OrExpression.Create, TextRange.Unknown);
 
         public static LambdaExpression Lambda(
             IBoundVariableTerm parameter, IExpression body) =>
-            LambdaExpression.Create(parameter, body);
+            LambdaExpression.Create(parameter, body, TextRange.Unknown);
         public static LambdaExpression Lambda(
             string parameter, IExpression body) =>
-            LambdaExpression.Create(BoundVariableTerm.Create(parameter), body);
+            LambdaExpression.Create(BoundVariableTerm.Create(parameter, TextRange.Unknown), body, TextRange.Unknown);
         public static LambdaExpression Lambda(
             IBoundVariableTerm parameter, IExpression body, IFunctionExpression higherOrder) =>
-            LambdaExpression.Create(parameter, body, higherOrder);
+            LambdaExpression.Create(parameter, body, higherOrder, TextRange.Unknown);
         public static LambdaExpression Lambda(
             string parameter, IExpression body, IFunctionExpression higherOrder) =>
-            LambdaExpression.Create(BoundVariableTerm.Create(parameter), body, higherOrder);
+            LambdaExpression.Create(BoundVariableTerm.Create(parameter, TextRange.Unknown), body, higherOrder, TextRange.Unknown);
 
         public static ApplyExpression Apply(
             IExpression function, IExpression argument) =>
-            ApplyExpression.Create(function, argument);
+            ApplyExpression.Create(function, argument, TextRange.Unknown);
         public static ApplyExpression Apply(
             IExpression function, IExpression argument, IExpression higherOrder) =>
-            ApplyExpression.Create(function, argument, higherOrder);
+            ApplyExpression.Create(function, argument, higherOrder, TextRange.Unknown);
 
         public static FunctionExpression Function(
             IExpression parameter, IExpression result) =>
-            FunctionExpression.Create(parameter, result);
+            FunctionExpression.Create(parameter, result, TextRange.Unknown);
         public static FunctionExpression Function(
             IExpression parameter, IExpression result, IFunctionExpression higherOrder) =>
-            FunctionExpression.Create(parameter, result, higherOrder);
+            FunctionExpression.Create(parameter, result, higherOrder, TextRange.Unknown);
     }
 }

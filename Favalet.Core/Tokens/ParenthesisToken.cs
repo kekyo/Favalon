@@ -18,9 +18,12 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using System;
+using System.Diagnostics;
+using Favalet.Ranges;
 
 namespace Favalet.Tokens
 {
+    [DebuggerStepThrough]
     public struct ParenthesisPair
     {
         public readonly char Open;
@@ -36,12 +39,14 @@ namespace Favalet.Tokens
             $"'{this.Open}','{this.Close}'";
     }
 
+    [DebuggerStepThrough]
     public abstract class ParenthesisToken :
         SymbolToken, IEquatable<ParenthesisToken?>
     {
         public readonly ParenthesisPair Pair;
 
-        internal ParenthesisToken(ParenthesisPair parenthesis) =>
+        private protected ParenthesisToken(ParenthesisPair parenthesis, TextRange range) :
+            base(range) =>
             this.Pair = parenthesis;
 
         public override int GetHashCode() =>
@@ -55,5 +60,10 @@ namespace Favalet.Tokens
 
         public void Deconstruct(out ParenthesisPair parenthesis) =>
             parenthesis = this.Pair;
+        public void Deconstruct(out ParenthesisPair parenthesis, out TextRange range)
+        {
+            parenthesis = this.Pair;
+            range = this.Range;
+        }
     }
 }

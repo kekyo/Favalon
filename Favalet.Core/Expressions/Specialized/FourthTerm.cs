@@ -21,6 +21,7 @@ using Favalet.Contexts;
 using System.Collections;
 using System.Diagnostics;
 using System.Linq;
+using Favalet.Ranges;
 
 namespace Favalet.Expressions.Specialized
 {
@@ -28,7 +29,8 @@ namespace Favalet.Expressions.Specialized
     public sealed class FourthTerm :
         Expression, ITerm
     {
-        private FourthTerm()
+        private FourthTerm(TextRange range) :
+            base(range)
         { }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -60,6 +62,6 @@ namespace Favalet.Expressions.Specialized
             "#";
 
         public static readonly FourthTerm Instance =
-            new FourthTerm();
+            new FourthTerm(TextRange.Unknown);  // TODO: range
     }
 }

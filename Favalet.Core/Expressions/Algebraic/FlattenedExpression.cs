@@ -25,6 +25,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Favalet.Expressions.Specialized;
+using Favalet.Ranges;
 
 namespace Favalet.Expressions.Algebraic
 {
@@ -34,7 +35,8 @@ namespace Favalet.Expressions.Algebraic
         public readonly IExpression[] Operands;
 
         [DebuggerStepThrough]
-        protected FlattenedExpression(IExpression[] operands) =>
+        protected FlattenedExpression(IExpression[] operands, TextRange range) :
+            base(range) =>
             this.Operands = operands;
 
         public sealed override int GetHashCode() =>
@@ -78,9 +80,11 @@ namespace Favalet.Expressions.Algebraic
             expression switch
             {
                 IAndExpression and => new AndFlattenedExpression(
-                    Flatten<IAndExpression>(and.Left, and.Right).Memoize()),
+                    Flatten<IAndExpression>(and.Left, and.Right).Memoize(),
+                    TextRange.Unknown),  // TODO: range
                 IOrExpression or => new OrFlattenedExpression(
-                    Flatten<IOrExpression>(or.Left, or.Right).Memoize()),
+                    Flatten<IOrExpression>(or.Left, or.Right).Memoize(),
+                    TextRange.Unknown),  // TODO: range
                 _ => expression
             };
 
@@ -103,9 +107,11 @@ namespace Favalet.Expressions.Algebraic
             expression switch
             {
                 IAndExpression and => new AndFlattenedExpression(
-                    FlattenAll<IAndExpression>(and.Left, and.Right).Memoize()),
+                    FlattenAll<IAndExpression>(and.Left, and.Right).Memoize(),
+                    TextRange.Unknown),  // TODO: range
                 IOrExpression or => new OrFlattenedExpression(
-                    FlattenAll<IOrExpression>(or.Left, or.Right).Memoize()),
+                    FlattenAll<IOrExpression>(or.Left, or.Right).Memoize(),
+                    TextRange.Unknown),  // TODO: range
                 _ => expression
             };
     }
@@ -113,13 +119,14 @@ namespace Favalet.Expressions.Algebraic
     internal sealed class AndFlattenedExpression : FlattenedExpression
     {
         [DebuggerStepThrough]
-        public AndFlattenedExpression(IExpression[] operands) :
-            base(operands)
+        public AndFlattenedExpression(IExpression[] operands, TextRange range) :
+            base(operands, range)
         { }
 
         public override IExpression HigherOrder =>
             new AndFlattenedExpression(
-                this.Operands.Select(operand => operand.HigherOrder).Memoize());
+                this.Operands.Select(operand => operand.HigherOrder).Memoize(),
+                TextRange.Unknown);   // TODO: range
 
         public override bool Equals(IExpression? other) =>
             other is AndFlattenedExpression rhs &&
@@ -136,13 +143,14 @@ namespace Favalet.Expressions.Algebraic
     internal sealed class OrFlattenedExpression : FlattenedExpression
     {
         [DebuggerStepThrough]
-        public OrFlattenedExpression(IExpression[] operands) :
-            base(operands)
+        public OrFlattenedExpression(IExpression[] operands, TextRange range) :
+            base(operands, range)
         { }
 
         public override IExpression HigherOrder =>
             new OrFlattenedExpression(
-                this.Operands.Select(operand => operand.HigherOrder).Memoize());
+                this.Operands.Select(operand => operand.HigherOrder).Memoize(),
+                TextRange.Unknown);  // TODO: range
 
         public override bool Equals(IExpression? other) =>
             other is OrFlattenedExpression rhs &&

@@ -18,13 +18,17 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using System;
+using System.Diagnostics;
+using Favalet.Ranges;
 
 namespace Favalet.Tokens
 {
+    [DebuggerStepThrough]
     public abstract class SymbolToken :
         Token
     {
-        internal SymbolToken()
+        private protected SymbolToken(TextRange range) :
+            base(range)
         { }
 
         public abstract char Symbol { get; }
@@ -34,5 +38,10 @@ namespace Favalet.Tokens
 
         public void Deconstruct(out char symbol) =>
             symbol = this.Symbol;
+        public void Deconstruct(out char symbol, out TextRange range)
+        {
+            symbol = this.Symbol;
+            range = this.Range;
+        }
     }
 }

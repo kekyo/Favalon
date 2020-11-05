@@ -21,6 +21,7 @@ using Favalet.Contexts;
 using Favalet.Expressions;
 using Favalet.Expressions.Specialized;
 using Favalet.Contexts.Unifiers;
+using Favalet.Ranges;
 using System;
 using System.Diagnostics;
 using System.Linq;
@@ -48,7 +49,7 @@ namespace Favalet
             base(null, typeCalculator)
         {
             this.saveLastTopology = saveLastTopology;
-            this.MutableBind(Generator.kind.Symbol, Generator.kind);
+            this.MutableBind(Generator.kind.Symbol, TextRange.Internal, Generator.kind);
         }
         
         public ITopology? LastTopology =>
@@ -74,7 +75,7 @@ namespace Favalet
                 Reverse().
                 Aggregate(
                     (IExpression)DeadEndTerm.Instance,
-                    (agg, index) => PlaceholderTerm.Create(index, agg));
+                    (agg, index) => PlaceholderTerm.Create(index, agg, TextRange.Unknown));  // TODO: range
         }
 
         [DebuggerStepThrough]
@@ -176,6 +177,14 @@ namespace Favalet
             this IEnvironments environment,
             string symbol,
             IExpression expression) =>
-            environment.MutableBind(BoundVariableTerm.Create(symbol), expression);
+            environment.MutableBind(BoundVariableTerm.Create(symbol, TextRange.Unknown), expression);
+        
+        [DebuggerStepThrough]
+        public static void MutableBind(
+            this IEnvironments environment,
+            string symbol,
+            TextRange range,
+            IExpression expression) =>
+            environment.MutableBind(BoundVariableTerm.Create(symbol, range), expression);
     }
 }

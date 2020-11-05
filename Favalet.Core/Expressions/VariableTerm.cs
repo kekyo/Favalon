@@ -25,6 +25,7 @@ using System.Linq;
 using System.Xml.Linq;
 using Favalet.Expressions.Algebraic;
 using Favalet.Internal;
+using Favalet.Ranges;
 
 namespace Favalet.Expressions
 {
@@ -41,7 +42,8 @@ namespace Favalet.Expressions
         public readonly string Symbol;
 
         [DebuggerStepThrough]
-        private VariableTerm(string symbol, IExpression higherOrder, IExpression[]? bounds)
+        private VariableTerm(string symbol, IExpression higherOrder, IExpression[]? bounds, TextRange range) :
+            base(range)
         {
             this.HigherOrder = higherOrder;
             this.Symbol = symbol;
@@ -77,7 +79,8 @@ namespace Favalet.Expressions
             new VariableTerm(
                 this.Symbol,
                 context.MakeRewritableHigherOrder(this.HigherOrder),
-                this.bounds);
+                this.bounds,
+                this.Range);
         
         protected override IExpression Infer(IInferContext context)
         {
@@ -102,11 +105,13 @@ namespace Favalet.Expressions
                 {
                     var symbolHigherOrder = LogicalCalculator.ConstructNested(
                         targets.Select(v => v.symbolHigherOrder).Memoize(),
-                        OrExpression.Create)!;
+                        OrExpression.Create,
+                        this.Range)!;
 
                     var expressionHigherOrder = LogicalCalculator.ConstructNested(
                         targets.Select(v => v.expression.HigherOrder).Memoize(),
-                        OrExpression.Create)!;
+                        OrExpression.Create,
+                        this.Range)!;
                
                     context.Unify(symbolHigherOrder, expressionHigherOrder, true);
                     context.Unify(expressionHigherOrder, higherOrder, true);
@@ -115,7 +120,7 @@ namespace Favalet.Expressions
                 var bounds = targets.
                     Select(entry => entry.expression).
                     Memoize();
-                return new VariableTerm(this.Symbol, higherOrder, bounds);
+                return new VariableTerm(this.Symbol, higherOrder, bounds, this.Range);
             }
 
             if (object.ReferenceEquals(this.HigherOrder, higherOrder))
@@ -124,7 +129,7 @@ namespace Favalet.Expressions
             }
             else
             {
-                return new VariableTerm(this.Symbol, higherOrder, this.bounds);
+                return new VariableTerm(this.Symbol, higherOrder, this.bounds, this.Range);
             }
         }
 
@@ -146,24 +151,26 @@ namespace Favalet.Expressions
                             targets.
                                 Select(target => target.HigherOrder).
                                 Memoize(),
-                            OrExpression.Create)!;
+                            OrExpression.Create,
+                            this.Range)!;
 
                         var calculated = context.TypeCalculator.Compute(
                             AndExpression.Create(
-                                higherOrder, targetsHigherOrder));
+                                higherOrder, targetsHigherOrder,
+                                this.Range));
 
                         var filteredTargets = targets.
                             Select(target =>
                                 (target,
                                  calculated: context.TypeCalculator.Compute(
-                                    OrExpression.Create(target.HigherOrder, calculated)))).
+                                    OrExpression.Create(target.HigherOrder, calculated, this.Range)))).
                             Where(entry => entry.calculated.Equals(calculated)).
                             Select(entry => entry.target).
                             Memoize();
 
                         if (filteredTargets.Length >= 1)
                         {
-                            return new VariableTerm(this.Symbol, higherOrder, filteredTargets);
+                            return new VariableTerm(this.Symbol, higherOrder, filteredTargets, this.Range);
                         }
                     }
                 }
@@ -175,7 +182,7 @@ namespace Favalet.Expressions
             }
             else
             {
-                return new VariableTerm(this.Symbol, higherOrder, this.bounds);
+                return new VariableTerm(this.Symbol, higherOrder, this.bounds, this.Range);
             }
         }
 
@@ -213,10 +220,10 @@ namespace Favalet.Expressions
                 this.Symbol);
 
         [DebuggerStepThrough]
-        public static VariableTerm Create(string symbol, IExpression higherOrder) =>
-            new VariableTerm(symbol, higherOrder, default);
+        public static VariableTerm Create(string symbol, IExpression higherOrder, TextRange range) =>
+            new VariableTerm(symbol, higherOrder, default, range);
         [DebuggerStepThrough]
-        public static VariableTerm Create(string symbol) =>
-            new VariableTerm(symbol, UnspecifiedTerm.Instance, default);
+        public static VariableTerm Create(string symbol, TextRange range) =>
+            new VariableTerm(symbol, UnspecifiedTerm.Instance, default, range);
     }
 }

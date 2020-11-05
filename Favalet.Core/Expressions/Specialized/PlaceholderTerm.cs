@@ -21,6 +21,7 @@ using Favalet.Contexts;
 using System.Collections;
 using System.Diagnostics;
 using System.Xml.Linq;
+using Favalet.Ranges;
 
 namespace Favalet.Expressions.Specialized
 {
@@ -50,7 +51,8 @@ namespace Favalet.Expressions.Specialized
         public readonly int Index;
 
         [DebuggerStepThrough]
-        private PlaceholderTerm(int index, IExpression higherOrder)
+        private PlaceholderTerm(int index, IExpression higherOrder, TextRange range) :
+            base(range)
         {
             this.Index = index;
             this.HigherOrder = higherOrder;
@@ -111,7 +113,7 @@ namespace Favalet.Expressions.Specialized
                 }
                 else
                 {
-                    return new PlaceholderTerm(this.Index, higherOrder);
+                    return new PlaceholderTerm(this.Index, higherOrder, this.Range);
                 }
             }
         }
@@ -128,8 +130,8 @@ namespace Favalet.Expressions.Specialized
                 this.Symbol);
 
         [DebuggerStepThrough]
-        internal static PlaceholderTerm Create(int index, IExpression higherOrder) =>
-            new PlaceholderTerm(index, higherOrder);
+        internal static PlaceholderTerm Create(int index, IExpression higherOrder, TextRange range) =>
+            new PlaceholderTerm(index, higherOrder, range);
     }
 
     [DebuggerStepThrough]

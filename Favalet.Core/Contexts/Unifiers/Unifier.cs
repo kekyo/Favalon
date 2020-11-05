@@ -22,6 +22,7 @@ using Favalet.Expressions.Algebraic;
 using Favalet.Expressions.Specialized;
 using System;
 using System.Diagnostics;
+using Favalet.Ranges;
 
 namespace Favalet.Contexts.Unifiers
 {
@@ -104,7 +105,8 @@ namespace Favalet.Contexts.Unifiers
                 case (_, _, _, true):
                     // Validate polarity.
                     // from <: to
-                    var f = this.TypeCalculator.Compute(OrExpression.Create(from, to));
+                    var f = this.TypeCalculator.Compute(
+                        OrExpression.Create(from, to, TextRange.Unknown));
                     if (!this.TypeCalculator.Equals(f, to))
                     {
                         throw new ArgumentException(

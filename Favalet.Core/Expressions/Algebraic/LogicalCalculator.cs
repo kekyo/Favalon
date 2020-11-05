@@ -22,6 +22,7 @@ using Favalet.Internal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Favalet.Ranges;
 
 namespace Favalet.Expressions.Algebraic
 {
@@ -204,7 +205,7 @@ namespace Favalet.Expressions.Algebraic
                     var absorption =
                         this.ComputeAbsorption<OrFlattenedExpression>(left, right, this.ChoiceForAnd).
                         Memoize();
-                    if (ConstructNested(absorption, OrExpression.Create) is IExpression result1)
+                    if (ConstructNested(absorption, OrExpression.Create, binary.Range) is IExpression result1)
                     {
                         return this.Compute(result1);
                     }
@@ -213,7 +214,7 @@ namespace Favalet.Expressions.Algebraic
                     var shrinked =
                         this.ComputeShrink<IAndExpression>(left, right, this.ChoiceForAnd).
                         Memoize();
-                    if (ConstructNested(shrinked, AndExpression.Create) is IExpression result2)
+                    if (ConstructNested(shrinked, AndExpression.Create, binary.Range) is IExpression result2)
                     {
                         return result2;
                     }
@@ -224,7 +225,7 @@ namespace Favalet.Expressions.Algebraic
                     var absorption =
                         this.ComputeAbsorption<AndFlattenedExpression>(left, right, this.ChoiceForOr).
                         Memoize();
-                    if (ConstructNested(absorption, AndExpression.Create) is IExpression result1)
+                    if (ConstructNested(absorption, AndExpression.Create, binary.Range) is IExpression result1)
                     {
                         return this.Compute(result1);
                     }
@@ -233,7 +234,7 @@ namespace Favalet.Expressions.Algebraic
                     var shrinked =
                         this.ComputeShrink<IOrExpression>(left, right, this.ChoiceForOr).
                         Memoize();
-                    if (ConstructNested(shrinked, OrExpression.Create) is IExpression result2)
+                    if (ConstructNested(shrinked, OrExpression.Create, binary.Range) is IExpression result2)
                     {
                         return result2;
                     }
@@ -250,11 +251,11 @@ namespace Favalet.Expressions.Algebraic
                     // Reconstruct
                     if (binary is IAndExpression)
                     {
-                        return AndExpression.Create(left, right);
+                        return AndExpression.Create(left, right, binary.Range);
                     }
                     else if (binary is IOrExpression)
                     {
-                        return OrExpression.Create(left, right);
+                        return OrExpression.Create(left, right, binary.Range);
                     }
                     else
                     {
@@ -268,13 +269,14 @@ namespace Favalet.Expressions.Algebraic
 
         public static IExpression? ConstructNested(
             IExpression[] results,
-            Func<IExpression, IExpression, IExpression> creator) =>
+            Func<IExpression, IExpression, TextRange, IExpression> creator,
+            TextRange range) =>
             results.Length switch
             {
                 0 => null,
                 1 => results[0],
-                2 => creator(results[0], results[1]),
-                _ => results.Skip(2).Aggregate(creator(results[0], results[1]), creator)
+                2 => creator(results[0], results[1], range),
+                _ => results.Skip(2).Aggregate(creator(results[0], results[1], range), (agg, v) => creator(agg, v, range))  // TODO: range
             };
 
         public static readonly LogicalCalculator Instance =

@@ -23,6 +23,7 @@ using System;
 using System.Collections;
 using System.Diagnostics;
 using System.Xml.Linq;
+using Favalet.Ranges;
 
 namespace Favalet.Expressions
 {
@@ -31,6 +32,8 @@ namespace Favalet.Expressions
         string Type { get; }
 
         IExpression HigherOrder { get; }
+        
+        TextRange Range { get; }
     }
 
     public interface ITerm : IExpression
@@ -43,9 +46,11 @@ namespace Favalet.Expressions
     public abstract class Expression :
         IExpression
     {
+        public readonly TextRange Range;
+
         [DebuggerStepThrough]
-        protected Expression()
-        { }
+        protected Expression(TextRange range) =>
+            this.Range = range;
 
         public string Type =>
             this.GetType().Name.
@@ -53,6 +58,10 @@ namespace Favalet.Expressions
             Replace("Term", string.Empty);
 
         public abstract IExpression HigherOrder { get; }
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        TextRange IExpression.Range =>
+            this.Range;
 
         protected abstract IExpression MakeRewritable(IMakeRewritableContext context);
         protected abstract IExpression Infer(IInferContext context);

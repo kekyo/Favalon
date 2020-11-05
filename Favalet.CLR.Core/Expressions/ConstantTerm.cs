@@ -22,6 +22,7 @@ using Favalet.Internal;
 using System.Collections;
 using System.Diagnostics;
 using System.Xml.Linq;
+using Favalet.Ranges;
 
 namespace Favalet.Expressions
 {
@@ -38,7 +39,8 @@ namespace Favalet.Expressions
         public readonly object Value;
 
         [DebuggerStepThrough]
-        private ConstantTerm(object value, LazySlim<IExpression> higherOrder)
+        private ConstantTerm(object value, LazySlim<IExpression> higherOrder, TextRange range) :
+            base(range)
         {
             this.Value = value;
             this.higherOrder = higherOrder;
@@ -69,7 +71,8 @@ namespace Favalet.Expressions
         protected override IExpression MakeRewritable(IMakeRewritableContext context) =>
             new ConstantTerm(
                 this.Value,
-                LazySlim.Create(context.MakeRewritable(this.HigherOrder)));
+                LazySlim.Create(context.MakeRewritable(this.HigherOrder)),
+                this.Range);
 
         protected override IExpression Infer(IInferContext context) =>
             this;
@@ -99,8 +102,9 @@ namespace Favalet.Expressions
                 this.StringValue);
 
         [DebuggerStepThrough]
-        public static ConstantTerm From(object value) =>
+        public static ConstantTerm From(object value, TextRange range) =>
             new ConstantTerm(value, LazySlim.Create(() =>
-                (IExpression)TypeTerm.From(value.GetType())));
+                (IExpression)TypeTerm.From(value.GetType(), TextRange.Unknown)),
+                range);
     }
 }

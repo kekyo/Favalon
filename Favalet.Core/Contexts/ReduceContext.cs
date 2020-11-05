@@ -59,7 +59,8 @@ namespace Favalet.Contexts
                     case IFunctionExpression(IExpression parameter, IExpression result):
                         return FunctionExpression.Create(
                             UnsafeResolveWhile(resolver, parameter),
-                            UnsafeResolveWhile(resolver, result));
+                            UnsafeResolveWhile(resolver, result),
+                            current.Range);
                     
                     default:
                         return current;

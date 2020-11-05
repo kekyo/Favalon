@@ -27,7 +27,7 @@ namespace Favalet.Lexers
         protected LexRunner()
         { }
 
-        public abstract LexRunnerResult Run(LexRunnerContext context, char ch);
+        public abstract LexRunnerResult Run(LexRunnerContext context, Input input);
 
         public virtual LexRunnerResult Finish(LexRunnerContext context) =>
             LexRunnerResult.Empty(this);

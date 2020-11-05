@@ -17,9 +17,17 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+using System.Diagnostics;
+using Favalet.Ranges;
+
 namespace Favalet.Tokens
 {
+    [DebuggerStepThrough]
     public abstract partial class Token
     {
+        public readonly TextRange Range;
+
+        private protected Token(TextRange range) =>
+            this.Range = range;
     }
 }

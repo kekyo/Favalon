@@ -30,43 +30,81 @@ namespace Favalet.Lexers
         private WaitingIgnoreSpaceRunner()
         { }
 
-        public override LexRunnerResult Run(LexRunnerContext context, char ch)
+        public override LexRunnerResult Run(LexRunnerContext context, Input input)
         {
-            if (char.IsWhiteSpace(ch))
+            if (input.IsNextLine)
             {
+                context.ForwardNextLine();
                 return LexRunnerResult.Empty(this);
             }
-            else if (char.IsDigit(ch))
+            else if (input.IsDelimiterHint)
             {
-                context.TokenBuffer.Append(ch);
-                return LexRunnerResult.Empty(NumericRunner.Instance);
+                var range0 = context.GetRangeAndClear();
+                return LexRunnerResult.Create(
+                    this,
+                    WhiteSpaceToken.Create(range0));
             }
-            else if (TokenUtilities.IsOpenParenthesis(ch) is ParenthesisPair)
+            else if (char.IsWhiteSpace(input))
             {
+                context.ForwardOnly();
+                return LexRunnerResult.Empty(this);
+            }
+            else if (char.IsDigit(input))
+            {
+                var range0 = context.GetRangeAndClear();
+                context.Append(input);
+                return LexRunnerResult.Create(
+                    NumericRunner.Instance,
+                    WhiteSpaceToken.Create(range0));
+            }
+            else if (TokenUtilities.IsOpenParenthesis(input) is ParenthesisPair openPair)
+            {
+                var range0 = context.GetRangeAndClear();
+                context.ForwardOnly();
+                var range1 = context.GetRangeAndClear();
                 return LexRunnerResult.Create(
                     WaitingRunner.Instance,
-                    Token.Open(ch));
+                    WhiteSpaceToken.Create(range0),
+                    OpenParenthesisToken.Create(openPair, range0));
             }
-            else if (TokenUtilities.IsCloseParenthesis(ch) is ParenthesisPair)
+            else if (TokenUtilities.IsCloseParenthesis(input) is ParenthesisPair closePair)
             {
+                var range0 = context.GetRangeAndClear();
+                context.ForwardOnly();
+                var range1 = context.GetRangeAndClear();
                 return LexRunnerResult.Create(
                     WaitingRunner.Instance,
-                    Token.Close(ch));
+                    WhiteSpaceToken.Create(range0),
+                    CloseParenthesisToken.Create(closePair, range0));
             }
-            else if (TokenUtilities.IsOperator(ch))
+            else if (TokenUtilities.IsOperator(input))
             {
-                context.TokenBuffer.Append(ch);
-                return LexRunnerResult.Empty(OperatorRunner.Instance);
+                var range0 = context.GetRangeAndClear();
+                context.Append(input);
+                return LexRunnerResult.Create(
+                    OperatorRunner.Instance,
+                    WhiteSpaceToken.Create(range0));
             }
-            else if (!char.IsControl(ch))
+            else if (!char.IsControl(input))
             {
-                context.TokenBuffer.Append(ch);
-                return LexRunnerResult.Empty(IdentityRunner.Instance);
+                var range0 = context.GetRangeAndClear();
+                context.Append(input);
+                return LexRunnerResult.Create(
+                    IdentityRunner.Instance,
+                    WhiteSpaceToken.Create(range0));
             }
             else
             {
-                throw new InvalidOperationException(ch.ToString());
+                throw new InvalidOperationException(input.ToString());
             }
+        }
+
+        public override LexRunnerResult Finish(LexRunnerContext context)
+        {
+            var range0 = context.GetRangeAndClear();
+            return LexRunnerResult.Create(
+                WaitingRunner.Instance,
+                WhiteSpaceToken.Create(range0));
         }
 
         public static readonly LexRunner Instance =

@@ -32,50 +32,69 @@ namespace Favalet.Lexers
 
         private static NumericToken InternalFinish(LexRunnerContext context)
         {
-            var token = context.TokenBuffer.ToString();
-            context.TokenBuffer.Clear();
-            return new NumericToken(token);
+            var (token, range) = context.GetTokenTextAndClear();
+            return NumericToken.Create(token, range);
         }
 
-        public override LexRunnerResult Run(LexRunnerContext context, char ch)
+        public override LexRunnerResult Run(LexRunnerContext context, Input input)
         {
-            if (char.IsWhiteSpace(ch))
-            {
-                var token = context.TokenBuffer.ToString();
-                context.TokenBuffer.Clear();
-                return LexRunnerResult.Create(
-                    WaitingIgnoreSpaceRunner.Instance,
-                    new NumericToken(token),
-                    WhiteSpaceToken.Instance);
-            }
-            else if (TokenUtilities.IsOpenParenthesis(ch) is ParenthesisPair)
-            {
-                return LexRunnerResult.Create(
-                    WaitingRunner.Instance,
-                    InternalFinish(context),
-                    Token.Open(ch));
-            }
-            else if (TokenUtilities.IsCloseParenthesis(ch) is ParenthesisPair)
-            {
-                return LexRunnerResult.Create(
-                    WaitingRunner.Instance,
-                    InternalFinish(context),
-                    Token.Close(ch));
-            }
-            else if (TokenUtilities.IsOperator(ch))
+            if (input.IsNextLine)
             {
                 var token0 = InternalFinish(context);
-                context.TokenBuffer.Append(ch);
+                context.ForwardNextLine();
+                return LexRunnerResult.Create(
+                    WaitingIgnoreSpaceRunner.Instance,
+                    token0);
+            }
+            else if (input.IsDelimiterHint)
+            {
+                var token0 = InternalFinish(context);
+                return LexRunnerResult.Create(
+                    WaitingRunner.Instance,
+                    token0);
+            }
+            else if (char.IsWhiteSpace(input))
+            {
+                var token0 = InternalFinish(context);
+                context.ForwardOnly();
+                return LexRunnerResult.Create(
+                    WaitingIgnoreSpaceRunner.Instance,
+                    token0);
+            }
+            else if (TokenUtilities.IsOpenParenthesis(input) is ParenthesisPair openPair)
+            {
+                var token0 = InternalFinish(context);
+                context.ForwardOnly();
+                var range1 = context.GetRangeAndClear();
+                return LexRunnerResult.Create(
+                    WaitingRunner.Instance,
+                    token0,
+                    OpenParenthesisToken.Create(openPair, range1));
+            }
+            else if (TokenUtilities.IsCloseParenthesis(input) is ParenthesisPair closePair)
+            {
+                var token0 = InternalFinish(context);
+                context.ForwardOnly();
+                var range1 = context.GetRangeAndClear();
+                return LexRunnerResult.Create(
+                    WaitingRunner.Instance,
+                    token0,
+                    CloseParenthesisToken.Create(closePair, range1));
+            }
+            else if (TokenUtilities.IsOperator(input))
+            {
+                var token0 = InternalFinish(context);
+                context.Append(input);
                 return LexRunnerResult.Create(OperatorRunner.Instance, token0);
             }
-            else if (char.IsDigit(ch))
+            else if (char.IsDigit(input))
             {
-                context.TokenBuffer.Append(ch);
+                context.Append(input);
                 return LexRunnerResult.Empty(this);
             }
             else
             {
-                throw new InvalidOperationException(ch.ToString());
+                throw new InvalidOperationException(input.ToString());
             }
         }
 

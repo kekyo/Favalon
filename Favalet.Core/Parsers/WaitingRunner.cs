@@ -45,7 +45,7 @@ namespace Favalet.Parsers
                 
                 // "abc"
                 case IdentityToken identity:
-                    context.CombineAfter(VariableTerm.Create(identity.Identity));
+                    context.CombineAfter(VariableTerm.Create(identity.Identity, identity.Range));
                     return ParseRunnerResult.Empty(factory.Applying);
 
                 // "("

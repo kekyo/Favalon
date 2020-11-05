@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Favalet.Ranges;
 using Favalet.Reactive.Linq;
 
 namespace Favalet
@@ -66,6 +67,7 @@ namespace Favalet
 
             Assert.AreEqual(
                 new Token[] {
+                    Token.WhiteSpace(),
                     Token.Identity("abc"),
                     Token.WhiteSpace(),
                     Token.Identity("def"),
