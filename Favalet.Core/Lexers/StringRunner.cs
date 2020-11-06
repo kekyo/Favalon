@@ -24,7 +24,7 @@ using System.Diagnostics;
 
 namespace Favalet.Lexers
 {
-    internal sealed class StringRunner : LexRunner
+    internal sealed class StringRunner : LexRunner // TODO: test
     {
         [DebuggerStepThrough]
         private StringRunner()
@@ -53,7 +53,7 @@ namespace Favalet.Lexers
                 context.SetStringLastInput(input);
                 return LexRunnerResult.Empty(this);
             }
-            else if (context.StringLastInput == '\\')
+            else if (context.StringLastInput?.Equals('\\') ?? false)
             {
                 switch ((char)input)
                 {

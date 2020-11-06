@@ -19,6 +19,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Favalet.Lexers
 {
@@ -31,7 +32,8 @@ namespace Favalet.Lexers
     }
     
     [DebuggerStepThrough]
-    public readonly struct Input
+    public readonly struct Input :
+        IEquatable<Input>
     {
         private readonly char inch;
         private readonly InputTypes type;
@@ -46,7 +48,17 @@ namespace Favalet.Lexers
             (this.type & InputTypes.NextLine) == InputTypes.NextLine;
         public bool IsDelimiterHint =>
             (this.type & InputTypes.DelimiterHint) == InputTypes.DelimiterHint;
-        
+
+        public override int GetHashCode() =>
+            base.GetHashCode();
+
+        public bool Equals(char inch) =>
+            (this.type == InputTypes.UnicodeCharacter) && (inch == this.inch);
+        public bool Equals(Input input) =>
+            (this.inch == input.inch) && (this.type == input.type);
+        public override bool Equals(object obj) =>
+            obj is Input input && this.Equals(input);
+
         public override string ToString() =>
             this.type switch
             {
@@ -70,5 +82,14 @@ namespace Favalet.Lexers
             new Input(inch, InputTypes.UnicodeCharacter);
         public static implicit operator Input(InputTypes type) =>
             new Input('\0', type);
+
+        public static bool operator ==(Input lhs, char rhs) =>
+            lhs.Equals(rhs);
+        public static bool operator ==(char lhs, Input rhs) =>
+            rhs.Equals(lhs);
+        public static bool operator !=(Input lhs, char rhs) =>
+            !lhs.Equals(rhs);
+        public static bool operator !=(char lhs, Input rhs) =>
+            !rhs.Equals(lhs);
     }
 }
