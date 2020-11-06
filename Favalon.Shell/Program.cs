@@ -19,14 +19,11 @@
 
 using Favalet;
 using Favalet.Expressions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Favalet.Contexts;
-using Favalet.Expressions.Specialized;
-using Favalet.Ranges;
 using Favalet.Reactive;
 using Favalon.Internal;
+using System;
+using System.Collections.Generic;
 
 namespace Favalon
 {

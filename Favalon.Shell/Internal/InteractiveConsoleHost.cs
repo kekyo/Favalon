@@ -31,6 +31,8 @@ namespace Favalon.Internal
         ObservableBase<Input>
     {
         private readonly CancellationTokenSource cts = new CancellationTokenSource();
+        private readonly StringBuilder line = new StringBuilder();
+        private int currentColumn = 0;
         private IObserver<Input>? observer;
 
         private InteractiveConsoleHost()
@@ -42,98 +44,169 @@ namespace Favalon.Internal
             this.observer = subscribe;
             return new CancellationDisposable(this.cts);
         }
-        
+
+        public void Clear()
+        {
+            Console.Clear();
+            this.line.Clear();
+            this.currentColumn = 0;
+        }
+
+        public void InputEnter()
+        {
+            Console.WriteLine();
+            for (var index = 0; index < this.line.Length; index++)
+            {
+                this.observer?.OnNext(this.line[index]);
+            }
+            this.line.Clear();
+            this.currentColumn = 0;
+            this.observer?.OnNext(InputTypes.NextLine);
+            this.observer?.OnNext(InputTypes.DelimiterHint);
+        }
+
+        public bool InputChar(char inch)
+        {
+            if ((inch == '\r') || (inch == '\n'))   // TODO: sequence
+            {
+                this.InputEnter();
+                return true;
+            }
+            else if (!char.IsControl(inch))
+            {
+                this.line.Insert(this.currentColumn, inch);
+                if (this.currentColumn == this.line.Length)
+                {
+                    Console.Write(inch);
+                }
+                else
+                {
+                    var left = Console.CursorLeft + 1;
+                    var top = Console.CursorTop;
+                    Console.Write(this.line.ToString().Substring(this.currentColumn));
+                    Console.SetCursorPosition(left, top);
+                }
+                this.currentColumn++;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public bool InputForward()
+        {
+            if (this.currentColumn < this.line.Length)
+            {
+                this.currentColumn++;
+                var left = Console.CursorLeft + 1;
+                var top = Console.CursorTop;
+                Console.SetCursorPosition(left, top);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+  
+        public bool InputBackward()
+        {
+            if (this.currentColumn >= 1)
+            {
+                this.currentColumn--;
+                var left = Console.CursorLeft;
+                var top = Console.CursorTop;
+                if (left >= 1)
+                {
+                    left--;
+                }
+                Console.SetCursorPosition(left, top);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public bool InputBackspace()
+        {
+            if (this.currentColumn >= 1)
+            {
+                line.Remove(this.currentColumn - 1, 1);
+                this.currentColumn--;
+                var left = Console.CursorLeft;
+                var top = Console.CursorTop;
+                if (left >= 1)
+                {
+                    left--;
+                }
+                Console.SetCursorPosition(left, top);
+                Console.Write(line.ToString().Substring(this.currentColumn) + " ");
+                Console.SetCursorPosition(left, top);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public bool InputDelete()
+        {
+            if (this.currentColumn < line.Length)
+            {
+                line.Remove(this.currentColumn, 1);
+                var left = Console.CursorLeft;
+                var top = Console.CursorTop;
+                Console.Write(line.ToString().Substring(this.currentColumn) + " ");
+                Console.SetCursorPosition(left, top);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         public void Run()
         {
-            var line = new StringBuilder();
-            var currentColumn = 0;
-
+            var readKeyController = new UnsafeReadKeyController(this.cts.Token);
+            
             while (true)
             {
-                if (cts.IsCancellationRequested)
+                if (!(readKeyController.ReadKey() is ConsoleKeyInfo key))
                 {
                     this.observer?.OnCompleted();
                     break;
                 }
 
-                if (!Console.KeyAvailable)
-                {
-                    // Naive method :)
-                    Thread.Sleep(100);
-                    continue;
-                }
-
-                var key = Console.ReadKey(true);
                 switch (key.Key)
                 {
                     case ConsoleKey.Delete:
-                        if (currentColumn < line.Length)
-                        {
-                            line.Remove(currentColumn, 1);
-                            var left = Console.CursorLeft;
-                            var top = Console.CursorTop;
-                            Console.Write(line.ToString().Substring(currentColumn));
-                            Console.SetCursorPosition(top, left);
-                        }
+                        this.InputDelete();
                         break;
 
                     case ConsoleKey.Backspace:
-                        if (currentColumn >= 1)
-                        {
-                            line.Remove(currentColumn - 1, 1);
-                            currentColumn--;
-                            var left = Console.CursorLeft;
-                            var top = Console.CursorTop;
-                            if (left >= 1)
-                            {
-                                left--;
-                            }
-                            Console.SetCursorPosition(top, left);
-                            Console.Write(line.ToString().Substring(currentColumn) + " ");
-                            Console.SetCursorPosition(top, left);
-                        }
+                        this.InputBackspace();
                         break;
 
                     case ConsoleKey.RightArrow:
-                        if (currentColumn < line.Length)
-                        {
-                            currentColumn++;
-                            var left = Console.CursorLeft + 1;
-                            var top = Console.CursorTop;
-                            Console.SetCursorPosition(top, left);
-                        }
+                        this.InputForward();
                         break;
 
                     case ConsoleKey.LeftArrow:
-                        if (currentColumn >= 1)
-                        {
-                            currentColumn--;
-                            var left = Console.CursorLeft;
-                            var top = Console.CursorTop;
-                            if (left >= 1)
-                            {
-                                left--;
-                            }
-                            Console.SetCursorPosition(top, left);
-                        }
+                        this.InputBackward();
                         break;
                     
                     case ConsoleKey.Enter:
-                        Console.WriteLine();
-                        for (var index = 0; index < line.Length; index++)
-                        {
-                            this.observer?.OnNext(line[index]);
-                        }
-                        line.Clear();
-                        currentColumn = 0;
-                        this.observer?.OnNext(InputTypes.NextLine);
-                        this.observer?.OnNext(InputTypes.DelimiterHint);
+                        this.InputEnter();
                         break;
-                    
+
                     default:
-                        line.Insert(currentColumn, key.KeyChar);
-                        currentColumn++;
-                        Console.Write(key.KeyChar);
+                        this.InputChar(key.KeyChar);
                         break;
                 }
             }

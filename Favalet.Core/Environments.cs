@@ -95,7 +95,6 @@ namespace Favalet
 
 #if DEBUG
             Debug.WriteLine($"Infer[{context.GetHashCode()}:rewritable] :");
-            Debug.WriteLine(rewritable.GetXml());
 #endif            
 
             var inferred = context.Infer(rewritable);
@@ -103,7 +102,6 @@ namespace Favalet
             
 #if DEBUG
             Debug.WriteLine($"Infer[{context.GetHashCode()}:inferred] :");
-            Debug.WriteLine(inferred.GetXml());
 #endif
 
             context.NormalizeAliases();
@@ -113,7 +111,6 @@ namespace Favalet
 
 #if DEBUG
             Debug.WriteLine($"Infer[{context.GetHashCode()}:fixedup] :");
-            Debug.WriteLine(fixedup.GetXml());
 #endif
 
             return fixedup;
@@ -144,7 +141,6 @@ namespace Favalet
             
 #if DEBUG
             Debug.WriteLine($"Reduce[{context.GetHashCode()}:reduced] :");
-            Debug.WriteLine(reduced.GetXml());
 #endif
             if (this.saveLastTopology)
             {
