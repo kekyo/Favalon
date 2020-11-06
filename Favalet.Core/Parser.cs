@@ -59,21 +59,35 @@ namespace Favalet
                     if (index == BreakIndex) Debugger.Break();
                     index++;
 #endif
-                    switch (runner.Run(context, factory, token))
+                    if (token is DelimiterHintToken)
                     {
-                        case ParseRunnerResult(ParseRunner next, IExpression expression):
-                            observer.OnNext(expression);
-                            runner = next;
-                            break;
-                        case ParseRunnerResult(ParseRunner next, _):
-                            runner = next;
-                            break;
+                        // TODO: improves by type decls (how?)
+                        if ((context.NestedScopeCount == 0) &&
+                            context.Current is IExpression currentTerm)
+                        {
+                            observer.OnNext(currentTerm);
+                            context.Reset();
+                            runner = WaitingRunner.Instance;
+                        }
+                    }
+                    else
+                    {
+                        switch (runner.Run(context, factory, token))
+                        {
+                            case ParseRunnerResult(ParseRunner next, IExpression expression):
+                                observer.OnNext(expression);
+                                runner = next;
+                                break;
+                            case ParseRunnerResult(ParseRunner next, _):
+                                runner = next;
+                                break;
+                        }
                     }
 
+                    context.SetLastToken(token);
 #if DEBUG
                     Debug.WriteLine($"{index - 1}: '{token}': {context}");
 #endif
-                    context.SetLastToken(token);
                 },
                 observer.OnError,
                 () =>

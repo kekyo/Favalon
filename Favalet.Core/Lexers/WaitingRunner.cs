@@ -17,7 +17,6 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-using Favalet.Internal;
 using Favalet.Tokens;
 using System;
 using System.Diagnostics;
@@ -35,16 +34,20 @@ namespace Favalet.Lexers
             if (input.IsNextLine)
             {
                 context.ForwardNextLine();
-                return LexRunnerResult.Empty(WaitingIgnoreSpaceRunner.Instance);
+                return LexRunnerResult.Empty(
+                    WaitingIgnoreSpaceRunner.Instance);
             }
             else if (input.IsDelimiterHint)
             {
-                return LexRunnerResult.Empty(this);
+                return LexRunnerResult.Create(
+                    this,
+                    DelimiterHintToken.Instance);
             }
             else if (char.IsWhiteSpace(input))
             {
                 context.ForwardOnly();
-                return LexRunnerResult.Empty(WaitingIgnoreSpaceRunner.Instance);
+                return LexRunnerResult.Empty(
+                    WaitingIgnoreSpaceRunner.Instance);
             }
             else if (char.IsDigit(input))
             {

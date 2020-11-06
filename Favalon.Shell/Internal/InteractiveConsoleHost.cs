@@ -125,11 +125,14 @@ namespace Favalon.Internal
                             this.observer?.OnNext(line[index]);
                         }
                         line.Clear();
+                        currentColumn = 0;
                         this.observer?.OnNext(InputTypes.NextLine);
+                        this.observer?.OnNext(InputTypes.DelimiterHint);
                         break;
                     
                     default:
                         line.Insert(currentColumn, key.KeyChar);
+                        currentColumn++;
                         Console.Write(key.KeyChar);
                         break;
                 }

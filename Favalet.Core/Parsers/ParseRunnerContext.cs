@@ -32,18 +32,18 @@ namespace Favalet.Parsers
         private readonly Stack<(ParenthesisPair pair, IExpression? left)> scopes =
             new Stack<(ParenthesisPair pair, IExpression? left)>();
         
-        [DebuggerStepThrough]
         protected ParseRunnerContext() =>
             this.LastToken = null;
 
         public IExpression? Current { get; private set; }
         public Token? LastToken { get; private set; }
+
+        public int NestedScopeCount =>
+            this.scopes.Count;
         
-        [DebuggerStepThrough]
         internal void SetLastToken(Token token) =>
             this.LastToken = token;
 
-        [DebuggerStepThrough]
         private static IExpression Combine(IExpression? left, IExpression? right)
         {
             if (left != null)
@@ -64,20 +64,24 @@ namespace Favalet.Parsers
             }
         }
 
-        [DebuggerStepThrough]
         public void CombineAfter(IExpression expression) =>
             this.Current = Combine(this.Current, expression);
-        [DebuggerStepThrough]
         public void CombineBefore(IExpression expression) =>
             this.Current = Combine(expression, this.Current);
 
-        public void PushScope(ParenthesisPair pair)
+        internal void Reset()
+        {
+            Debug.Assert(this.scopes.Count == 0);
+            this.Current = null;
+        }
+        
+        internal void PushScope(ParenthesisPair pair)
         {
             this.scopes.Push((pair, this.Current));
             this.Current = null;
         }
 
-        public void PopScope(ParenthesisPair pair)
+        internal void PopScope(ParenthesisPair pair)
         {
             if (this.scopes.Count == 0)
             {
@@ -95,13 +99,11 @@ namespace Favalet.Parsers
             this.Current = Combine(left, this.Current);
         }
 
-        [DebuggerStepThrough]
         public override string ToString() =>
             this.Current is IExpression current ?
                 $"{current.GetPrettyString(PrettyStringTypes.Readable)}" :
                 "(empty)";
 
-        [DebuggerStepThrough]
         public static ParseRunnerContext Create() =>
             new ParseRunnerContext();
     }
