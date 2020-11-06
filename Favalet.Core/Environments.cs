@@ -151,8 +151,11 @@ namespace Favalet
         }
 
         [DebuggerStepThrough]
-        public new void MutableBind(IBoundVariableTerm symbol, IExpression expression) =>
-            base.MutableBind(symbol, expression);
+        public void MutableBind(IBoundVariableTerm symbol, IExpression expression) =>
+            base.MutableBind(symbol, expression, true);
+        [DebuggerStepThrough]
+        internal void UnsafeMutableBind(IBoundVariableTerm symbol, IExpression expression) =>
+            base.MutableBind(symbol, expression, false);
 
         [DebuggerStepThrough]
         public static Environments Create(

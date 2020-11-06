@@ -125,10 +125,13 @@ namespace Favalet.Expressions
         [DebuggerStepThrough]
         private static IExpression CreateHigherOrder(MethodBase method, TextRange range)
         {
-            var parameterType0 = method.IsStatic ?
-                method.GetParameters()[0].ParameterType :
-                method.DeclaringType!;
-            var returnType = (method is MethodInfo mi ? mi.ReturnType! : method.DeclaringType!) ?? typeof(void);
+            var (parameterType0, returnType) = method switch
+            {
+                MethodInfo m =>
+                    (m.IsStatic ? m.GetParameters()[0].ParameterType : m.DeclaringType!, m.ReturnType),
+                _ =>  // ConstructorInfo
+                    (method.GetParameters()[0].ParameterType, method.DeclaringType!)
+            };
             return FunctionExpression.Create(
                 TypeTerm.From(parameterType0, CLRGenerator.TextRange(parameterType0)),
                 TypeTerm.From(returnType, CLRGenerator.TextRange(returnType)),

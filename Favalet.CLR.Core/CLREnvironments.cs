@@ -59,7 +59,7 @@ namespace Favalet
                 foreach (var variable in this.LookupVariables(entry.Key.GetFullName()))
                 {
                     // Make alias. (int --> System.Int32)
-                    this.MutableBind(
+                    this.UnsafeMutableBind(
                         BoundVariableTerm.Create(
                             entry.Value,
                             variable.SymbolHigherOrder,
@@ -127,7 +127,7 @@ namespace Favalet
         {
             var typeTerm = MutableBindMember(environments, type, range);
                 
-            foreach (var constructor in type.GetConstructors().
+            foreach (var constructor in type.GetDeclaredConstructors().
                 Where(constructor =>
                     constructor.IsPublic && !constructor.IsStatic &&
                     (constructor.GetParameters().Length == 1)))  // TODO: 1parameter
@@ -135,7 +135,7 @@ namespace Favalet
                 MutableBindMember(environments, constructor, range);
             }
 
-            var properties = type.GetProperties().
+            var properties = type.GetDeclaredProperties().
                 Where(property =>
                     property.CanRead &&
                     property.GetGetMethod() is MethodInfo method &&
@@ -148,7 +148,7 @@ namespace Favalet
                 MutableBindMember(environments, property, range);
             }
                 
-            foreach (var method in type.GetMethods().
+            foreach (var method in type.GetDeclaredMethods().
                 Where(method =>
                     method.IsPublic && method.IsStatic && !method.IsGenericMethod &&
                     (method.ReturnType != typeof(void)) &&    // TODO: void
@@ -158,7 +158,7 @@ namespace Favalet
                 MutableBindMember(environments, method, range);
             }
                 
-            foreach (var method in type.GetMethods().
+            foreach (var method in type.GetDeclaredMethods().
                 Where(method =>
                     method.IsPublic && !method.IsStatic && !method.IsGenericMethod &&
                     (method.ReturnType != typeof(void)) &&    // TODO: void

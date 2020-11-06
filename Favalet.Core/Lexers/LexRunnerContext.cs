@@ -37,6 +37,11 @@ namespace Favalet.Lexers
 
         private LexRunnerContext(Uri uri) =>
             this.Uri = uri;
+        
+        public Input? StringLastInput { get; private set; }
+
+        public void SetStringLastInput(Input? input) =>
+            this.StringLastInput = input;
 
         public void Append(char inch)
         {

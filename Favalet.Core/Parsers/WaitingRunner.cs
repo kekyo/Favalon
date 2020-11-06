@@ -36,14 +36,13 @@ namespace Favalet.Parsers
             Token token)
         {
             Debug.Assert(context.Current == null);
-            //Debug.Assert(context.PreSignToken == null);
 
             switch (token)
             {
                 case WhiteSpaceToken _:
                     return ParseRunnerResult.Empty(this);
                 
-                // "abc"
+                // abc
                 case IdentityToken identity:
                     context.CombineAfter(VariableTerm.Create(identity.Identity, identity.Range));
                     return ParseRunnerResult.Empty(factory.Applying);

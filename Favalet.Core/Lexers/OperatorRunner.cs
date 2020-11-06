@@ -71,6 +71,14 @@ namespace Favalet.Lexers
                     WaitingIgnoreSpaceRunner.Instance,
                     token0);
             }
+            else if (input == '"')
+            {
+                var token0 = InternalFinish(context, true);
+                context.ForwardOnly();
+                return LexRunnerResult.Create(
+                    StringRunner.Instance,
+                    token0);
+            }
             else if (char.IsDigit(input))
             {
                 var token0 = InternalFinish(context, false);

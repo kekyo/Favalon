@@ -246,6 +246,7 @@ namespace Favalet.Contexts.Unifiers
             }
 
             // Step 2: Resolve inside unification expressions.
+            var removeCandidates = new List<IPlaceholderTerm>();
             foreach (var entry in this.topology)
             {
                 foreach (var unification in entry.Value.Unifications.ToArray())
@@ -264,6 +265,11 @@ namespace Favalet.Contexts.Unifiers
                         case (_, UnificationPolarities.Both):
                             // Switch an unification to new non-placeholder alias.
                             entry.Value.Unifications.Remove(unification);
+                            if (entry.Value.Unifications.Count == 0)
+                            {
+                                removeCandidates.Add(entry.Key);
+                            }
+                            
                             // Alias declared placeholder:
                             if (this.aliases.TryGetValue(entry.Key, out var target2))
                             {
@@ -322,6 +328,11 @@ namespace Favalet.Contexts.Unifiers
                             break;
                     }
                 }
+            }
+
+            foreach (var ph in removeCandidates)
+            {
+                this.topology.Remove(ph);
             }
         }
 
@@ -447,9 +458,10 @@ namespace Favalet.Contexts.Unifiers
                 case (_, IPlaceholderTerm _):
                     return outMost0;
                 default:
+                    return inMost0;
                     // Combine both expressions.
-                    return calculator.Compute(
-                        AndExpression.Create(outMost0, inMost0, placeholder.Range));  // TODO: range
+                    //return calculator.Compute(
+                    //    AndExpression.Create(outMost0, inMost0, placeholder.Range));  // TODO: range
             }
         }
         #endregion

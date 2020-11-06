@@ -49,6 +49,12 @@ namespace Favalet.Lexers
                 return LexRunnerResult.Empty(
                     WaitingIgnoreSpaceRunner.Instance);
             }
+            else if (input == '"')
+            {
+                context.ForwardOnly();
+                return LexRunnerResult.Empty(
+                    StringRunner.Instance);
+            }
             else if (char.IsDigit(input))
             {
                 context.Append(input);

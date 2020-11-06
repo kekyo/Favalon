@@ -35,13 +35,13 @@ namespace Favalet.Internal
         public static IEnumerable<Type> GetTypes(this Assembly assembly) =>
             assembly.DefinedTypes.Select(typeInfo => typeInfo.AsType());
 
-        public static IEnumerable<ConstructorInfo> GetConstructors(this Type type) =>
+        public static IEnumerable<ConstructorInfo> GetDeclaredConstructors(this Type type) =>
             type.GetTypeInfo().DeclaredConstructors;
 
-        public static IEnumerable<MethodInfo> GetMethods(this Type type) =>
+        public static IEnumerable<MethodInfo> GetDeclaredMethods(this Type type) =>
             type.GetTypeInfo().DeclaredMethods;
 
-        public static IEnumerable<PropertyInfo> GetProperties(this Type type) =>
+        public static IEnumerable<PropertyInfo> GetDeclaredProperties(this Type type) =>
             type.GetTypeInfo().DeclaredProperties;
 
         public static MethodInfo? GetGetMethod(this PropertyInfo property) =>
@@ -62,6 +62,18 @@ namespace Favalet.Internal
         public static Assembly GetAssembly(this Type type) =>
             type.Assembly;
 
+        public static IEnumerable<ConstructorInfo> GetDeclaredConstructors(this Type type) =>
+            type.GetConstructors(
+                BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+
+        public static IEnumerable<MethodInfo> GetDeclaredMethods(this Type type) =>
+            type.GetMethods(
+                BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+
+        public static IEnumerable<PropertyInfo> GetDeclaredProperties(this Type type) =>
+            type.GetProperties(
+                BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+
         public static bool IsPublic(this Type type) =>
             type.IsPublic;
 
@@ -76,16 +88,19 @@ namespace Favalet.Internal
             $"{type.Namespace}.{type.Name}";
 
         public static string GetFullName(this MemberInfo member) =>
-#if NETSTANDARD1_1
-            member is TypeInfo typeInfo ?
-                GetFullName(typeInfo.AsType()) :
-#else
-            member is Type type ?
-                GetFullName(type) :
+            member switch
+            {
+#if !NET40
+                TypeInfo typeInfo => GetFullName(typeInfo.AsType()),
 #endif
-                member.DeclaringType is Type declaringType ?
+#if !NETSTANDARD1_1
+                Type type => GetFullName(type),
+#endif
+                ConstructorInfo constructor => GetFullName(member.DeclaringType!),
+                _ => member.DeclaringType is Type declaringType ?
                     $"{GetFullName(declaringType)}.{member.Name}" :
-                    member.Name;
+                    member.Name
+            };
 
         public static string GetReadableName(this Type type) =>
             SharpSymbols.ReadableTypeNames.TryGetValue(type, out var name) ?
@@ -93,15 +108,18 @@ namespace Favalet.Internal
                 GetFullName(type);
 
         public static string GetReadableName(this MemberInfo member) =>
-#if NETSTANDARD1_1
-            member is TypeInfo typeInfo ?
-                GetReadableName(typeInfo.AsType()) :
-#else
-            member is Type type ?
-                GetReadableName(type) :
+            member switch
+            {
+#if !NET40
+                TypeInfo typeInfo => GetReadableName(typeInfo.AsType()),
 #endif
-                member.DeclaringType is Type declaringType ?
+#if !NETSTANDARD1_1
+                Type type => GetReadableName(type),
+#endif
+                ConstructorInfo constructor => GetReadableName(member.DeclaringType!),
+                _ => member.DeclaringType is Type declaringType ?
                     $"{GetReadableName(declaringType)}.{member.Name}" :
-                    member.Name;
+                    member.Name
+            };
     }
 }

@@ -41,10 +41,16 @@ namespace Favalet.Parsers
 
             switch (token)
             {
+                // 123
                 case NumericToken numeric:
                     CLRParserUtilities.CombineNumericValue(
                         (CLRParseRunnerContext)context!,
                         numeric);
+                    return ParseRunnerResult.Empty(factory.Applying);
+                
+                // "abc"
+                case StringToken str:
+                    context!.CombineAfter(ConstantTerm.From(str.Value, str.Range));
                     return ParseRunnerResult.Empty(factory.Applying);
 
                 case NumericalSignToken numericSign:
