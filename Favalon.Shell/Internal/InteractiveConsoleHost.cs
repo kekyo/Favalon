@@ -18,7 +18,9 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using Favalet.Lexers;
@@ -30,9 +32,12 @@ namespace Favalon.Internal
     public sealed class InteractiveConsoleHost :
         ObservableBase<Input>
     {
+        private readonly List<string> history = new List<string>();
+        
         private readonly CancellationTokenSource cts = new CancellationTokenSource();
         private readonly StringBuilder line = new StringBuilder();
         private int currentColumn = 0;
+        private int historyIndex = 0;
         private IObserver<Input>? observer;
 
         private InteractiveConsoleHost()
@@ -55,11 +60,16 @@ namespace Favalon.Internal
         public void InputEnter()
         {
             Console.WriteLine();
-            for (var index = 0; index < this.line.Length; index++)
-            {
-                this.observer?.OnNext(this.line[index]);
-            }
+
+            var line = this.line.ToString();
             this.line.Clear();
+            this.history.Add(line);
+
+            foreach (var inch in line)
+            {
+                this.observer?.OnNext(inch);
+            }
+            
             this.currentColumn = 0;
             this.observer?.OnNext(InputTypes.NextLine);
             this.observer?.OnNext(InputTypes.DelimiterHint);
@@ -82,9 +92,8 @@ namespace Favalon.Internal
                 else
                 {
                     var left = Console.CursorLeft + 1;
-                    var top = Console.CursorTop;
                     Console.Write(this.line.ToString().Substring(this.currentColumn));
-                    Console.SetCursorPosition(left, top);
+                    Console.SetCursorPosition(left, Console.CursorTop);
                 }
                 this.currentColumn++;
                 return true;
@@ -101,8 +110,7 @@ namespace Favalon.Internal
             {
                 this.currentColumn++;
                 var left = Console.CursorLeft + 1;
-                var top = Console.CursorTop;
-                Console.SetCursorPosition(left, top);
+                Console.SetCursorPosition(left, Console.CursorTop);
                 return true;
             }
             else
@@ -117,12 +125,11 @@ namespace Favalon.Internal
             {
                 this.currentColumn--;
                 var left = Console.CursorLeft;
-                var top = Console.CursorTop;
                 if (left >= 1)
                 {
                     left--;
                 }
-                Console.SetCursorPosition(left, top);
+                Console.SetCursorPosition(left, Console.CursorTop);
                 return true;
             }
             else
@@ -138,14 +145,13 @@ namespace Favalon.Internal
                 line.Remove(this.currentColumn - 1, 1);
                 this.currentColumn--;
                 var left = Console.CursorLeft;
-                var top = Console.CursorTop;
                 if (left >= 1)
                 {
                     left--;
                 }
-                Console.SetCursorPosition(left, top);
+                Console.SetCursorPosition(left, Console.CursorTop);
                 Console.Write(line.ToString().Substring(this.currentColumn) + " ");
-                Console.SetCursorPosition(left, top);
+                Console.SetCursorPosition(left, Console.CursorTop);
                 return true;
             }
             else
@@ -160,9 +166,71 @@ namespace Favalon.Internal
             {
                 line.Remove(this.currentColumn, 1);
                 var left = Console.CursorLeft;
-                var top = Console.CursorTop;
                 Console.Write(line.ToString().Substring(this.currentColumn) + " ");
-                Console.SetCursorPosition(left, top);
+                Console.SetCursorPosition(left, Console.CursorTop);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public bool InputOlder()
+        {
+            if (this.historyIndex < this.history.Count)
+            {
+                Console.SetCursorPosition(0, Console.CursorTop);
+                Console.Write(new string(' ', this.line.Length));
+                Console.SetCursorPosition(0, Console.CursorTop);
+
+                this.historyIndex++;
+
+                var line = this.history[this.history.Count - this.historyIndex];
+                this.line.Clear();
+                this.line.Append(line);
+                
+                Console.Write(line);
+                this.currentColumn = line.Length;
+                
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public bool InputNewer()
+        {
+            if (this.historyIndex >= 2)
+            {
+                Console.SetCursorPosition(0, Console.CursorTop);
+                Console.Write(new string(' ', this.line.Length));
+                Console.SetCursorPosition(0, Console.CursorTop);
+
+                this.historyIndex--;
+
+                var line = this.history[this.history.Count - this.historyIndex];
+                this.line.Clear();
+                this.line.Append(line);
+                
+                Console.Write(line);
+                this.currentColumn = line.Length;
+                
+                return true;
+            }
+            else if (this.historyIndex == 1)
+            {
+                Console.SetCursorPosition(0, Console.CursorTop);
+                Console.Write(new string(' ', this.line.Length));
+                Console.SetCursorPosition(0, Console.CursorTop);
+
+                this.historyIndex--;
+
+                this.line.Clear();
+
+                this.currentColumn = 0;
                 return true;
             }
             else
@@ -188,19 +256,21 @@ namespace Favalon.Internal
                     case ConsoleKey.Delete:
                         this.InputDelete();
                         break;
-
                     case ConsoleKey.Backspace:
                         this.InputBackspace();
                         break;
-
                     case ConsoleKey.RightArrow:
                         this.InputForward();
                         break;
-
                     case ConsoleKey.LeftArrow:
                         this.InputBackward();
                         break;
-                    
+                    case ConsoleKey.UpArrow:
+                        this.InputOlder();
+                        break;
+                    case ConsoleKey.DownArrow:
+                        this.InputNewer();
+                        break;
                     case ConsoleKey.Enter:
                         this.InputEnter();
                         break;

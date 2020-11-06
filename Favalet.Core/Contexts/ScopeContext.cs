@@ -77,7 +77,8 @@ namespace Favalet.Contexts
 
         public ITypeCalculator TypeCalculator { get; }
 
-        private protected void MutableBind(IBoundVariableTerm symbol, IExpression expression)
+        private protected void MutableBind(
+            IBoundVariableTerm symbol, IExpression expression, bool checkDuplicate)
         {
             this.variables ??= new Dictionary<string, List<VariableInformation>>();
 
@@ -91,10 +92,19 @@ namespace Favalet.Contexts
                 symbol.Symbol,
                 symbol.HigherOrder,
                 expression);
-            
-            Debug.Assert(!list.Any(entry => entry.Equals(vi)));
 
-            list.Add(vi);
+            if (checkDuplicate)
+            {
+                if (!list.Any(entry => entry.Equals(vi)))
+                {
+                    list.Add(vi);
+                }
+            }
+            else
+            {
+                Debug.Assert(!list.Any(entry => entry.Equals(vi)));
+                list.Add(vi);
+            }
         }
 
         public VariableInformation[] LookupVariables(string symbol)

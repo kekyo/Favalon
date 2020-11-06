@@ -62,6 +62,14 @@ namespace Favalet.Lexers
                     WaitingIgnoreSpaceRunner.Instance,
                     token0);
             }
+            else if (input == '"')
+            {
+                var token0 = InternalFinish(context);
+                context.ForwardOnly();
+                return LexRunnerResult.Create(
+                    StringRunner.Instance,
+                    token0);
+            }
             else if (TokenUtilities.IsOpenParenthesis(input) is ParenthesisPair openPair)
             {
                 var token0 = InternalFinish(context);
@@ -88,7 +96,8 @@ namespace Favalet.Lexers
                 context.Append(input);
                 return LexRunnerResult.Create(OperatorRunner.Instance, token0);
             }
-            else if (char.IsDigit(input))
+            else if (char.IsDigit(input) ||
+                     (input == '.') || (input == ',')) // TODO: test
             {
                 context.Append(input);
                 return LexRunnerResult.Empty(this);

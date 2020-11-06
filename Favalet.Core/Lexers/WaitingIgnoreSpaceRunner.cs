@@ -50,6 +50,14 @@ namespace Favalet.Lexers
                 context.ForwardOnly();
                 return LexRunnerResult.Empty(this);
             }
+            else if (input == '"')
+            {
+                var range0 = context.GetRangeAndClear();
+                context.ForwardOnly();
+                return LexRunnerResult.Create(
+                    StringRunner.Instance,
+                    WhiteSpaceToken.Create(range0));
+            }
             else if (char.IsDigit(input))
             {
                 var range0 = context.GetRangeAndClear();

@@ -36,7 +36,6 @@ namespace Favalet.Parsers
             Token token)
         {
             Debug.Assert(context.Current != null);
-            //Debug.Assert(context.PreSignToken == null);
 
             switch (token)
             {
