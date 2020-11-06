@@ -17,19 +17,23 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
-using Favalet.Parsers;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Threading;
+using Favalet.Reactive.Disposables;
 
-namespace Favalet
+namespace Favalet.Reactive
 {
-    public sealed class CLRParser : Parser
+    [DebuggerStepThrough]
+    public abstract class ObservableBase<T> :
+        IObservable<T>
     {
-        [DebuggerStepThrough]
-        private CLRParser() :
-            base(CLRParseRunnerFactory.Instance)
+        protected ObservableBase()
         { }
-        
-        public new static CLRParser Create() =>
-            new CLRParser();
+
+        public abstract IDisposable Subscribe(IObserver<T> observer);
     }
 }

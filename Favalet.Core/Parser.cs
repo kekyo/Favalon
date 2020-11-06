@@ -87,7 +87,7 @@ namespace Favalet
                 }));
         });
 
-        public static readonly Parser Instance =
+        public static Parser Create() =>
             new Parser(ParseRunnerFactory.Instance);
     }
 
