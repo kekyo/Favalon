@@ -99,7 +99,7 @@ namespace Favalet
         public static PropertyTerm MutableBindMember(this IEnvironments environments, PropertyInfo property) =>
             MutableBindMember(environments, property, CLRGenerator.TextRange(property));
 
-        private static MethodTerm MutableBindMember(IEnvironments environments, MethodInfo method, TextRange range)
+        private static MethodTerm MutableBindMember(IEnvironments environments, MethodBase method, TextRange range)
         {
             var methodTerm = MethodTerm.From(method, range);
             environments.MutableBind(
@@ -108,7 +108,7 @@ namespace Favalet
             return methodTerm;
         }
         
-        public static MethodTerm MutableBindMember(this IEnvironments environments, MethodInfo method) =>
+        public static MethodTerm MutableBindMember(this IEnvironments environments, MethodBase method) =>
             MutableBindMember(environments, method, CLRGenerator.TextRange(method));
 
         private static ITerm MutableBindMember(IEnvironments environments, Type type, TextRange range)
@@ -126,11 +126,20 @@ namespace Favalet
         private static ITerm MutableBindMembers(IEnvironments environments, Type type, TextRange range)
         {
             var typeTerm = MutableBindMember(environments, type, range);
+                
+            foreach (var constructor in type.GetConstructors().
+                Where(constructor =>
+                    constructor.IsPublic && !constructor.IsStatic &&
+                    (constructor.GetParameters().Length == 1)))  // TODO: 1parameter
+            {
+                MutableBindMember(environments, constructor, range);
+            }
 
             var properties = type.GetProperties().
                 Where(property =>
                     property.CanRead &&
-                    (property.GetGetMethod() != null) &&
+                    property.GetGetMethod() is MethodInfo method &&
+                    method.IsStatic &&
                     property.GetIndexParameters().Length == 0).
                 ToDictionary(property => property.GetGetMethod());
 
@@ -145,6 +154,15 @@ namespace Favalet
                     (method.ReturnType != typeof(void)) &&    // TODO: void
                     (method.GetParameters().Length == 1) &&   // TODO: 1parameter
                     !properties.ContainsKey(method)))
+            {
+                MutableBindMember(environments, method, range);
+            }
+                
+            foreach (var method in type.GetMethods().
+                Where(method =>
+                    method.IsPublic && !method.IsStatic && !method.IsGenericMethod &&
+                    (method.ReturnType != typeof(void)) &&    // TODO: void
+                    (method.GetParameters().Length == 0)))    // TODO: 1parameter (this)
             {
                 MutableBindMember(environments, method, range);
             }

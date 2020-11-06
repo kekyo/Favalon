@@ -95,10 +95,16 @@ namespace Favalet.Expressions
                     var result = constructor.Invoke(new[] { constant.Value });
                     return ConstantTerm.From(result, this.Range);
                 }
-                else
+                else if (this.RuntimeMethod.IsStatic)
                 {
                     var method = (MethodInfo)this.RuntimeMethod;
                     var result = method.Invoke(null, new[] { constant.Value });
+                    return ConstantTerm.From(result, this.Range);
+                }
+                else
+                {
+                    var method = (MethodInfo)this.RuntimeMethod;
+                    var result = method.Invoke(constant.Value, ArrayEx.Empty<object>());
                     return ConstantTerm.From(result, this.Range);
                 }
             }
@@ -119,7 +125,9 @@ namespace Favalet.Expressions
         [DebuggerStepThrough]
         private static IExpression CreateHigherOrder(MethodBase method, TextRange range)
         {
-            var parameterType0 = method.GetParameters()[0].ParameterType;
+            var parameterType0 = method.IsStatic ?
+                method.GetParameters()[0].ParameterType :
+                method.DeclaringType!;
             var returnType = (method is MethodInfo mi ? mi.ReturnType! : method.DeclaringType!) ?? typeof(void);
             return FunctionExpression.Create(
                 TypeTerm.From(parameterType0, CLRGenerator.TextRange(parameterType0)),
@@ -129,7 +137,10 @@ namespace Favalet.Expressions
 
         [DebuggerStepThrough]
         public static MethodTerm From(MethodBase method, TextRange range) =>
-            new MethodTerm(method, LazySlim.Create(() => CreateHigherOrder(method, TextRange.Unknown)), range);  // TODO: range
+            new MethodTerm(
+                method,
+                LazySlim.Create(() => CreateHigherOrder(method, CLRGenerator.TextRange(method))),
+                range);
     }
 
     public static class MethodTermExtension

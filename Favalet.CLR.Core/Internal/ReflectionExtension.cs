@@ -35,6 +35,9 @@ namespace Favalet.Internal
         public static IEnumerable<Type> GetTypes(this Assembly assembly) =>
             assembly.DefinedTypes.Select(typeInfo => typeInfo.AsType());
 
+        public static IEnumerable<ConstructorInfo> GetConstructors(this Type type) =>
+            type.GetTypeInfo().DeclaredConstructors;
+
         public static IEnumerable<MethodInfo> GetMethods(this Type type) =>
             type.GetTypeInfo().DeclaredMethods;
 
