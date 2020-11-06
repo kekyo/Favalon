@@ -19,13 +19,11 @@
 
 using Favalet;
 using Favalet.Expressions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Favalet.Contexts;
-using Favalet.Ranges;
 using Favalet.Reactive;
 using Favalon.Internal;
+using System;
+using System.Collections.Generic;
 
 namespace Favalon
 {
@@ -47,20 +45,6 @@ namespace Favalon
             yield return $"{bc},{wc},{lc}";
         }
 
-        private static Environments CreateEnvironments()
-        {
-            var environments = Environments.Create(CLRTypeCalculator.Instance);
-            
-            foreach (var type in typeof(object).Assembly.GetTypes().
-                Where(type => type.IsPublic && !type.IsNestedPublic && !type.IsGenericType))
-            {
-                var typeTerm = CLRGenerator.Type(type);
-                environments.MutableBind(type.FullName!, TextRange.From(type), typeTerm);
-            }
-
-            return environments;
-        }
-
         public static int Main(string[] args)
         {
             var console = InteractiveConsoleHost.Create();
@@ -72,7 +56,7 @@ namespace Favalon
             var parser = CLRParser.Create();
             var parsed = parser.Parse(tokens);
             
-            var environments = CreateEnvironments();
+            var environments = CLREnvironments.Create();
             
             IDisposable? d = default;
             d = parsed.Subscribe(Observer.Create<IExpression>(
@@ -85,7 +69,7 @@ namespace Favalon
                     }
                     else
                     {
-                        Console.WriteLine(reduced.GetPrettyString(PrettyStringTypes.ReadableAll));
+                        Console.WriteLine(reduced.GetPrettyString(PrettyStringTypes.Readable));
                     }
                 },
                 ex => { },

@@ -67,7 +67,7 @@ namespace Favalet
                         {
                             observer.OnNext(currentTerm);
                             context.Reset();
-                            runner = WaitingRunner.Instance;
+                            runner = factory.Waiting;
                         }
                     }
                     else

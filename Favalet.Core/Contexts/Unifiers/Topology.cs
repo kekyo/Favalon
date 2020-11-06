@@ -391,8 +391,22 @@ namespace Favalet.Contexts.Unifiers
                         ToArray();
                     if (expressions.Length >= 1)
                     {
-                        var calculated = context.Compute(expressions, TextRange.Unknown)!;   // TODO: range
-                        return calculated;
+                        // TODO: placeholder filtering idea is bad?
+                        if (expressions.All(expression => expression.IsContainsPlaceholder))
+                        {
+                            var calculated = context.Compute(
+                                expressions, TextRange.Unknown)!;   // TODO: range
+                            return calculated;
+                        }
+                        else
+                        {
+                            var filtered = expressions.
+                                Where(expression => !expression.IsContainsPlaceholder).
+                                ToArray();
+                            var calculated = context.Compute(
+                                filtered, TextRange.Unknown)!;   // TODO: range
+                            return calculated;
+                        }
                     }
                 }
             }

@@ -49,7 +49,7 @@ namespace Favalet.Reducing
         [Test]
         public void LookupIdentity()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // let ABC = XYZ
             environment.MutableBind("ABC", Variable("XYZ"));
@@ -70,7 +70,7 @@ namespace Favalet.Reducing
         [Test]
         public void PureLambda()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // arg -> arg && B
             var expression =
@@ -96,7 +96,7 @@ namespace Favalet.Reducing
         [Test]
         public void ApplyLambda1()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // (arg -> arg && B) A
             var expression =
@@ -122,7 +122,7 @@ namespace Favalet.Reducing
         [Test]
         public void ApplyLambda2()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // inner = arg1 -> arg1 && B
             environment.MutableBind(
@@ -157,7 +157,7 @@ namespace Favalet.Reducing
         [Test]
         public void ApplyLambda3()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // Same argument symbols.
 
@@ -194,7 +194,7 @@ namespace Favalet.Reducing
         [Test]
         public void ApplyNestedLambda1()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // Complex nested lambda (bind)
 
@@ -231,7 +231,7 @@ namespace Favalet.Reducing
         [Test]
         public void ApplyNestedLambda2()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // Complex nested lambda (bind)
 
@@ -268,7 +268,7 @@ namespace Favalet.Reducing
         [Test]
         public void ApplyLogicalOperator1()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // Logical (A && (B && A))
             var expression =
@@ -294,7 +294,7 @@ namespace Favalet.Reducing
         [Test]
         public void ApplyLogicalOperator2()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // logical = Logical
             environment.MutableBind(
@@ -325,7 +325,7 @@ namespace Favalet.Reducing
         [Test]
         public void ApplyMethod()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // Math.Sqrt pi
             var expression =
@@ -345,7 +345,7 @@ namespace Favalet.Reducing
         [Test]
         public void ApplyConstructor()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // Uri "http://example.com"
             var expression =

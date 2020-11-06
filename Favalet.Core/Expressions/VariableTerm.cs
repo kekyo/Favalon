@@ -104,14 +104,14 @@ namespace Favalet.Expressions
                 if (targets.Length >= 1)
                 {
                     var symbolHigherOrder = LogicalCalculator.ConstructNested(
-                        targets.Select(v => v.symbolHigherOrder).Memoize(),
-                        OrExpression.Create,
-                        this.Range)!;
+                            targets.Select(v => v.symbolHigherOrder).Memoize(),
+                            OrExpression.Create,
+                            this.Range)!;
 
                     var expressionHigherOrder = LogicalCalculator.ConstructNested(
-                        targets.Select(v => v.expression.HigherOrder).Memoize(),
-                        OrExpression.Create,
-                        this.Range)!;
+                            targets.Select(v => v.expression.HigherOrder).Memoize(),
+                            OrExpression.Create,
+                            this.Range)!;
                
                     context.Unify(symbolHigherOrder, expressionHigherOrder, true);
                     context.Unify(expressionHigherOrder, higherOrder, true);
@@ -190,21 +190,22 @@ namespace Favalet.Expressions
         {
             if (this.bounds is IExpression[] bounds)
             {
-                Debug.Assert(bounds.Length >= 1);
-
-                var target = bounds[0];
-                if (target is IBoundVariableTerm bound)
+                if (this.bounds.Length >= 1)
                 {
-                    var variables = context.LookupVariables(bound.Symbol);
-                    if (variables.Length >= 1)
+                    var target = bounds[0];
+                    if (target is IBoundVariableTerm bound)
                     {
-                        // Nearly overloaded variable.
-                        return context.Reduce(variables[0].Expression);
+                        var variables = context.LookupVariables(bound.Symbol);
+                        if (variables.Length >= 1)
+                        {
+                            // Nearly overloaded variable.
+                            return context.Reduce(variables[0].Expression);
+                        }
                     }
-                }
-                else
-                {
-                    return context.Reduce(target);
+                    else
+                    {
+                        return context.Reduce(target);
+                    }
                 }
             }
 

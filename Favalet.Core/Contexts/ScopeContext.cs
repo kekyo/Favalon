@@ -22,6 +22,7 @@ using Favalet.Expressions.Specialized;
 using Favalet.Internal;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace Favalet.Contexts
 {
@@ -86,11 +87,14 @@ namespace Favalet.Contexts
                 this.variables.Add(symbol.Symbol, list);
             }
 
-            list.Add(
-                VariableInformation.Create(
-                    symbol.Symbol,
-                    symbol.HigherOrder,
-                    expression));
+            var vi = VariableInformation.Create(
+                symbol.Symbol,
+                symbol.HigherOrder,
+                expression);
+            
+            Debug.Assert(!list.Any(entry => entry.Equals(vi)));
+
+            list.Add(vi);
         }
 
         public VariableInformation[] LookupVariables(string symbol)

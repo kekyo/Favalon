@@ -34,6 +34,8 @@ namespace Favalet.Expressions
         IExpression HigherOrder { get; }
         
         TextRange Range { get; }
+        
+        bool IsContainsPlaceholder { get; }
     }
 
     public interface ITerm : IExpression
@@ -62,6 +64,24 @@ namespace Favalet.Expressions
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         TextRange IExpression.Range =>
             this.Range;
+
+        public bool IsContainsPlaceholder
+        {
+            [DebuggerStepThrough]
+            get => this switch
+                {
+                   IPlaceholderTerm placeholder => true,
+                   IPairExpression pair =>
+                       pair.Left.IsContainsPlaceholder || pair.Right.IsContainsPlaceholder,
+                   _ => false
+                } ||
+                this.HigherOrder switch
+                {
+                   DeadEndTerm _ => false,
+                   FourthTerm _ => false,
+                   _ => this.HigherOrder.IsContainsPlaceholder
+                };
+        }
 
         protected abstract IExpression MakeRewritable(IMakeRewritableContext context);
         protected abstract IExpression Infer(IInferContext context);

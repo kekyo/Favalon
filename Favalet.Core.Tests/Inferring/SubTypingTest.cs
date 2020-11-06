@@ -49,7 +49,7 @@ namespace Favalet.Inferring
         [Test]
         public void Widening1()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
             
             // bool || IConvertible
             var expression =
@@ -69,7 +69,7 @@ namespace Favalet.Inferring
         [Test]
         public void Widening2()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // bool || IConvertible || int
             var expression =
@@ -91,7 +91,7 @@ namespace Favalet.Inferring
         [Test]
         public void Widening3()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // IConvertible || bool || int
             var expression =
@@ -113,7 +113,7 @@ namespace Favalet.Inferring
         [Test]
         public void Widening4()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // bool || IConvertible || int
             var expression =
@@ -135,7 +135,7 @@ namespace Favalet.Inferring
         [Test]
         public void Widening5()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // bool || int || IConvertible
             var expression =
@@ -159,7 +159,7 @@ namespace Favalet.Inferring
         [Test]
         public void Narrowing1()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
             
             // bool && IConvertible
             var expression =
@@ -179,7 +179,7 @@ namespace Favalet.Inferring
         [Test]
         public void Narrowing2()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // bool && IConvertible && int
             var expression =
@@ -203,7 +203,7 @@ namespace Favalet.Inferring
         [Test]
         public void Narrowing3()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // IConvertible && bool && int
             var expression =
@@ -227,7 +227,7 @@ namespace Favalet.Inferring
         [Test]
         public void Narrowing4()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // bool && IConvertible && int
             var expression =
@@ -251,7 +251,7 @@ namespace Favalet.Inferring
         [Test]
         public void Narrowing5()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // bool && int && IConvertible
             var expression =
@@ -277,7 +277,7 @@ namespace Favalet.Inferring
         [Test]
         public void CovarianceInLambdaBody1()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // (a -> a):(int -> object)
             var expression =
@@ -305,7 +305,7 @@ namespace Favalet.Inferring
         [Test]
         public void CovarianceInLambdaBody2()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // (a:int -> a):(_ -> object)
             var expression =
@@ -333,7 +333,7 @@ namespace Favalet.Inferring
         [Test]
         public void CovarianceInLambdaBody3()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // (a -> a:int):(_ -> object)
             var expression =
@@ -363,7 +363,7 @@ namespace Favalet.Inferring
         [Test]
         public void ContravarianceInLambdaBody1()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // (a:object -> a):(int -> object)
             var expression =
@@ -391,7 +391,7 @@ namespace Favalet.Inferring
         [Test]
         public void ContravarianceInLambdaBody2()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // (a -> a:object):(int -> object)
             var expression =
@@ -419,7 +419,7 @@ namespace Favalet.Inferring
         [Test]
         public void ContravarianceInLambdaBody3()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // (a:object -> a):(int -> _)
             var expression =
@@ -447,7 +447,7 @@ namespace Favalet.Inferring
         [Test]
         public void ContravarianceInLambdaBody4()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // (a -> a:object):(int -> _)
             var expression =

@@ -20,47 +20,85 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 
 namespace Favalet.Internal
 {
+    [DebuggerStepThrough]
     internal static class ReflectionExtension
     {
-        private static readonly Dictionary<Type, string> readableNames =
-            new Dictionary<Type, string>
-            {
-                { typeof(void), "void" },
-                { typeof(bool), "bool" },
-                { typeof(byte), "byte" },
-                { typeof(sbyte), "sbyte" },
-                { typeof(short), "short" },
-                { typeof(ushort), "ushort" },
-                { typeof(int), "int" },
-                { typeof(uint), "uint" },
-                { typeof(long), "long" },
-                { typeof(ulong), "ulong" },
-                { typeof(float), "float" },
-                { typeof(double), "double" },
-                { typeof(decimal), "decimal" },
-                { typeof(char), "char" },
-                { typeof(string), "string" },
-                { typeof(object), "object" },
-            };
-
 #if NETSTANDARD1_1
-        [DebuggerStepThrough]
+        public static Assembly GetAssembly(this Type type) =>
+            type.GetTypeInfo().Assembly;
+
+        public static IEnumerable<Type> GetTypes(this Assembly assembly) =>
+            assembly.DefinedTypes.Select(typeInfo => typeInfo.AsType());
+
+        public static IEnumerable<MethodInfo> GetMethods(this Type type) =>
+            type.GetTypeInfo().DeclaredMethods;
+
+        public static IEnumerable<PropertyInfo> GetProperties(this Type type) =>
+            type.GetTypeInfo().DeclaredProperties;
+
+        public static MethodInfo? GetGetMethod(this PropertyInfo property) =>
+            property.GetMethod;
+
+        public static bool IsPublic(this Type type) =>
+            type.GetTypeInfo().IsPublic;
+
+        public static bool IsNestedPublic(this Type type) =>
+            type.GetTypeInfo().IsNestedPublic;
+
+        public static bool IsGenericType(this Type type) =>
+            type.GetTypeInfo().IsGenericType;
+
         public static bool IsAssignableFrom(this Type lhs, Type rhs) =>
             lhs.GetTypeInfo().IsAssignableFrom(rhs.GetTypeInfo());
+#else
+        public static Assembly GetAssembly(this Type type) =>
+            type.Assembly;
+
+        public static bool IsPublic(this Type type) =>
+            type.IsPublic;
+
+        public static bool IsNestedPublic(this Type type) =>
+            type.IsNestedPublic;
+
+        public static bool IsGenericType(this Type type) =>
+            type.IsGenericType;
 #endif
 
-        [DebuggerStepThrough]
-        public static string GetReadableName(this Type type) =>
-            readableNames.TryGetValue(type, out var name) ?
-                name :
-                type.FullName;
+        public static string GetFullName(this Type type) =>
+            $"{type.Namespace}.{type.Name}";
 
-        [DebuggerStepThrough]
-        public static string GetReadableName(this MethodBase method) =>
-            $"{method.DeclaringType.GetReadableName()}.{method.Name}";
+        public static string GetFullName(this MemberInfo member) =>
+#if NETSTANDARD1_1
+            member is TypeInfo typeInfo ?
+                GetFullName(typeInfo.AsType()) :
+#else
+            member is Type type ?
+                GetFullName(type) :
+#endif
+                member.DeclaringType is Type declaringType ?
+                    $"{GetFullName(declaringType)}.{member.Name}" :
+                    member.Name;
+
+        public static string GetReadableName(this Type type) =>
+            SharpSymbols.ReadableTypeNames.TryGetValue(type, out var name) ?
+                name :
+                GetFullName(type);
+
+        public static string GetReadableName(this MemberInfo member) =>
+#if NETSTANDARD1_1
+            member is TypeInfo typeInfo ?
+                GetReadableName(typeInfo.AsType()) :
+#else
+            member is Type type ?
+                GetReadableName(type) :
+#endif
+                member.DeclaringType is Type declaringType ?
+                    $"{GetReadableName(declaringType)}.{member.Name}" :
+                    member.Name;
     }
 }

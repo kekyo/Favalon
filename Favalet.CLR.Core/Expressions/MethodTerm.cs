@@ -122,8 +122,8 @@ namespace Favalet.Expressions
             var parameterType0 = method.GetParameters()[0].ParameterType;
             var returnType = (method is MethodInfo mi ? mi.ReturnType! : method.DeclaringType!) ?? typeof(void);
             return FunctionExpression.Create(
-                TypeTerm.From(parameterType0,TextRange.From(parameterType0)),
-                TypeTerm.From(returnType, TextRange.From(returnType)),
+                TypeTerm.From(parameterType0, CLRGenerator.TextRange(parameterType0)),
+                TypeTerm.From(returnType, CLRGenerator.TextRange(returnType)),
                 range);
         }
 

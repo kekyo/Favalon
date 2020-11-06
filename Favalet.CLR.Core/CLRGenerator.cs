@@ -30,24 +30,36 @@ namespace Favalet
     [DebuggerStepThrough]
     public static class CLRGenerator
     {
-        public static Environments CLREnvironment(
+        public static CLREnvironments CLREnvironments(
 #if DEBUG
             bool saveLastTopology = true
 #else
             bool saveLastTopology = false
 #endif
             ) =>
-            Favalet.Environments.Create(CLRTypeCalculator.Instance, saveLastTopology);
+            Favalet.CLREnvironments.Create(saveLastTopology);
+
+        public static TextRange TextRange(Assembly assembly) =>
+            Favalet.Ranges.TextRange.Create(new Uri(assembly.GetName().Name, UriKind.RelativeOrAbsolute), TextPosition.Zero);
+        public static TextRange TextRange(MemberInfo member) =>
+            TextRange(member.Module.Assembly);
+#if NETSTANDARD1_1
+        public static TextRange TextRange(Type type) =>
+            TextRange(type.GetTypeInfo().Assembly);
+#endif
 
         public static ITerm Type<T>() =>
-            TypeTerm.From(typeof(T), TextRange.From(typeof(T)));
+            TypeTerm.From(typeof(T), TextRange(typeof(T)));
         public static ITerm Type(Type runtimeType) =>
-            TypeTerm.From(runtimeType, TextRange.From(runtimeType));
+            TypeTerm.From(runtimeType, TextRange(runtimeType));
 
         public static MethodTerm Method(MethodBase runtimeMethod) =>
-            MethodTerm.From(runtimeMethod, TextRange.From(runtimeMethod));
+            MethodTerm.From(runtimeMethod, TextRange(runtimeMethod));
+
+        public static PropertyTerm Property(PropertyInfo runtimeProperty) =>
+            PropertyTerm.From(runtimeProperty, TextRange(runtimeProperty));
 
         public static ConstantTerm Constant(object value) =>
-            ConstantTerm.From(value, TextRange.Unknown);
+            ConstantTerm.From(value, Favalet.Ranges.TextRange.Unknown);
     }
 }
