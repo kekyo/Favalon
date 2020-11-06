@@ -96,7 +96,8 @@ namespace Favalet.Lexers
                 context.Append(input);
                 return LexRunnerResult.Create(OperatorRunner.Instance, token0);
             }
-            else if (char.IsDigit(input))
+            else if (char.IsDigit(input) ||
+                     (input == '.') || (input == ',')) // TODO: test
             {
                 context.Append(input);
                 return LexRunnerResult.Empty(this);
