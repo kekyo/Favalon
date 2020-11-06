@@ -49,14 +49,14 @@ namespace Favalet.Inferring
         [Test]
         public void OverloadingExactMatch1()
         {
-            var environment = CLREnvironments();
+            var environments = CLREnvironments();
             
             // a = 123
             // a = 123.456
             // a = x -> x
-            environment.MutableBind("a", Constant(123));
-            environment.MutableBind("a", Constant(123.456));
-            environment.MutableBind("a",
+            environments.MutableBind("a", Constant(123));
+            environments.MutableBind("a", Constant(123.456));
+            environments.MutableBind("a",
                 Lambda(
                     "x",
                     Variable("x")));
@@ -65,7 +65,7 @@ namespace Favalet.Inferring
             var expression =
                 Variable("a", Type<int>());
 
-            var actual = environment.Infer(expression);
+            var actual = environments.Infer(expression);
 
             // a:int
             var expected =
@@ -77,14 +77,14 @@ namespace Favalet.Inferring
         [Test]
         public void OverloadingExactMatch2()
         {
-            var environment = CLREnvironments();
+            var environments = CLREnvironments();
             
             // a = 123
             // a = 123.456
             // a = x -> x
-            environment.MutableBind("a", Constant(123));
-            environment.MutableBind("a", Constant(123.456));
-            environment.MutableBind("a",
+            environments.MutableBind("a", Constant(123));
+            environments.MutableBind("a", Constant(123.456));
+            environments.MutableBind("a",
                 Lambda(
                     "x",
                     Variable("x")));
@@ -93,7 +93,7 @@ namespace Favalet.Inferring
             var expression =
                 Variable("a", Type<double>());
 
-            var actual = environment.Infer(expression);
+            var actual = environments.Infer(expression);
 
             // a:double
             var expected =
@@ -105,18 +105,18 @@ namespace Favalet.Inferring
         [Test]
         public void OverloadingExactMatch3()
         {
-            var environment = CLREnvironments();
+            var environments = CLREnvironments();
             
             // a = [object]
             // a = 123
-            environment.MutableBind("a", Constant(new object()));
-            environment.MutableBind("a", Constant(123));
+            environments.MutableBind("a", Constant(new object()));
+            environments.MutableBind("a", Constant(123));
 
             // a:int
             var expression =
                 Variable("a", Type<int>());
 
-            var actual = environment.Infer(expression);
+            var actual = environments.Infer(expression);
 
             // a:int
             var expected =
@@ -128,18 +128,18 @@ namespace Favalet.Inferring
         [Test]
         public void OverloadingExactMatch4()
         {
-            var environment = CLREnvironments();
+            var environments = CLREnvironments();
             
             // a = [object]
             // a = 123
-            environment.MutableBind("a", Constant(new object()));
-            environment.MutableBind("a", Constant(123));
+            environments.MutableBind("a", Constant(new object()));
+            environments.MutableBind("a", Constant(123));
 
             // a:object
             var expression =
                 Variable("a", Type<object>());
 
-            var actual = environment.Infer(expression);
+            var actual = environments.Infer(expression);
 
             // a:object
             var expected =
@@ -151,18 +151,18 @@ namespace Favalet.Inferring
         [Test]
         public void OverloadingExactMatch5()
         {
-            var environment = CLREnvironments();
+            var environments = CLREnvironments();
             
             // a = [object]
             // a = 123
-            environment.MutableBind("a", Constant(new object()));
-            environment.MutableBind("a", Constant(123));
+            environments.MutableBind("a", Constant(new object()));
+            environments.MutableBind("a", Constant(123));
 
             // a:IFormattable
             var expression =
                 Variable("a", Type<IFormattable>());
 
-            var actual = environment.Infer(expression);
+            var actual = environments.Infer(expression);
 
             // a:IFormattable
             var expected =
@@ -176,14 +176,14 @@ namespace Favalet.Inferring
         [Test]
         public void OverloadingFunctionExactMatch1()
         {
-            var environment = CLREnvironments();
+            var environments = CLREnvironments();
             
             // a = 123
             // a = 123.456
             // a = x -> x
-            environment.MutableBind("a", Constant(123));
-            environment.MutableBind("a", Constant(123.456));
-            environment.MutableBind("a",
+            environments.MutableBind("a", Constant(123));
+            environments.MutableBind("a", Constant(123.456));
+            environments.MutableBind("a",
                 Lambda(
                     "x",
                     Variable("x")));
@@ -195,7 +195,7 @@ namespace Favalet.Inferring
                         Unspecified(),
                         Unspecified()));
 
-            var actual = environment.Infer(expression);
+            var actual = environments.Infer(expression);
 
             // a:('0 -> '0)
             var provider = PseudoPlaceholderProvider.Create();
@@ -212,14 +212,14 @@ namespace Favalet.Inferring
         [Test]
         public void OverloadingFunctionExactMatch2()
         {
-            var environment = CLREnvironments();
+            var environments = CLREnvironments();
             
             // a = 123
             // a = 123.456
             // a = x -> x
-            environment.MutableBind("a", Constant(123));
-            environment.MutableBind("a", Constant(123.456));
-            environment.MutableBind("a",
+            environments.MutableBind("a", Constant(123));
+            environments.MutableBind("a", Constant(123.456));
+            environments.MutableBind("a",
                 Lambda(
                     "x",
                     Variable("x")));
@@ -231,7 +231,7 @@ namespace Favalet.Inferring
                         Variable("b"),
                         Variable("b")));
 
-            var actual = environment.Infer(expression);
+            var actual = environments.Infer(expression);
 
             // a:('0 -> '0)
             var provider = PseudoPlaceholderProvider.Create();
@@ -250,14 +250,14 @@ namespace Favalet.Inferring
         [Test]
         public void ApplyOverloadingExactMatch1()
         {
-            var environment = CLREnvironments();
+            var environments = CLREnvironments();
             
             // a = 123
             // a = 123.456
             // a = x -> x
-            environment.MutableBind("a", Constant(123));
-            environment.MutableBind("a", Constant(123.456));
-            environment.MutableBind("a",
+            environments.MutableBind("a", Constant(123));
+            environments.MutableBind("a", Constant(123.456));
+            environments.MutableBind("a",
                 Lambda(
                     "x",
                     Variable("x")));
@@ -270,7 +270,7 @@ namespace Favalet.Inferring
                         Variable("x")),
                     Variable("a"));
 
-            var actual = environment.Infer(expression);
+            var actual = environments.Infer(expression);
 
             // (x:int -> x:int) a:int
             var expected =
@@ -286,14 +286,14 @@ namespace Favalet.Inferring
         [Test]
         public void ApplyOverloadingExactMatch2()
         {
-            var environment = CLREnvironments();
+            var environments = CLREnvironments();
             
             // a = 123
             // a = 123.456
             // a = x -> x
-            environment.MutableBind("a", Constant(123));
-            environment.MutableBind("a", Constant(123.456));
-            environment.MutableBind("a",
+            environments.MutableBind("a", Constant(123));
+            environments.MutableBind("a", Constant(123.456));
+            environments.MutableBind("a",
                 Lambda(
                     "x",
                     Variable("x")));
@@ -306,7 +306,7 @@ namespace Favalet.Inferring
                         Variable("x")),
                     Variable("a"));
 
-            var actual = environment.Infer(expression);
+            var actual = environments.Infer(expression);
 
             // (x:double -> x:double) a:double
             var expected =

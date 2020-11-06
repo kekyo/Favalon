@@ -171,8 +171,8 @@ namespace Favalet.Inferring
             // a:bool -> a:bool
             var expected =
                 Lambda(
-                    BoundVariable("a", Variable("bool")),
-                    Variable("a", Variable("bool")));
+                    BoundVariable("a", Type<bool>()),
+                    Variable("a", Type<bool>()));
 
             AssertLogicalEqual(expression, expected, actual);
         }
@@ -186,15 +186,15 @@ namespace Favalet.Inferring
             var expression =
                 Lambda(
                     BoundVariable("a"),
-                    Variable("a", Variable("bool")));
+                    Variable("a", Type<bool>()));
 
             var actual = environment.Infer(expression);
 
             // a:bool -> a:bool
             var expected =
                 Lambda(
-                    BoundVariable("a", Variable("bool")),
-                    Variable("a", Variable("bool")));
+                    BoundVariable("a", Type<bool>()),
+                    Variable("a", Type<bool>()));
 
             AssertLogicalEqual(expression, expected, actual);
         }
@@ -218,11 +218,11 @@ namespace Favalet.Inferring
             // (a:bool -> a:bool):(bool -> bool)
             var expected =
                 Lambda(
-                    BoundVariable("a", Variable("bool")),
-                    Variable("a", Variable("bool")),
+                    BoundVariable("a", Type<bool>()),
+                    Variable("a", Type<bool>()),
                     Function(
-                        Variable("bool"),
-                        Variable("bool")));
+                        Type<bool>(),
+                        Type<bool>()));
 
             AssertLogicalEqual(expression, expected, actual);
         }
@@ -246,11 +246,11 @@ namespace Favalet.Inferring
             // (a:bool -> a:bool):(bool -> bool)
             var expected =
                 Lambda(
-                    BoundVariable("a", Variable("bool")),
-                    Variable("a", Variable("bool")),
+                    BoundVariable("a", Type<bool>()),
+                    Variable("a", Type<bool>()),
                     Function(
-                        Variable("bool"),
-                        Variable("bool")));
+                        Type<bool>(),
+                        Type<bool>()));
 
             AssertLogicalEqual(expression, expected, actual);
         }

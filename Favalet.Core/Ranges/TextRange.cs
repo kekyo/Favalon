@@ -18,10 +18,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using System;
-using System.ComponentModel;
 using System.Diagnostics;
-using System.IO;
-using System.Reflection;
 
 namespace Favalet.Ranges
 {
@@ -124,15 +121,6 @@ namespace Favalet.Ranges
             Create(new Uri(position.uri, UriKind.RelativeOrAbsolute), TextPosition.Create(position.line, position.column));
         public static implicit operator TextRange((string uri, int lineFirst, int columnFirst, int lineLast, int columnLast) range) =>
             Create(new Uri(range.uri, UriKind.RelativeOrAbsolute), TextPosition.Create(range.lineFirst, range.columnFirst), TextPosition.Create(range.lineLast, range.columnLast));
-#endif
-
-        public static TextRange From(Assembly assembly) =>
-            Create(new Uri(assembly.GetName().Name, UriKind.RelativeOrAbsolute), TextPosition.Zero);
-        public static TextRange From(MemberInfo member) =>
-            From(member.Module.Assembly);
-#if NETSTANDARD1_1
-        public static TextRange From(Type type) =>
-            From(type.GetTypeInfo().Assembly);
 #endif
     }
 }

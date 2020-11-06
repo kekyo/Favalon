@@ -100,27 +100,13 @@ namespace Favalet.Contexts
     }
 
     internal abstract class FixupContext :
-        IFixupContext, IUnsafePlaceholderResolver
+        IUnsafePlaceholderResolver
     {
         [DebuggerStepThrough]
         protected FixupContext(ITypeCalculator typeCalculator) =>
             this.TypeCalculator = typeCalculator;
 
         public ITypeCalculator TypeCalculator { get; }
-
-        [DebuggerStepThrough]
-        public IExpression Fixup(IExpression expression) =>
-            expression is Expression expr ? expr.InternalFixup(this) : expression;
-
-        [DebuggerStepThrough]
-        public IExpression FixupHigherOrder(IExpression higherOrder)
-        {
-            var fixedup = higherOrder is Expression expr ?
-                expr.InternalFixup(this) :
-                higherOrder;
-
-            return this.TypeCalculator.Compute(fixedup);
-        }
 
         public abstract IExpression? Resolve(IPlaceholderTerm placeholder);
 
@@ -133,7 +119,7 @@ namespace Favalet.Contexts
     }
 
     internal sealed class ReduceContext :
-        FixupContext, IInferContext, IReduceContext, ITopology
+        FixupContext, IInferContext, IFixupContext, IReduceContext, ITopology
     {
         private readonly Environments rootScope;
         private readonly IScopeContext parentScope;
@@ -206,6 +192,11 @@ namespace Favalet.Contexts
         [DebuggerStepThrough]
         public IExpression Infer(IExpression expression) =>
             expression is Expression expr ? expr.InternalInfer(this) : expression;
+
+        [DebuggerStepThrough]
+        public IExpression Fixup(IExpression expression) =>
+            expression is Expression expr ? expr.InternalFixup(this) : expression;
+        
         [DebuggerStepThrough]
         public IExpression Reduce(IExpression expression) =>
             expression is Expression expr ? expr.InternalReduce(this) : expression;
@@ -239,6 +230,18 @@ namespace Favalet.Contexts
             IExpression toHigherOrder,
             bool bidirectional = false) =>
             this.unifier.Unify(fromHigherOrder, toHigherOrder, bidirectional);
+        
+        [DebuggerStepThrough]
+        public IExpression FixupHigherOrder(IExpression higherOrder)
+        {
+            var fixedup = higherOrder is Expression expr ?
+                expr.InternalFixup(this) :
+                higherOrder;
+            var calculated = this.TypeCalculator.Compute(fixedup);
+            
+            // Reduce higher order.
+            return this.Reduce(calculated);
+        }
 
         [DebuggerStepThrough]
         public override IExpression? Resolve(IPlaceholderTerm placeholder) =>

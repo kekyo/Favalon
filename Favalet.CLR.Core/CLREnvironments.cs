@@ -35,6 +35,40 @@ namespace Favalet
             base(CLRTypeCalculator.Instance, saveLastTopology)
         { }
 
+        private void MutableBindDefaults()
+        {
+            // Bind default assemblies.
+            foreach (var assembly in new[]
+            {
+#if NET40 || NET45
+                typeof(object), typeof(Uri), typeof(Enumerable)
+#else
+                typeof(object)
+#endif
+            }.Select(type => type.GetAssembly()))
+            {
+                this.MutableBindMembers(assembly);
+            }
+        }
+
+        private void MutableBindReadableNames()
+        {
+            // Bind readable type names.
+            foreach (var entry in SharpSymbols.ReadableTypeNames)
+            {
+                foreach (var variable in this.LookupVariables(entry.Key.GetFullName()))
+                {
+                    // Make alias. (int --> System.Int32)
+                    this.MutableBind(
+                        BoundVariableTerm.Create(
+                            entry.Value,
+                            variable.SymbolHigherOrder,
+                            variable.Expression.Range),
+                        variable.Expression);
+                }
+            }
+        }
+
         [DebuggerStepThrough]
         public new static CLREnvironments Create(
 #if DEBUG
@@ -45,44 +79,53 @@ namespace Favalet
         )
         {
             var environments = new CLREnvironments(saveLastTopology);
-
-            var assembly = typeof(object).GetAssembly();
-            environments.MutableBindMembers(assembly);
-
+            environments.MutableBindDefaults();
+            environments.MutableBindReadableNames();
             return environments;
         }
     }
 
     public static class CLREnvironmentsExtension
     {
-        private static void MutableBindMember(IEnvironments environments, PropertyInfo property, TextRange range)
+        private static PropertyTerm MutableBindMember(IEnvironments environments, PropertyInfo property, TextRange range)
         {
             var propertyTerm = PropertyTerm.From(property, range);
             environments.MutableBind(
-                BoundVariableTerm.Create(property.GetReadableName(), propertyTerm.HigherOrder, range),
+                BoundVariableTerm.Create(property.GetFullName(), propertyTerm.HigherOrder, range),
                 propertyTerm);
+            return propertyTerm;
         }
         
-        public static void MutableBindMember(this IEnvironments environments, PropertyInfo property) =>
-            MutableBindMember(environments, property, TextRange.From(property));
+        public static PropertyTerm MutableBindMember(this IEnvironments environments, PropertyInfo property) =>
+            MutableBindMember(environments, property, CLRGenerator.TextRange(property));
 
-        private static void MutableBindMember(IEnvironments environments, MethodInfo method, TextRange range)
+        private static MethodTerm MutableBindMember(IEnvironments environments, MethodInfo method, TextRange range)
         {
             var methodTerm = MethodTerm.From(method, range);
             environments.MutableBind(
-                BoundVariableTerm.Create(method.GetReadableName(), methodTerm.HigherOrder, range),
+                BoundVariableTerm.Create(method.GetFullName(), methodTerm.HigherOrder, range),
                 methodTerm);
+            return methodTerm;
         }
         
-        public static void MutableBindMember(this IEnvironments environments, MethodInfo method) =>
-            MutableBindMember(environments, method, TextRange.From(method));
+        public static MethodTerm MutableBindMember(this IEnvironments environments, MethodInfo method) =>
+            MutableBindMember(environments, method, CLRGenerator.TextRange(method));
 
-        private static void MutableBindMembers(IEnvironments environments, Type type, TextRange range)
+        private static ITerm MutableBindMember(IEnvironments environments, Type type, TextRange range)
         {
             var typeTerm = TypeTerm.From(type, range);
             environments.MutableBind(
-                BoundVariableTerm.Create(type.GetReadableName(), typeTerm.HigherOrder, range),
+                BoundVariableTerm.Create(type.GetFullName(), typeTerm.HigherOrder, range),
                 typeTerm);
+            return typeTerm;
+        }
+
+        public static ITerm MutableBindMember(this IEnvironments environments, Type type) =>
+            MutableBindMember(environments, type, CLRGenerator.TextRange(type));
+
+        private static ITerm MutableBindMembers(IEnvironments environments, Type type, TextRange range)
+        {
+            var typeTerm = MutableBindMember(environments, type, range);
 
             var properties = type.GetProperties().
                 Where(property =>
@@ -105,14 +148,16 @@ namespace Favalet
             {
                 MutableBindMember(environments, method, range);
             }
+
+            return typeTerm;
         }
 
-        public static void MutableBindMembers(this IEnvironments environments, Type type) =>
-            MutableBindMembers(environments, type, TextRange.From(type));
+        public static ITerm MutableBindMembers(this IEnvironments environments, Type type) =>
+            MutableBindMembers(environments, type, CLRGenerator.TextRange(type));
 
         public static void MutableBindMembers(this IEnvironments environments, Assembly assembly)
         {
-            var range = TextRange.From(assembly);
+            var range = CLRGenerator.TextRange(assembly);
             foreach (var type in assembly.GetTypes().
                 Where(type => type.IsPublic() && !type.IsNestedPublic() && !type.IsGenericType()))
             {

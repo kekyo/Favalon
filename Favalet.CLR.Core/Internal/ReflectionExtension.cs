@@ -28,27 +28,6 @@ namespace Favalet.Internal
     [DebuggerStepThrough]
     internal static class ReflectionExtension
     {
-        private static readonly Dictionary<Type, string> readableNames =
-            new Dictionary<Type, string>
-            {
-                { typeof(void), "void" },
-                { typeof(bool), "bool" },
-                { typeof(byte), "byte" },
-                { typeof(sbyte), "sbyte" },
-                { typeof(short), "short" },
-                { typeof(ushort), "ushort" },
-                { typeof(int), "int" },
-                { typeof(uint), "uint" },
-                { typeof(long), "long" },
-                { typeof(ulong), "ulong" },
-                { typeof(float), "float" },
-                { typeof(double), "double" },
-                { typeof(decimal), "decimal" },
-                { typeof(char), "char" },
-                { typeof(string), "string" },
-                { typeof(object), "object" },
-            };
-
 #if NETSTANDARD1_1
         public static Assembly GetAssembly(this Type type) =>
             type.GetTypeInfo().Assembly;
@@ -90,12 +69,36 @@ namespace Favalet.Internal
             type.IsGenericType;
 #endif
 
+        public static string GetFullName(this Type type) =>
+            $"{type.Namespace}.{type.Name}";
+
+        public static string GetFullName(this MemberInfo member) =>
+#if NETSTANDARD1_1
+            member is TypeInfo typeInfo ?
+                GetFullName(typeInfo.AsType()) :
+#else
+            member is Type type ?
+                GetFullName(type) :
+#endif
+                member.DeclaringType is Type declaringType ?
+                    $"{GetFullName(declaringType)}.{member.Name}" :
+                    member.Name;
+
         public static string GetReadableName(this Type type) =>
-            readableNames.TryGetValue(type, out var name) ?
-                name! :
-                type.FullName!;
+            SharpSymbols.ReadableTypeNames.TryGetValue(type, out var name) ?
+                name :
+                GetFullName(type);
 
         public static string GetReadableName(this MemberInfo member) =>
-            $"{member.DeclaringType!.GetReadableName()}.{member.Name}";
+#if NETSTANDARD1_1
+            member is TypeInfo typeInfo ?
+                GetReadableName(typeInfo.AsType()) :
+#else
+            member is Type type ?
+                GetReadableName(type) :
+#endif
+                member.DeclaringType is Type declaringType ?
+                    $"{GetReadableName(declaringType)}.{member.Name}" :
+                    member.Name;
     }
 }
