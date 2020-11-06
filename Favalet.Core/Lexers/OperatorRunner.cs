@@ -60,7 +60,8 @@ namespace Favalet.Lexers
                 var token0 = InternalFinish(context, true);
                 return LexRunnerResult.Create(
                     WaitingRunner.Instance,
-                    token0);
+                    token0,
+                    DelimiterHintToken.Instance);
             }
             else if (char.IsWhiteSpace(input))
             {

@@ -29,7 +29,7 @@ namespace Favalet
     public sealed class ParserTest
     {
         private static IExpression[] Parse(params Token[] tokens) =>
-            CLRParser.Instance.Parse(tokens).ToEnumerable().ToArray();
+            CLRParser.Create().Parse(tokens).ToEnumerable().ToArray();
 
         [Test]
         public void EnumerableIdentityToken()

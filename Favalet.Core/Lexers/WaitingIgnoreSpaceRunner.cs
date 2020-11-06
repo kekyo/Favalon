@@ -42,7 +42,8 @@ namespace Favalet.Lexers
                 var range0 = context.GetRangeAndClear();
                 return LexRunnerResult.Create(
                     this,
-                    WhiteSpaceToken.Create(range0));
+                    WhiteSpaceToken.Create(range0),
+                    DelimiterHintToken.Instance);
             }
             else if (char.IsWhiteSpace(input))
             {

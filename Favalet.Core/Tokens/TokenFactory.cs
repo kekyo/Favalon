@@ -88,6 +88,9 @@ namespace Favalet.Tokens
         public static IEnumerable<char> OperatorChars =>
             TokenUtilities.operatorChars;
 
+        public static DelimiterHintToken DelimiterHint() =>
+            DelimiterHintToken.Instance;
+
         public static IdentityToken Identity(string identity) =>
             IdentityToken.Create(identity, Favalet.Ranges.TextRange.Unknown);
         public static IdentityToken Identity(string identity, TextRange range) =>

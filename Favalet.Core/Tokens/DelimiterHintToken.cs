@@ -1,4 +1,4 @@
-/////////////////////////////////////////////////////////////////////////////////////////////////
+﻿/////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Favalon - An Interactive Shell Based on a Typed Lambda Calculus.
 // Copyright (c) 2018-2020 Kouji Matsui (@kozy_kekyo, @kekyo2)
@@ -17,19 +17,33 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+using System;
 using System.Diagnostics;
-using Favalet.Parsers;
+using Favalet.Ranges;
 
-namespace Favalet
+namespace Favalet.Tokens
 {
-    public sealed class CLRParser : Parser
+    [DebuggerStepThrough]
+    public sealed class DelimiterHintToken :
+        Token, IEquatable<DelimiterHintToken?>
     {
-        [DebuggerStepThrough]
-        private CLRParser() :
-            base(CLRParseRunnerFactory.Instance)
+        private DelimiterHintToken() :
+            base(Ranges.TextRange.Unknown)
         { }
-        
-        public new static CLRParser Create() =>
-            new CLRParser();
+
+        public override int GetHashCode() =>
+            0;
+
+        public bool Equals(DelimiterHintToken? other) =>
+            other != null;
+
+        public override bool Equals(object obj) =>
+            this.Equals(obj as DelimiterHintToken);
+
+        public override string ToString() =>
+            "#DH";
+
+        public static readonly DelimiterHintToken Instance =
+            new DelimiterHintToken();
     }
 }

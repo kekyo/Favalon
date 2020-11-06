@@ -27,9 +27,7 @@ namespace Favalet.Ranges
     public readonly struct TextPosition :
         IEquatable<TextPosition>, IComparable<TextPosition>, IComparable
     {
-        //public static readonly TextPosition Unknown = new TextPosition(-1, -1);
         public static readonly TextPosition Zero = new TextPosition(0, 0);
-        // public static readonly TextPosition MaxValue = new TextPosition(int.MaxValue, int.MaxValue);
 
         public readonly int Line;
         public readonly int Column;

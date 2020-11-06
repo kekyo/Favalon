@@ -17,19 +17,21 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+using System;
 using System.Diagnostics;
-using Favalet.Parsers;
+using System.Threading;
 
-namespace Favalet
+namespace Favalet.Reactive.Disposables
 {
-    public sealed class CLRParser : Parser
+    [DebuggerStepThrough]
+    public sealed class CancellationDisposable : IDisposable
     {
-        [DebuggerStepThrough]
-        private CLRParser() :
-            base(CLRParseRunnerFactory.Instance)
-        { }
-        
-        public new static CLRParser Create() =>
-            new CLRParser();
+        private readonly CancellationTokenSource source;
+
+        public CancellationDisposable(CancellationTokenSource source) =>
+            this.source = source;
+
+        public void Dispose() =>
+            this.source.Cancel();
     }
 }
