@@ -52,7 +52,7 @@ namespace Favalet.Reducing
         [Test]
         public void NonReduceSingleAnd()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // A && B
             var expression =
@@ -74,7 +74,7 @@ namespace Favalet.Reducing
         [Test]
         public void ReduceSingleAnd()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // A && B
             var expression =
@@ -97,7 +97,7 @@ namespace Favalet.Reducing
         [Test]
         public void NonReduceDuplicatedAnd()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // (A && A) && A
             var expression =
@@ -123,7 +123,7 @@ namespace Favalet.Reducing
         [Test]
         public void ReduceDuplicatedAnd()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // (A && A) && A
             var expression =
@@ -146,7 +146,7 @@ namespace Favalet.Reducing
         [Test]
         public void ReduceMultipleDuplicatedAnd()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // (A && A) && (A && A)
             var expression =
@@ -173,7 +173,7 @@ namespace Favalet.Reducing
         [Test]
         public void NonReduceSingleOr()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // A || B
             var expression =
@@ -195,7 +195,7 @@ namespace Favalet.Reducing
         [Test]
         public void ReduceSingleOr()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // A || B
             var expression =
@@ -218,7 +218,7 @@ namespace Favalet.Reducing
         [Test]
         public void NonReduceDuplicatedOr()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // (A || A) || A
             var expression =
@@ -244,7 +244,7 @@ namespace Favalet.Reducing
         [Test]
         public void ReduceDuplicatedOr()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // (A || A) || A
             var expression =
@@ -267,7 +267,7 @@ namespace Favalet.Reducing
         [Test]
         public void ReduceMultipleDuplicatedOr()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // (A || A) || (A || A)
             var expression =
@@ -294,7 +294,7 @@ namespace Favalet.Reducing
         [Test]
         public void ReduceDuplicatedCombinedAndOr()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // (A || A) && (A || A)
             var expression =
@@ -319,7 +319,7 @@ namespace Favalet.Reducing
         [Test]
         public void ReduceDuplicatedCombinedOrAnd()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // (A && A) || (A && A)
             var expression =
@@ -344,7 +344,7 @@ namespace Favalet.Reducing
         [Test]
         public void ReducePartialCombinedAndOr()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // (A || A) && (B || B)
             var expression =
@@ -371,7 +371,7 @@ namespace Favalet.Reducing
         [Test]
         public void ReducePartialCombinedOrAnd()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // (A && A) || (B && B)
             var expression =
@@ -398,7 +398,7 @@ namespace Favalet.Reducing
         [Test]
         public void ReducePartialDifferenceAndOr()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // (A || B) && (A || B)
             var expression =
@@ -425,7 +425,7 @@ namespace Favalet.Reducing
         [Test]
         public void ReducePartialDifferenceOrAnd()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // (A && B) || (A && B)
             var expression =
@@ -452,7 +452,7 @@ namespace Favalet.Reducing
         [Test]
         public void ReducePartialPartiallyAndOr()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // Absorption
 
@@ -477,7 +477,7 @@ namespace Favalet.Reducing
         [Test]
         public void ReducePartialPartiallyOrAnd()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // Absorption
 
@@ -502,7 +502,7 @@ namespace Favalet.Reducing
         [Test]
         public void ReducePartialAndOrTensor()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // (A || B) && (B || A)
             var expression =
@@ -529,7 +529,7 @@ namespace Favalet.Reducing
         [Test]
         public void ReducePartialOrAndTensor()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // (A && B) || (B && A)
             var expression =
@@ -555,7 +555,7 @@ namespace Favalet.Reducing
         [Test]
         public void ReducePartialAndOrMultipleTensorLogical1()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // (A || (B || C)) && (B || (C || A))
             var expression =
@@ -588,7 +588,7 @@ namespace Favalet.Reducing
         [Test]
         public void ReducePartialOrAndMultipleTensorLogical1()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // (A && (B && C)) || (B && (C && A))
             var expression =
@@ -621,7 +621,7 @@ namespace Favalet.Reducing
         [Test]
         public void ReducePartialAndOrMultipleTensorLogical2()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // (A || (B || C)) && ((C || A) || B)
             var expression =
@@ -654,7 +654,7 @@ namespace Favalet.Reducing
         [Test]
         public void ReducePartialOrAndMultipleTensorLogical2()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // (A && (B && C)) || ((C && A) && B)
             var expression =
@@ -687,7 +687,7 @@ namespace Favalet.Reducing
         [Test]
         public void ReducePartialAndOrMultipleTensorLogical3()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // ((A || B) || C) && (B || (C || A))
             var expression =
@@ -720,7 +720,7 @@ namespace Favalet.Reducing
         [Test]
         public void ReducePartialOrAndMultipleTensorLogical3()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // ((A && B) && C) || (B && (C && A))
             var expression =
@@ -753,7 +753,7 @@ namespace Favalet.Reducing
         [Test]
         public void ReducePartialAndOrComplex()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // Absorption
 
@@ -784,7 +784,7 @@ namespace Favalet.Reducing
         [Test]
         public void ReducePartialOrAndComplex()
         {
-            var environment = Environment();
+            var environment = Environments();
 
             // Absorption
 

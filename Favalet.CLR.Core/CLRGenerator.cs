@@ -30,14 +30,14 @@ namespace Favalet
     [DebuggerStepThrough]
     public static class CLRGenerator
     {
-        public static Environments CLREnvironment(
+        public static CLREnvironments CLREnvironments(
 #if DEBUG
             bool saveLastTopology = true
 #else
             bool saveLastTopology = false
 #endif
             ) =>
-            Favalet.Environments.Create(CLRTypeCalculator.Instance, saveLastTopology);
+            Favalet.CLREnvironments.Create(saveLastTopology);
 
         public static ITerm Type<T>() =>
             TypeTerm.From(typeof(T), TextRange.From(typeof(T)));
@@ -46,6 +46,9 @@ namespace Favalet
 
         public static MethodTerm Method(MethodBase runtimeMethod) =>
             MethodTerm.From(runtimeMethod, TextRange.From(runtimeMethod));
+
+        public static PropertyTerm Property(PropertyInfo runtimeProperty) =>
+            PropertyTerm.From(runtimeProperty, TextRange.From(runtimeProperty));
 
         public static ConstantTerm Constant(object value) =>
             ConstantTerm.From(value, TextRange.Unknown);

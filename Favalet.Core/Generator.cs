@@ -31,8 +31,8 @@ namespace Favalet
     [DebuggerStepThrough]
     public static class Generator
     {
-        public static Environments Environment() =>
-            Favalet.Environments.Create(TypeCalculator.Instance);
+        public static Environments Environments() =>
+            Favalet.Environments.Create();
 
         internal static readonly VariableTerm kind =
             VariableTerm.Create("*", FourthTerm.Instance, TextRange.Internal);

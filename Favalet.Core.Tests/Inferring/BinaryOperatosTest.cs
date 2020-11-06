@@ -58,7 +58,7 @@ namespace Favalet.Inferring
         public void BinaryWithoutAnnotation1(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // true && false
             var expression =
@@ -85,7 +85,7 @@ namespace Favalet.Inferring
         public void BinaryWithoutAnnotation2(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // (true && false) && true
             var expression =
@@ -118,7 +118,7 @@ namespace Favalet.Inferring
         public void BinaryWithAnnotation11(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // (true && false):bool
             var expression =
@@ -143,7 +143,7 @@ namespace Favalet.Inferring
         public void BinaryWithAnnotation12(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // true:bool && false
             var expression =
@@ -168,7 +168,7 @@ namespace Favalet.Inferring
         public void BinaryWithAnnotation13(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // true && false:bool
             var expression =
@@ -193,7 +193,7 @@ namespace Favalet.Inferring
         public void BinaryWithAnnotation14(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // true:bool && false:bool
             var expression =
@@ -218,7 +218,7 @@ namespace Favalet.Inferring
         public void BinaryWithAnnotation15(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // (true:bool && false:bool):bool
             var expression =
@@ -245,7 +245,7 @@ namespace Favalet.Inferring
         public void BinaryWithAnnotation21(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // (true && (false && true)):bool
             var expression =
@@ -276,7 +276,7 @@ namespace Favalet.Inferring
         public void BinaryWithAnnotation22(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // true:bool && (false && true)
             var expression =
@@ -307,7 +307,7 @@ namespace Favalet.Inferring
         public void BinaryWithAnnotation23(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // true && (false:bool && true)
             var expression =
@@ -338,7 +338,7 @@ namespace Favalet.Inferring
         public void BinaryWithAnnotation24(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // true && (false && true:bool)
             var expression =
@@ -369,7 +369,7 @@ namespace Favalet.Inferring
         public void BinaryWithAnnotation25(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // true && (false && true):bool
             var expression =
@@ -400,7 +400,7 @@ namespace Favalet.Inferring
         public void BinaryWithAnnotation26(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // true:bool && (false:bool && true)
             var expression =
@@ -431,7 +431,7 @@ namespace Favalet.Inferring
         public void BinaryWithAnnotation27(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // true && (false:bool && true:bool)
             var expression =
@@ -462,7 +462,7 @@ namespace Favalet.Inferring
         public void BinaryWithAnnotation28(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // true:bool && (false && true:bool)
             var expression =
@@ -493,7 +493,7 @@ namespace Favalet.Inferring
         public void BinaryWithAnnotation29(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // true:bool && (false:bool && true:bool)
             var expression =
@@ -524,7 +524,7 @@ namespace Favalet.Inferring
         public void BinaryWithAnnotation30(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // true:bool && (false && true):bool
             var expression =
@@ -555,7 +555,7 @@ namespace Favalet.Inferring
         public void BinaryWithAnnotation31(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // true:bool && (false:bool && true):bool
             var expression =
@@ -586,7 +586,7 @@ namespace Favalet.Inferring
         public void BinaryWithAnnotation32(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // true:bool && (false && true:bool):bool
             var expression =
@@ -617,7 +617,7 @@ namespace Favalet.Inferring
         public void BinaryWithAnnotation33(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // true:bool && (false:bool && true:bool):bool
             var expression =
@@ -648,7 +648,7 @@ namespace Favalet.Inferring
         public void BinaryWithAnnotation34(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // (true:bool && (false:bool && true:bool):bool):bool
             var expression =

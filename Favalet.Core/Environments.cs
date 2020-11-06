@@ -37,7 +37,7 @@ namespace Favalet
         void MutableBind(IBoundVariableTerm symbol, IExpression expression);
     }
 
-    public sealed class Environments :
+    public class Environments :
         ScopeContext, IEnvironments, IPlaceholderProvider
     {
         private ReduceContext? lastContext;
@@ -45,7 +45,7 @@ namespace Favalet
         private bool saveLastTopology;
 
         [DebuggerStepThrough]
-        private Environments(ITypeCalculator typeCalculator, bool saveLastTopology) :
+        protected Environments(ITypeCalculator typeCalculator, bool saveLastTopology) :
             base(null, typeCalculator)
         {
             this.saveLastTopology = saveLastTopology;
@@ -160,17 +160,16 @@ namespace Favalet
 
         [DebuggerStepThrough]
         public static Environments Create(
-            ITypeCalculator typeCalculator,
 #if DEBUG
             bool saveLastTopology = true
 #else
             bool saveLastTopology = false
 #endif
             ) =>
-            new Environments(typeCalculator, saveLastTopology);
+            new Environments(Favalet.TypeCalculator.Instance, saveLastTopology);
     }
 
-    public static class EnvironmentExtension
+    public static class EnvironmentsExtension
     {
         [DebuggerStepThrough]
         public static void MutableBind(

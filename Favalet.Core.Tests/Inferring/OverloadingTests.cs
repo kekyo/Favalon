@@ -49,7 +49,7 @@ namespace Favalet.Inferring
         [Test]
         public void OverloadingExactMatch1()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
             
             // a = 123
             // a = 123.456
@@ -77,7 +77,7 @@ namespace Favalet.Inferring
         [Test]
         public void OverloadingExactMatch2()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
             
             // a = 123
             // a = 123.456
@@ -105,7 +105,7 @@ namespace Favalet.Inferring
         [Test]
         public void OverloadingExactMatch3()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
             
             // a = [object]
             // a = 123
@@ -128,7 +128,7 @@ namespace Favalet.Inferring
         [Test]
         public void OverloadingExactMatch4()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
             
             // a = [object]
             // a = 123
@@ -151,7 +151,7 @@ namespace Favalet.Inferring
         [Test]
         public void OverloadingExactMatch5()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
             
             // a = [object]
             // a = 123
@@ -176,7 +176,7 @@ namespace Favalet.Inferring
         [Test]
         public void OverloadingFunctionExactMatch1()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
             
             // a = 123
             // a = 123.456
@@ -212,7 +212,7 @@ namespace Favalet.Inferring
         [Test]
         public void OverloadingFunctionExactMatch2()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
             
             // a = 123
             // a = 123.456
@@ -250,7 +250,7 @@ namespace Favalet.Inferring
         [Test]
         public void ApplyOverloadingExactMatch1()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
             
             // a = 123
             // a = 123.456
@@ -286,7 +286,7 @@ namespace Favalet.Inferring
         [Test]
         public void ApplyOverloadingExactMatch2()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
             
             // a = 123
             // a = 123.456

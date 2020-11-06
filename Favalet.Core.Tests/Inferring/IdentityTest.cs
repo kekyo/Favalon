@@ -49,7 +49,7 @@ namespace Favalet.Inferring
         [Test]
         public void FromVariable1()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             environment.MutableBind(
                 "true",
@@ -71,7 +71,7 @@ namespace Favalet.Inferring
         [Test]
         public void FromVariable2()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             environment.MutableBind(
                 "true",
@@ -103,7 +103,7 @@ namespace Favalet.Inferring
         [Test]
         public void BoundVariableFixedRelation1()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // (a -> a):(object -> _)
             var expression =
@@ -131,7 +131,7 @@ namespace Favalet.Inferring
         [Test]
         public void BoundVariableFixedRelation3()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // a:object -> a
             var expression =
@@ -158,7 +158,7 @@ namespace Favalet.Inferring
         [Test]
         public void TypeVariable1()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // a:bool -> a
             var expression =
@@ -180,7 +180,7 @@ namespace Favalet.Inferring
         [Test]
         public void TypeVariable2()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // a -> a:bool
             var expression =
@@ -202,7 +202,7 @@ namespace Favalet.Inferring
         [Test]
         public void TypeVariable3()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // (a -> a):(bool -> _)
             var expression =
@@ -230,7 +230,7 @@ namespace Favalet.Inferring
         [Test]
         public void TypeVariable4()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // (a -> a):(_ -> bool)
             var expression =

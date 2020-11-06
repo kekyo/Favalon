@@ -48,7 +48,7 @@ namespace Favalet.Inferring
         [Test]
         public void ApplyWithoutAnnotation()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // a b
             var expression =
@@ -74,7 +74,7 @@ namespace Favalet.Inferring
         [Test]
         public void ApplyNestedFunctionWithoutAnnotation1()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // a a
             var expression =
@@ -100,7 +100,7 @@ namespace Favalet.Inferring
         //[Test]
         public void ApplyNestedFunctionWithoutAnnotation2()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // a = x -> x
             environment.MutableBind(
@@ -140,7 +140,7 @@ namespace Favalet.Inferring
         [Test]
         public void ApplyWithAnnotation1()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // a:(bool -> _) b
             var expression =
@@ -169,7 +169,7 @@ namespace Favalet.Inferring
         [Test]
         public void ApplyWithAnnotation2()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // a:(_ -> bool) b
             var expression =
@@ -198,7 +198,7 @@ namespace Favalet.Inferring
         [Test]
         public void ApplyWithAnnotation3()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // a:(int -> bool) b
             var expression =
@@ -227,7 +227,7 @@ namespace Favalet.Inferring
         [Test]
         public void ApplyWithAnnotation4()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // a b:bool
             var expression =
@@ -253,7 +253,7 @@ namespace Favalet.Inferring
         [Test]
         public void ApplyWithAnnotation5()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // (a b):bool
             var expression =
@@ -282,7 +282,7 @@ namespace Favalet.Inferring
         [Test]
         public void ApplyWithAnnotation6()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // (a b:bool):int
             var expression =
@@ -309,7 +309,7 @@ namespace Favalet.Inferring
         [Test]
         public void ApplyWithAnnotation7()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // a:(_ -> int) b:bool
             var expression =
@@ -338,7 +338,7 @@ namespace Favalet.Inferring
         [Test]
         public void ApplyWithAnnotation8()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // a:(_ -> int) b:bool
             var expression =
@@ -367,7 +367,7 @@ namespace Favalet.Inferring
         [Test]
         public void ApplyWithAnnotation9()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // (a:(bool -> _) b):int
             var expression =
@@ -397,7 +397,7 @@ namespace Favalet.Inferring
         [Test]
         public void ApplyWithAnnotation10()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // (a:(bool -> int) b:bool):int
             var expression =
@@ -427,7 +427,7 @@ namespace Favalet.Inferring
         [Test]
         public void NestedApplyWithoutAnnotation()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // a b c
             var expression =
@@ -461,7 +461,7 @@ namespace Favalet.Inferring
         [Test]
         public void NestedApplyWithAnnotation1()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // a b c:bool
             var expression =
@@ -494,7 +494,7 @@ namespace Favalet.Inferring
         [Test]
         public void NestedApplyWithAnnotation2()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // a b:bool c
             var expression =
@@ -527,7 +527,7 @@ namespace Favalet.Inferring
         [Test]
         public void NestedApplyWithAnnotation3()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // a:(bool -> _) b c
             var expression =
@@ -561,7 +561,7 @@ namespace Favalet.Inferring
         //[Test]
         public void ApplyYCombinator1()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // Y = f -> f (Y f)
             environment.MutableBind(
@@ -589,7 +589,7 @@ namespace Favalet.Inferring
         //[Test]
         public void ApplyYCombinator2()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // Y = f -> (x -> f (x x)) (x -> f (x x))
             var expression =
@@ -624,7 +624,7 @@ namespace Favalet.Inferring
         //[Test]
         public void ApplyZCombinator()
         {
-            var environment = CLREnvironment();
+            var environment = CLREnvironments();
 
             // Z = f -> (x -> f (y -> x x y)) (x -> f (y -> x x y))
             var expression =
