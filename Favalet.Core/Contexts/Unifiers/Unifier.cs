@@ -29,7 +29,6 @@ namespace Favalet.Contexts.Unifiers
     [DebuggerDisplay("{View}")]
     internal sealed class Unifier :
         FixupContext,  // Because used by "Simple" property implementation.
-        IUnsafePlaceholderResolver,
         ITopology
     {
         private readonly Topology topology ;

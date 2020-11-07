@@ -21,7 +21,9 @@ using Favalet.Contexts.Unifiers;
 using Favalet.Expressions;
 using Favalet.Expressions.Specialized;
 using Favalet.Internal;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace Favalet.Contexts
 {
@@ -30,47 +32,9 @@ namespace Favalet.Contexts
         IExpression MakeRewritable(IExpression expression);
         IExpression MakeRewritableHigherOrder(IExpression higherOrder);
     }
-    
-    public interface IUnsafePlaceholderResolver
-    {
-        IExpression? UnsafeResolve(IPlaceholderTerm placeholder);
-    }
-
-    public static class UnsafePlaceholderResolverExtension
-    {
-        public static IExpression UnsafeResolveWhile(this IUnsafePlaceholderResolver resolver, IExpression expression)
-        {
-            var current = expression;
-            while (true)
-            {
-                switch (current)
-                {
-                    case IPlaceholderTerm placeholder:
-                        if (resolver.UnsafeResolve(placeholder) is IExpression resolved)
-                        {
-                            current = resolved;
-                            continue;
-                        }
-                        else
-                        {
-                            return current;
-                        }
-                    
-                    case IFunctionExpression(IExpression parameter, IExpression result):
-                        return FunctionExpression.Create(
-                            UnsafeResolveWhile(resolver, parameter),
-                            UnsafeResolveWhile(resolver, result),
-                            current.Range);
-                    
-                    default:
-                        return current;
-                }
-            }
-        }
-    }
 
     public interface IInferContext :
-        IScopeContext, IMakeRewritableContext, IUnsafePlaceholderResolver
+        IScopeContext, IMakeRewritableContext
     {
         IExpression Infer(IExpression expression);
     
@@ -99,8 +63,7 @@ namespace Favalet.Contexts
         IReduceContext Bind(IBoundVariableTerm parameter, IExpression expression);
     }
 
-    internal abstract class FixupContext :
-        IUnsafePlaceholderResolver
+    internal abstract class FixupContext
     {
         [DebuggerStepThrough]
         protected FixupContext(ITypeCalculator typeCalculator) =>
@@ -109,13 +72,6 @@ namespace Favalet.Contexts
         public ITypeCalculator TypeCalculator { get; }
 
         public abstract IExpression? Resolve(IPlaceholderTerm placeholder);
-
-        [DebuggerStepThrough]
-        IExpression? IUnsafePlaceholderResolver.UnsafeResolve(IPlaceholderTerm placeholder) =>
-            this.Resolve(placeholder);
-
-        public virtual VariableInformation[] LookupVariables(string symbol) =>
-            ArrayEx.Empty<VariableInformation>();
     }
 
     internal sealed class ReduceContext :
@@ -124,8 +80,7 @@ namespace Favalet.Contexts
         private readonly Environments rootScope;
         private readonly IScopeContext parentScope;
         private readonly Unifier unifier;
-        private IBoundVariableTerm? boundSymbol;
-        private IExpression? boundExpression;
+        private VariableInformationRegistry? registry;
         private PlaceholderOrderHints orderHint = PlaceholderOrderHints.VariableOrAbove;
 
         [DebuggerStepThrough]
@@ -209,8 +164,8 @@ namespace Favalet.Contexts
                 this,
                 this.unifier);
 
-            newContext.boundSymbol = symbol;
-            newContext.boundExpression = expression;
+            newContext.registry = new VariableInformationRegistry();
+            newContext.registry.Register(symbol, expression, true);
 
             return newContext;
         }
@@ -223,6 +178,17 @@ namespace Favalet.Contexts
         IReduceContext IReduceContext.Bind(
             IBoundVariableTerm symbol, IExpression expression) =>
             this.Bind(symbol, expression);
+
+        public IEnumerable<VariableInformation> LookupVariables(string symbol)
+        {
+            var overrideVariables =
+                this.registry?.Lookup(symbol) ??
+                ArrayEx.Empty<VariableInformation>();
+            return (overrideVariables.Length >= 1) ?
+                overrideVariables :
+                this.parentScope?.LookupVariables(symbol) ??
+                    Enumerable.Empty<VariableInformation>();
+        }
 
         [DebuggerStepThrough]
         public void Unify(
@@ -246,15 +212,6 @@ namespace Favalet.Contexts
         [DebuggerStepThrough]
         public override IExpression? Resolve(IPlaceholderTerm placeholder) =>
             this.unifier.Resolve(placeholder);
-
-        public override VariableInformation[] LookupVariables(string symbol) =>
-            // TODO: improving when identity's higher order acceptable
-            // TODO: what acceptable (narrowing, widening)
-            this.boundSymbol is IBoundVariableTerm p &&
-            boundExpression is IExpression expr &&
-            p.Symbol.Equals(symbol) ?
-                new[] { VariableInformation.Create(symbol, p.HigherOrder, expr) } :
-                parentScope.LookupVariables(symbol);
 
         public string View
         {

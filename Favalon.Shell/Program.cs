@@ -69,6 +69,10 @@ namespace Favalon
                 while (!tr.EndOfStream)
                 {
                     var line = tr.ReadLine();
+                    if (line == null)
+                    {
+                        break;
+                    }
                     yield return line;
                 }
             }
@@ -99,6 +103,9 @@ namespace Favalon
                     var reduced = environments.Reduce(expression);
                     switch (reduced)
                     {
+                        case IVariableTerm("clear"):
+                            console.Clear();
+                            break;
                         case IVariableTerm("exit"):
                             d?.Dispose();
                             break;

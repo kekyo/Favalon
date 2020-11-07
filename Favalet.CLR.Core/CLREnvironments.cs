@@ -38,13 +38,8 @@ namespace Favalet
         private void MutableBindDefaults()
         {
             // Bind default assemblies.
-            foreach (var assembly in new[]
-            {
-#if NET40 || NET45
+            foreach (var assembly in new[] {
                 typeof(object), typeof(Uri), typeof(Enumerable)
-#else
-                typeof(object)
-#endif
             }.Select(type => type.GetAssembly()))
             {
                 this.MutableBindMembers(assembly);

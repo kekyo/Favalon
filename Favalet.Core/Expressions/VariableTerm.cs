@@ -90,7 +90,9 @@ namespace Favalet.Expressions
             }
             
             var higherOrder = context.Infer(this.HigherOrder);
-            var variables = context.LookupVariables(this.Symbol);
+            var variables = context.
+                LookupVariables(this.Symbol).
+                Memoize();
 
             if (variables.Length >= 1)
             {
@@ -195,7 +197,9 @@ namespace Favalet.Expressions
                     var target = bounds[0];
                     if (target is IBoundVariableTerm bound)
                     {
-                        var variables = context.LookupVariables(bound.Symbol);
+                        var variables = context.
+                            LookupVariables(bound.Symbol).
+                            Memoize();
                         if (variables.Length >= 1)
                         {
                             // Nearly overloaded variable.

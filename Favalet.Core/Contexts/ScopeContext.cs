@@ -18,7 +18,9 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using Favalet.Expressions;
+using Favalet.Expressions.Algebraic;
 using Favalet.Expressions.Specialized;
+using Favalet.Ranges;
 using Favalet.Internal;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -26,47 +28,18 @@ using System.Linq;
 
 namespace Favalet.Contexts
 {
-    public readonly struct VariableInformation
-    {
-#if DEBUG
-        public readonly string Symbol;
-#endif
-        public readonly IExpression SymbolHigherOrder;
-        public readonly IExpression Expression;
-
-        private VariableInformation(
-            string symbol, IExpression symbolHigherOrder, IExpression expression)
-        {
-#if DEBUG
-            this.Symbol = symbol;
-#endif
-            this.SymbolHigherOrder = symbolHigherOrder;
-            this.Expression = expression;
-        }
-
-        public override string ToString() =>
-#if DEBUG
-            $"{this.Symbol}:{this.SymbolHigherOrder.GetPrettyString(PrettyStringTypes.Readable)} --> {this.Expression.GetPrettyString(PrettyStringTypes.Readable)}";
-#else
-            $"{this.SymbolHigherOrder.GetPrettyString(PrettyStringTypes.Readable)} --> {this.Expression.GetPrettyString(PrettyStringTypes.Readable)}";
-#endif
-        public static VariableInformation Create(
-            string symbol, IExpression symbolHigherOrder, IExpression expression) =>
-            new VariableInformation(symbol, symbolHigherOrder, expression);
-    }
-
     public interface IScopeContext
     {
         ITypeCalculator TypeCalculator { get; }
 
-        VariableInformation[] LookupVariables(string symbol);
+        IEnumerable<VariableInformation> LookupVariables(string symbol);
     }
 
     public abstract class ScopeContext :
         IScopeContext
     {
         private readonly ScopeContext? parent;
-        private Dictionary<string, List<VariableInformation>>? variables;
+        private VariableInformationRegistry? registry;
 
         [DebuggerStepThrough]
         internal ScopeContext(ScopeContext? parent, ITypeCalculator typeCalculator)
@@ -80,46 +53,19 @@ namespace Favalet.Contexts
         private protected void MutableBind(
             IBoundVariableTerm symbol, IExpression expression, bool checkDuplicate)
         {
-            this.variables ??= new Dictionary<string, List<VariableInformation>>();
-
-            if (!this.variables.TryGetValue(symbol.Symbol, out var list))
-            {
-                list = new List<VariableInformation>();
-                this.variables.Add(symbol.Symbol, list);
-            }
-
-            var vi = VariableInformation.Create(
-                symbol.Symbol,
-                symbol.HigherOrder,
-                expression);
-
-            if (checkDuplicate)
-            {
-                if (!list.Any(entry => entry.Equals(vi)))
-                {
-                    list.Add(vi);
-                }
-            }
-            else
-            {
-                Debug.Assert(!list.Any(entry => entry.Equals(vi)));
-                list.Add(vi);
-            }
+            this.registry ??= new VariableInformationRegistry();
+            this.registry.Register(symbol, expression, checkDuplicate);
         }
 
-        public VariableInformation[] LookupVariables(string symbol)
+        public IEnumerable<VariableInformation> LookupVariables(string symbol)
         {
-            if (this.variables != null &&
-                this.variables.TryGetValue(symbol, out var list))
-            {
-                return list.Memoize();
-            }
-            else
-            {
-                return
-                    this.parent?.LookupVariables(symbol) ??
-                    ArrayEx.Empty<VariableInformation>();
-            }
+            var overrideVariables =
+                this.registry?.Lookup(symbol) ??
+                ArrayEx.Empty<VariableInformation>();
+            return (overrideVariables.Length >= 1) ?
+                overrideVariables :
+                this.parent?.LookupVariables(symbol) ??
+                    Enumerable.Empty<VariableInformation>();
         }
     }
 }
