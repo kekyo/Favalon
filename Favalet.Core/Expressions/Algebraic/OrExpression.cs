@@ -43,11 +43,6 @@ namespace Favalet.Expressions.Algebraic
             IExpression left, IExpression right, IExpression higherOrder, TextRange range) =>
             new OrExpression(left, right, higherOrder, range);
 
-        protected override string GetPrettyString(IPrettyStringContext context) =>
-            context.FinalizePrettyString(
-                this,
-                $"{context.GetPrettyString(this.Left)} || {context.GetPrettyString(this.Right)}");
-
         [DebuggerStepThrough]
         public static OrExpression Create(
             IExpression left, IExpression right, IExpression higherOrder, TextRange range) =>

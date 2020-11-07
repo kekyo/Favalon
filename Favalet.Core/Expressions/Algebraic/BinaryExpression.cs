@@ -168,8 +168,13 @@ namespace Favalet.Expressions.Algebraic
         public override bool Equals(IExpression? other) =>
             other is TBinaryExpression rhs && this.Equals(rhs);
 
+        [DebuggerStepThrough]
         protected sealed override IEnumerable GetXmlValues(IXmlRenderContext context) =>
             new[] { context.GetXml(this.Left), context.GetXml(this.Right) };
+
+        [DebuggerStepThrough]
+        protected sealed override string GetPrettyString(IPrettyStringContext context) =>
+            context.GetPrettyString(FlattenedExpression.FlattenAll(this));
     }
 
     public static class BinaryExpressionExtension

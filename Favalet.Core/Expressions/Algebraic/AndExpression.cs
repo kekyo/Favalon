@@ -43,11 +43,6 @@ namespace Favalet.Expressions.Algebraic
             IExpression left, IExpression right, IExpression higherOrder, TextRange range) =>
             new AndExpression(left, right, higherOrder, range);
 
-        protected override string GetPrettyString(IPrettyStringContext context) =>
-            context.FinalizePrettyString(
-                this,
-                $"{context.GetPrettyString(this.Left)} && {context.GetPrettyString(this.Right)}");
-
         [DebuggerStepThrough]
         public static AndExpression Create(
             IExpression left, IExpression right, IExpression higherOrder, TextRange range) =>
