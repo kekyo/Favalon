@@ -27,9 +27,12 @@ using System.Collections.Generic;
 
 namespace Favalon
 {
-    public static class Program
+    public static class Test
     {
-        private static IEnumerable<string> wc(IEnumerable<string> stdin)
+        public static IEnumerable<string> echo(string str) =>
+            str.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        
+        public static IEnumerable<string> wc(IEnumerable<string> stdin)
         {
             var bc = 0;
             var wc = 0;
@@ -45,6 +48,12 @@ namespace Favalon
             yield return $"{bc},{wc},{lc}";
         }
 
+        public static string dump(IEnumerable<string> stdin) =>
+            string.Join(Environment.NewLine, stdin);
+    }
+    
+    public static class Program
+    {
         public static int Main(string[] args)
         {
             var console = InteractiveConsoleHost.Create();
@@ -57,6 +66,8 @@ namespace Favalon
             var parsed = parser.Parse(tokens);
             
             var environments = CLREnvironments.Create();
+
+            environments.MutableBindMembers(typeof(Test));
             
             IDisposable? d = default;
             d = parsed.Subscribe(Observer.Create<IExpression>(
