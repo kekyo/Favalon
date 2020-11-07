@@ -24,15 +24,21 @@ using Favalet.Reactive;
 using Favalon.Internal;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Favalon
 {
     public static class Test
     {
-        public static IEnumerable<string> echo(string str) =>
-            str.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        [AliasName("echo")]
+        public static IEnumerable<string> Echo(string str)
+        {
+            var split = str.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            return split;
+        }
         
-        public static IEnumerable<string> wc(IEnumerable<string> stdin)
+        [AliasName("wc")]
+        public static IEnumerable<string> WordCount(IEnumerable<string> stdin)
         {
             var bc = 0;
             var wc = 0;
@@ -48,8 +54,25 @@ namespace Favalon
             yield return $"{bc},{wc},{lc}";
         }
 
-        public static string dump(IEnumerable<string> stdin) =>
-            string.Join(Environment.NewLine, stdin);
+        [AliasName("dump")]
+        public static string Dump(IEnumerable<string> stdin)
+        {
+            var joined = string.Join(Environment.NewLine, stdin);
+            return joined;
+        }
+
+        [AliasName("cat")]
+        public static IEnumerable<string> Cat(string fileName)
+        {
+            using (var tr = File.OpenText(fileName))
+            {
+                while (!tr.EndOfStream)
+                {
+                    var line = tr.ReadLine();
+                    yield return line;
+                }
+            }
+        }
     }
     
     public static class Program
@@ -74,13 +97,25 @@ namespace Favalon
                 expression =>
                 {
                     var reduced = environments.Reduce(expression);
-                    if (reduced is VariableTerm("exit"))
+                    switch (reduced)
                     {
-                        d?.Dispose();
-                    }
-                    else
-                    {
-                        Console.WriteLine(reduced.GetPrettyString(PrettyStringTypes.Readable));
+                        case IVariableTerm("exit"):
+                            d?.Dispose();
+                            break;
+                        case IConstantTerm constant
+                            when (constant.Value.GetType().IsPrimitive || constant.Value is string):
+                            Console.WriteLine(constant.Value);
+                            break;
+                        case IConstantTerm constant
+                            when (constant.Value is IEnumerable<string>):
+                            foreach (var line in (IEnumerable<string>)constant.Value)
+                            {
+                                Console.WriteLine(line);
+                            }
+                            break;
+                        default:
+                            Console.WriteLine(reduced.GetPrettyString(PrettyStringTypes.Readable));
+                            break;
                     }
                 },
                 ex => { },

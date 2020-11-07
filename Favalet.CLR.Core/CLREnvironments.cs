@@ -87,12 +87,32 @@ namespace Favalet
 
     public static class CLREnvironmentsExtension
     {
+        private static void MutableBindMembersByAliasNames(
+            IEnvironments environments,
+            MemberInfo member,
+            IExpression expression,
+            TextRange range)
+        {
+            if (member.GetCustomAttributes(typeof(AliasNameAttribute), true) is AliasNameAttribute[] names)
+            {
+                foreach (var name in names)
+                {
+                    environments.MutableBind(
+                        BoundVariableTerm.Create(name.Name, expression.HigherOrder, range),
+                        expression);
+                }
+            }
+        }
+        
         private static PropertyTerm MutableBindMember(IEnvironments environments, PropertyInfo property, TextRange range)
         {
             var propertyTerm = PropertyTerm.From(property, range);
             environments.MutableBind(
                 BoundVariableTerm.Create(property.GetFullName(), propertyTerm.HigherOrder, range),
                 propertyTerm);
+
+            MutableBindMembersByAliasNames(environments, property, propertyTerm, range);
+            
             return propertyTerm;
         }
         
@@ -105,6 +125,9 @@ namespace Favalet
             environments.MutableBind(
                 BoundVariableTerm.Create(method.GetFullName(), methodTerm.HigherOrder, range),
                 methodTerm);
+
+            MutableBindMembersByAliasNames(environments, method, methodTerm, range);
+            
             return methodTerm;
         }
         
