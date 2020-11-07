@@ -44,6 +44,9 @@ namespace Favalet.Internal
         public static IEnumerable<PropertyInfo> GetDeclaredProperties(this Type type) =>
             type.GetTypeInfo().DeclaredProperties;
 
+        public static IEnumerable<Attribute> GetCustomAttributes(this Type type, Type attributeType, bool inherit) =>
+            type.GetTypeInfo().GetCustomAttributes(attributeType, inherit);
+
         public static MethodInfo? GetGetMethod(this PropertyInfo property) =>
             property.GetMethod;
 
@@ -56,6 +59,9 @@ namespace Favalet.Internal
         public static bool IsGenericType(this Type type) =>
             type.GetTypeInfo().IsGenericType;
 
+        public static IEnumerable<Type> GetGenericArguments(this Type type) =>
+            type.GenericTypeArguments;
+        
         public static bool IsAssignableFrom(this Type lhs, Type rhs) =>
             lhs.GetTypeInfo().IsAssignableFrom(rhs.GetTypeInfo());
 #else
@@ -84,8 +90,19 @@ namespace Favalet.Internal
             type.IsGenericType;
 #endif
 
-        public static string GetFullName(this Type type) =>
-            $"{type.Namespace}.{type.Name}";
+        public static string GetFullName(this Type type)
+        {
+            if (type.IsGenericType())
+            {
+                var ga = string.Join(".", type.GetGenericArguments().Select(GetFullName));
+                var name = type.Name.Substring(0, type.Name.IndexOf('`'));
+                return $"{type.Namespace}.{name}<{ga}>";
+            }
+            else
+            {
+                return $"{type.Namespace}.{type.Name}";
+            }
+        }
 
         public static string GetFullName(this MemberInfo member) =>
             member switch
@@ -102,10 +119,36 @@ namespace Favalet.Internal
                     member.Name
             };
 
-        public static string GetReadableName(this Type type) =>
-            SharpSymbols.ReadableTypeNames.TryGetValue(type, out var name) ?
-                name :
-                GetFullName(type);
+        private static string? GetAliasName(Type type) =>
+            type.GetCustomAttributes(typeof(AliasNameAttribute), true) is IEnumerable<AliasNameAttribute> names ?
+                names.Select(name => name.Name).FirstOrDefault() : null;
+        private static string? GetAliasName(MemberInfo member) =>
+            member.GetCustomAttributes(typeof(AliasNameAttribute), true) is IEnumerable<AliasNameAttribute> names ?
+                names.Select(name => name.Name).FirstOrDefault() : null;
+
+        public static string GetReadableName(this Type type)
+        {
+            if (SharpSymbols.ReadableTypeNames.TryGetValue(type, out var readableName))
+            {
+                return readableName;
+            }
+
+            if (GetAliasName(type) is string aliasName)
+            {
+                return aliasName;
+            }
+
+            if (type.IsGenericType())
+            {
+                var ga = string.Join(".", type.GetGenericArguments().Select(GetReadableName));
+                var name = type.Name.Substring(0, type.Name.IndexOf('`'));
+                return $"{type.Namespace}.{name}<{ga}>";
+            }
+            else
+            {
+                return $"{type.Namespace}.{type.Name}";
+            }
+        }
 
         public static string GetReadableName(this MemberInfo member) =>
             member switch
@@ -118,7 +161,9 @@ namespace Favalet.Internal
 #endif
                 ConstructorInfo constructor => GetReadableName(member.DeclaringType!),
                 _ => member.DeclaringType is Type declaringType ?
-                    $"{GetReadableName(declaringType)}.{member.Name}" :
+                    (GetAliasName(member) is string aliasName ?
+                        aliasName :
+                        $"{GetReadableName(declaringType)}.{member.Name}") :
                     member.Name
             };
     }
