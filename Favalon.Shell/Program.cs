@@ -24,12 +24,21 @@ using Favalet.Reactive;
 using Favalon.Internal;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Favalon
 {
-    public static class Program
+    public static class Test
     {
-        private static IEnumerable<string> wc(IEnumerable<string> stdin)
+        [AliasName("echo")]
+        public static IEnumerable<string> Echo(string str)
+        {
+            var split = str.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            return split;
+        }
+        
+        [AliasName("wc")]
+        public static IEnumerable<string> WordCount(IEnumerable<string> stdin)
         {
             var bc = 0;
             var wc = 0;
@@ -45,6 +54,33 @@ namespace Favalon
             yield return $"{bc},{wc},{lc}";
         }
 
+        [AliasName("dump")]
+        public static string Dump(IEnumerable<string> stdin)
+        {
+            var joined = string.Join(Environment.NewLine, stdin);
+            return joined;
+        }
+
+        [AliasName("cat")]
+        public static IEnumerable<string> Cat(string fileName)
+        {
+            using (var tr = File.OpenText(fileName))
+            {
+                while (!tr.EndOfStream)
+                {
+                    var line = tr.ReadLine();
+                    if (line == null)
+                    {
+                        break;
+                    }
+                    yield return line;
+                }
+            }
+        }
+    }
+    
+    public static class Program
+    {
         public static int Main(string[] args)
         {
             var console = InteractiveConsoleHost.Create();
@@ -57,19 +93,36 @@ namespace Favalon
             var parsed = parser.Parse(tokens);
             
             var environments = CLREnvironments.Create();
+
+            environments.MutableBindMembers(typeof(Test));
             
             IDisposable? d = default;
             d = parsed.Subscribe(Observer.Create<IExpression>(
                 expression =>
                 {
                     var reduced = environments.Reduce(expression);
-                    if (reduced is VariableTerm("exit"))
+                    switch (reduced)
                     {
-                        d?.Dispose();
-                    }
-                    else
-                    {
-                        Console.WriteLine(reduced.GetPrettyString(PrettyStringTypes.Readable));
+                        case IVariableTerm("clear"):
+                            console.Clear();
+                            break;
+                        case IVariableTerm("exit"):
+                            d?.Dispose();
+                            break;
+                        case IConstantTerm constant
+                            when (constant.Value.GetType().IsPrimitive || constant.Value is string):
+                            Console.WriteLine(constant.Value);
+                            break;
+                        case IConstantTerm constant
+                            when (constant.Value is IEnumerable<string>):
+                            foreach (var line in (IEnumerable<string>)constant.Value)
+                            {
+                                Console.WriteLine(line);
+                            }
+                            break;
+                        default:
+                            Console.WriteLine(reduced.GetPrettyString(PrettyStringTypes.Readable));
+                            break;
                     }
                 },
                 ex => { },
