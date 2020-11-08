@@ -19,10 +19,11 @@
 
 using Favalet.Expressions.Specialized;
 using Favalet.Internal;
+using Favalet.Ranges;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using Favalet.Ranges;
 
 namespace Favalet.Expressions.Algebraic
 {
@@ -37,6 +38,25 @@ namespace Favalet.Expressions.Algebraic
     public class LogicalCalculator :
         ILogicalCalculator
     {
+        [DebuggerStepThrough]
+        protected LogicalCalculator()
+        {
+        }
+
+        protected virtual IComparer<IExpression>? Sorter =>
+            null;
+
+        protected IEnumerable<IExpression> SortExpressions(
+            Func<IExpression, IExpression> selector,
+            IEnumerable<IExpression> enumerable) =>
+            (this.Sorter != null) ?
+                enumerable.OrderBy(selector, this.Sorter) :
+                enumerable;
+
+        private IEnumerable<IExpression> SortExpressions(
+            IEnumerable<IExpression> enumerable) =>
+            this.SortExpressions(expression => expression, enumerable);
+
         public bool Equals(IExpression lhs, IExpression rhs)
         {
             if (object.ReferenceEquals(lhs, rhs))
@@ -45,8 +65,8 @@ namespace Favalet.Expressions.Algebraic
             }
             else
             {
-                var left = FlattenedExpression.FlattenAll(lhs);
-                var right = FlattenedExpression.FlattenAll(rhs);
+                var left = FlattenedExpression.FlattenAll(lhs, this.SortExpressions);
+                var right = FlattenedExpression.FlattenAll(rhs, this.SortExpressions);
 
                 return left.Equals(right);
             }
@@ -60,8 +80,8 @@ namespace Favalet.Expressions.Algebraic
             }
             else
             {
-                var left = FlattenedExpression.FlattenAll(lhs);
-                var right = FlattenedExpression.FlattenAll(rhs);
+                var left = FlattenedExpression.FlattenAll(lhs, this.SortExpressions);
+                var right = FlattenedExpression.FlattenAll(rhs, this.SortExpressions);
 
                 return
                     left.Equals(right) &&
@@ -105,8 +125,8 @@ namespace Favalet.Expressions.Algebraic
             Func<IExpression, IExpression, ChoiceResults> selector)
             where TFlattenedExpression : FlattenedExpression
         {
-            var fl = FlattenedExpression.Flatten(left);
-            var fr = FlattenedExpression.Flatten(right);
+            var fl = FlattenedExpression.Flatten(left, this.SortExpressions);
+            var fr = FlattenedExpression.Flatten(right, this.SortExpressions);
 
             if (fr is TFlattenedExpression(IExpression[] rightOperands))
             {

@@ -75,44 +75,49 @@ namespace Favalet.Expressions.Algebraic
             return lf.Concat(rf);
         }
 
-        public static IExpression Flatten(IExpression expression) =>
+        public static IExpression Flatten(
+            IExpression expression,
+            Func<IEnumerable<IExpression>, IEnumerable<IExpression>> sorter) =>
             expression switch
             {
                 IAndExpression and => new AndFlattenedExpression(
-                    Flatten<IAndExpression>(and.Left, and.Right).Memoize(),
+                    sorter(Flatten<IAndExpression>(and.Left, and.Right)).Memoize(),
                     and.HigherOrder,
                     TextRange.Unknown),  // TODO: range
                 IOrExpression or => new OrFlattenedExpression(
-                    Flatten<IOrExpression>(or.Left, or.Right).Memoize(),
+                    sorter(Flatten<IOrExpression>(or.Left, or.Right)).Memoize(),
                     or.HigherOrder,
                     TextRange.Unknown),  // TODO: range
                 _ => expression
             };
 
         public static IEnumerable<IExpression> FlattenAll<TBinaryExpression>(
-            IExpression left, IExpression right)
+            IExpression left, IExpression right,
+            Func<IEnumerable<IExpression>, IEnumerable<IExpression>> sorter)
             where TBinaryExpression : IBinaryExpression
         {
             var lf = left is TBinaryExpression lb ?
-                FlattenAll<TBinaryExpression>(lb.Left, lb.Right) :
-                new[] { FlattenAll(left) };
+                FlattenAll<TBinaryExpression>(lb.Left, lb.Right, sorter) :
+                new[] { FlattenAll(left, sorter) };
 
             var rf = right is TBinaryExpression rb ?
-                FlattenAll<TBinaryExpression>(rb.Left, rb.Right) :
-                new[] { FlattenAll(right) };
+                FlattenAll<TBinaryExpression>(rb.Left, rb.Right, sorter) :
+                new[] { FlattenAll(right, sorter) };
 
             return lf.Concat(rf);
         }
 
-        public static IExpression FlattenAll(IExpression expression) =>
+        public static IExpression FlattenAll(
+            IExpression expression,
+            Func<IEnumerable<IExpression>, IEnumerable<IExpression>> sorter) =>
             expression switch
             {
                 IAndExpression and => new AndFlattenedExpression(
-                    FlattenAll<IAndExpression>(and.Left, and.Right).Memoize(),
+                    sorter(FlattenAll<IAndExpression>(and.Left, and.Right, sorter)).Memoize(),
                     and.HigherOrder,
                     TextRange.Unknown),  // TODO: range
                 IOrExpression or => new OrFlattenedExpression(
-                    FlattenAll<IOrExpression>(or.Left, or.Right).Memoize(),
+                    sorter(FlattenAll<IOrExpression>(or.Left, or.Right, sorter)).Memoize(),
                     or.HigherOrder,
                     TextRange.Unknown),  // TODO: range
                 _ => expression

@@ -17,21 +17,33 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-using Favalet.Expressions.Algebraic;
 using System;
-using Favalet.Contexts;
+using Favalet.Expressions.Algebraic;
 using Favalet.Expressions;
+using Favalet.Internal;
+using System.Collections.Generic;
 
 namespace Favalet
 {
     public interface ITypeCalculator :
         ILogicalCalculator
     {
+        IEnumerable<IExpression> SortExpressions(
+            Func<IExpression, IExpression> selector,
+            IEnumerable<IExpression> enumerable);
     }
     
     public class TypeCalculator :
         LogicalCalculator, ITypeCalculator
     {
+        protected override IComparer<IExpression>? Sorter =>
+            OrderedExpressionComparer.Instance;
+
+        IEnumerable<IExpression> ITypeCalculator.SortExpressions(
+            Func<IExpression, IExpression> selector,
+            IEnumerable<IExpression> enumerable) =>
+            base.SortExpressions(selector, enumerable);
+
         protected override ChoiceResults ChoiceForAnd(
             IExpression left, IExpression right)
         {

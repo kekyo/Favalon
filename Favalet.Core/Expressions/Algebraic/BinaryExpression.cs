@@ -174,7 +174,7 @@ namespace Favalet.Expressions.Algebraic
 
         [DebuggerStepThrough]
         protected sealed override string GetPrettyString(IPrettyStringContext context) =>
-            context.GetPrettyString(FlattenedExpression.FlattenAll(this));
+            context.GetPrettyString(FlattenedExpression.FlattenAll(this, e => e));
     }
 
     public static class BinaryExpressionExtension

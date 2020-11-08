@@ -17,17 +17,19 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-using System;
-using System.Reflection;
-using Favalet.Contexts;
 using Favalet.Expressions;
 using Favalet.Internal;
+using System;
+using System.Collections.Generic;
 
 namespace Favalet
 {
     public sealed class CLRTypeCalculator :
         TypeCalculator
     {
+        protected override IComparer<IExpression>? Sorter =>
+            OrderedTypeTermComparer.Instance;
+
         protected override ChoiceResults ChoiceForAnd(
             IExpression left, IExpression right)
         {
