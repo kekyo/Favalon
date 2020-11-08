@@ -83,7 +83,6 @@ namespace Favalet.Contexts.Unifiers
 #endif
         }
 
-        [DebuggerStepThrough]
         private bool InternalAddNormalized(
             IPlaceholderTerm placeholder,
             IExpression expression,
@@ -99,7 +98,6 @@ namespace Favalet.Contexts.Unifiers
             return node.Unifications.Add(unification);
         }
 
-        [DebuggerStepThrough]
         private T? GetAlias<T>(
             IPlaceholderTerm placeholder,
             T? defaultValue)
@@ -110,7 +108,6 @@ namespace Favalet.Contexts.Unifiers
                     ((alias as T) ?? defaultValue)) :
                 defaultValue;
         
-        [DebuggerStepThrough]
         private bool InternalAdd(
             IPlaceholderTerm placeholder,
             IExpression expression,
@@ -125,7 +122,6 @@ namespace Favalet.Contexts.Unifiers
             return this.InternalAddNormalized(ph, ex, polarity);
         }
 
-        [DebuggerStepThrough]
         public void AddBoth(
             IExpression from,
             IExpression to)
@@ -182,7 +178,6 @@ namespace Favalet.Contexts.Unifiers
             }
         }
 
-        [DebuggerStepThrough]
         public void AddForward(
             IPlaceholderTerm placeholder,
             IExpression from)
@@ -201,7 +196,6 @@ namespace Favalet.Contexts.Unifiers
             }
         }
 
-        [DebuggerStepThrough]
         public void AddBackward(
             IPlaceholderTerm placeholder,
             IExpression to)

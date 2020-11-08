@@ -361,5 +361,26 @@ namespace Favalet.Reducing
 
             AssertLogicalEqual(expression, expected, actual);
         }
+
+        [TestCase(123, "123")]
+        [TestCase(123.456, "123.456")]
+        public void ApplyOverloadedMethod(object argument, object result)
+        {
+            var environment = CLREnvironments();
+            
+            // Convert.ToString(123)
+            var expression =
+                Apply(
+                    Variable("System.Convert.ToString"),
+                    Constant(argument));
+
+            var actual = environment.Reduce(expression);
+
+            // "123"
+            var expected =
+                Constant(result);
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
     }
 }

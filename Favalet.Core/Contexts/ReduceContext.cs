@@ -203,10 +203,11 @@ namespace Favalet.Contexts
             var fixedup = higherOrder is Expression expr ?
                 expr.InternalFixup(this) :
                 higherOrder;
-            var calculated = this.TypeCalculator.Compute(fixedup);
             
             // Reduce higher order.
-            return this.Reduce(calculated);
+            //var calculated = this.TypeCalculator.Compute(fixedup);
+            //return this.Reduce(calculated);
+            return this.Reduce(fixedup);
         }
 
         [DebuggerStepThrough]

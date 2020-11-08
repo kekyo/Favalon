@@ -196,12 +196,20 @@ namespace Favalet.Expressions
                 var target = bounds[0];
                 if (target is IBoundVariableTerm bound)
                 {
-                    var variables = context.
-                        LookupVariables(bound.Symbol).
+                    var variables =
+                        context.TypeCalculator.SortExpressions(
+                            expression => expression.HigherOrder,
+                            context.LookupVariables(bound.Symbol).
+                            Where(variable => context.TypeCalculator.Equals(variable.SymbolHigherOrder, bound.HigherOrder)).
+                            Select(variable => variable.Expression)).
                         Memoize();
                     if (variables.Length == 1)
                     {
-                        return context.Reduce(variables[0].Expression);
+                        return context.Reduce(variables[0]);
+                    }
+                    else if (variables.Length >= 2)
+                    {
+                        return new VariableTerm(this.Symbol, this.HigherOrder, variables, this.Range);
                     }
                 }
                 else
