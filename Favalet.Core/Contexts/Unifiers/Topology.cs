@@ -37,9 +37,7 @@ namespace Favalet.Contexts.Unifiers
         string Dot { get; }    
     }
     
-    [DebuggerDisplay("{View}")]
-    internal sealed class Topology :
-        ITopology
+    partial class Unifier
     {
         [DebuggerStepThrough]
         private sealed class Node
@@ -65,23 +63,6 @@ namespace Favalet.Contexts.Unifiers
             new Dictionary<IPlaceholderTerm, Node>(IdentityTermComparer.Instance);
         private readonly Dictionary<IPlaceholderTerm, IExpression> aliases =
             new Dictionary<IPlaceholderTerm, IExpression>(IdentityTermComparer.Instance);
-
-#if DEBUG
-        private IExpression targetRoot;
-#else
-        private string targetRootString;
-#endif
-
-        [DebuggerStepThrough]
-        private Topology(IExpression targetRoot)
-        {
-#if DEBUG
-            this.targetRoot = targetRoot;
-#else
-            this.targetRootString =
-                targetRoot.GetPrettyString(PrettyStringTypes.ReadableAll);
-#endif
-        }
 
         private bool InternalAddNormalized(
             IPlaceholderTerm placeholder,
@@ -214,7 +195,7 @@ namespace Favalet.Contexts.Unifiers
             }
         }
 
-        public void NormalizeAliases(ITypeCalculator calculator)
+        public void NormalizeAliases()
         {
             // Will make aliases normalized topology excepts outside PlaceholderTerm instances.
             
@@ -271,7 +252,7 @@ namespace Favalet.Contexts.Unifiers
                                 var combined = AndExpression.Create(
                                     target2, unification.Expression,
                                     TextRange.Unknown);   // TODO: range
-                                var calculated = calculator.Compute(combined);
+                                var calculated = this.TypeCalculator.Compute(combined);
                                 this.aliases[entry.Key] = calculated;
                             }
                             else
@@ -289,10 +270,10 @@ namespace Favalet.Contexts.Unifiers
                                 var combined = AndExpression.Create(
                                     target3, unification.Expression,
                                     TextRange.Unknown);  // TODO: range
-                                var calculated = calculator.Compute(combined);
+                                var calculated = this.TypeCalculator.Compute(combined);
                                 
                                 // Absorb?
-                                if (calculator.Equals(calculated, unification.Expression))
+                                if (this.TypeCalculator.Equals(calculated, unification.Expression))
                                 {
                                     // Switch an unification to new non-placeholder alias.
                                     entry.Value.Unifications.Remove(unification);
@@ -309,10 +290,10 @@ namespace Favalet.Contexts.Unifiers
                                 var combined = AndExpression.Create(
                                     target4, unification.Expression,
                                     TextRange.Unknown);  // TODO: range
-                                var calculated = calculator.Compute(combined);
+                                var calculated = this.TypeCalculator.Compute(combined);
                                 
                                 // Absorb?
-                                if (calculator.Equals(calculated, unification.Expression))
+                                if (this.TypeCalculator.Equals(calculated, unification.Expression))
                                 {
                                     // Switch an unification to new non-placeholder alias.
                                     entry.Value.Unifications.Remove(unification);
@@ -419,19 +400,19 @@ namespace Favalet.Contexts.Unifiers
             return resolved;
         }
         
-        public IExpression Resolve(ITypeCalculator calculator, IPlaceholderTerm placeholder)
+        public override IExpression? Resolve(IPlaceholderTerm placeholder)
         {
             // TODO: cache
             
             var outMost0 = this.InternalResolve(
                 ResolveContext.Create(
-                    calculator,
+                    this.TypeCalculator,
                     UnificationPolarities.Out,
                     OrExpression.Create),
                 placeholder);
             var inMost0 = this.InternalResolve(
                 ResolveContext.Create(
-                    calculator,
+                    this.TypeCalculator,
                     UnificationPolarities.In,
                     AndExpression.Create),
                 placeholder);
@@ -442,7 +423,7 @@ namespace Favalet.Contexts.Unifiers
                     // inmost (narrow) has higher priority.
                     var inMost1 = this.InternalResolve(
                         ResolveContext.Create(
-                            calculator,
+                            this.TypeCalculator,
                             UnificationPolarities.In,
                             AndExpression.Create),
                         imph0);
@@ -514,15 +495,6 @@ namespace Favalet.Contexts.Unifiers
         public void Validate(IPlaceholderTerm placeholder) =>
             this.Validate(PlaceholderMarker.Create(), placeholder);
         #endregion
-
-        [DebuggerStepThrough]
-        public void SetTargetRoot(IExpression targetRoot) =>
-#if DEBUG
-            this.targetRoot = targetRoot;
-#else
-            this.targetRootString =
-                targetRoot.GetPrettyString(PrettyStringTypes.ReadableAll);
-#endif
 
         public string View
         {
@@ -692,13 +664,5 @@ namespace Favalet.Contexts.Unifiers
                 return tw.ToString();
             }
         }
-
-        [DebuggerStepThrough]
-        public override string ToString() =>
-            "Topology: " + this.View;
-
-        [DebuggerStepThrough]
-        public static Topology Create(IExpression targetRoot) =>
-            new Topology(targetRoot);
     }
 }

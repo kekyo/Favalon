@@ -27,20 +27,36 @@ using Favalet.Ranges;
 namespace Favalet.Contexts.Unifiers
 {
     [DebuggerDisplay("{View}")]
-    internal sealed class Unifier :
-        FixupContext,  // Because used by "Simple" property implementation.
+    internal sealed partial class Unifier :
+        FixupContext,  // Because used by simplist Dot property implementation.
         ITopology
     {
-        private readonly Topology topology ;
+#if DEBUG
+        private IExpression targetRoot;
+#else
+        private string targetRootString;
+#endif
         
         [DebuggerStepThrough]
         private Unifier(ITypeCalculator typeCalculator, IExpression targetRoot) :
-            base(typeCalculator) =>
-            this.topology = Topology.Create(targetRoot);
+            base(typeCalculator)
+        {
+#if DEBUG
+            this.targetRoot = targetRoot;
+#else
+            this.targetRootString =
+                targetRoot.GetPrettyString(PrettyStringTypes.ReadableAll);
+#endif
+        }
 
         [DebuggerStepThrough]
         public void SetTargetRoot(IExpression targetRoot) =>
-            this.topology.SetTargetRoot(targetRoot);
+#if DEBUG
+            this.targetRoot = targetRoot;
+#else
+            this.targetRootString =
+                targetRoot.GetPrettyString(PrettyStringTypes.ReadableAll);
+#endif
 
         private bool InternalUnifyCore(
             IExpression from,
@@ -55,19 +71,19 @@ namespace Favalet.Contexts.Unifiers
             {
                 // Placeholder unification.
                 case (_, IPlaceholderTerm tph, false, _):
-                    this.topology.AddForward(tph, from);
+                    this.AddForward(tph, from);
                     //this.topology.Validate(tp2);
                     return true;
                 case (IPlaceholderTerm fph, _, false, _):
-                    this.topology.AddBackward(fph, to);
+                    this.AddBackward(fph, to);
                     //this.topology.Validate(fp2);
                     return true;
                 case (_, IPlaceholderTerm tph, true, _):
-                     this.topology.AddBoth(tph, from);
+                     this.AddBoth(tph, from);
                      //this.topology.Validate(tp2);
                      return true;
                 case (IPlaceholderTerm fph, _, true, _):
-                    this.topology.AddBoth(fph, to);
+                    this.AddBoth(fph, to);
                     //this.topology.Validate(fp2);
                     return true;
 
@@ -163,31 +179,6 @@ namespace Favalet.Contexts.Unifiers
             IExpression to,
             bool bidirectional) =>
             this.InternalUnify(from, to, bidirectional, true);
-
-        [DebuggerStepThrough]
-        public void NormalizeAliases() =>
-            this.topology.NormalizeAliases(this.TypeCalculator);
-
-        [DebuggerStepThrough]
-        public override IExpression? Resolve(IPlaceholderTerm placeholder)
-        {
-#if DEBUG
-            //this.topology.Validate(identity);
-#endif
-            return this.topology.Resolve(this.TypeCalculator, placeholder);
-        }
-
-        public string View
-        {
-            [DebuggerStepThrough]
-            get => this.topology.View;
-        }
-
-        public string Dot
-        {
-            [DebuggerStepThrough]
-            get => this.topology.Dot;
-        }
 
         [DebuggerStepThrough]
         public override string ToString() =>
