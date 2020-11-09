@@ -35,14 +35,16 @@ namespace Favalet.Expressions.Algebraic
         AcceptRight,
     }
 
-    public interface IChoicer
+    public interface IExpressionChoicer
     {
         ChoiceResults ChoiceForAnd(
             ILogicalCalculator calculator,
+            IExpressionChoicer self,   // drives by Y combinator
             IExpression left, IExpression right);
 
         ChoiceResults ChoiceForOr(
             ILogicalCalculator calculator,
+            IExpressionChoicer self,   // drives by Y combinator
             IExpression left, IExpression right);
     }
 
@@ -51,7 +53,7 @@ namespace Favalet.Expressions.Algebraic
         bool Equals(IExpression lhs, IExpression rhs);
         bool ExactEquals(IExpression lhs, IExpression rhs);
 
-        IExpression Calculate(IExpression operand, IChoicer choicer);
+        IExpression Calculate(IExpression operand, IExpressionChoicer choicer);
         IExpression Calculate(IExpression operand);
     }
 
@@ -60,13 +62,14 @@ namespace Favalet.Expressions.Algebraic
     {
         [DebuggerStepThrough]
         public class LogicalCalculatorChoicer :
-            IChoicer
+            IExpressionChoicer
         {
             protected LogicalCalculatorChoicer()
             { }
 
             public virtual ChoiceResults ChoiceForAnd(
                 ILogicalCalculator calculator,
+                IExpressionChoicer self,
                 IExpression left, IExpression right) =>
                 // Idempotence
                 calculator.Equals(left, right) ?
@@ -75,6 +78,7 @@ namespace Favalet.Expressions.Algebraic
 
             public virtual ChoiceResults ChoiceForOr(
                 ILogicalCalculator calculator,
+                IExpressionChoicer self,
                 IExpression left, IExpression right) =>
                 // Idempotence
                 calculator.Equals(left, right) ?
@@ -90,7 +94,7 @@ namespace Favalet.Expressions.Algebraic
         {
         }
         
-        public virtual IChoicer DefaultChoicer =>
+        public virtual IExpressionChoicer DefaultChoicer =>
             LogicalCalculatorChoicer.Instance;
 
         protected virtual IComparer<IExpression>? Sorter =>
@@ -150,7 +154,8 @@ namespace Favalet.Expressions.Algebraic
         private IEnumerable<IExpression> ComputeAbsorption<TFlattenedExpression>(
             IExpression left,
             IExpression right,
-            Func<ILogicalCalculator, IExpression, IExpression, ChoiceResults> selector)
+            IExpressionChoicer choicer,
+            Func<ILogicalCalculator, IExpressionChoicer, IExpression, IExpression, ChoiceResults> selector)
             where TFlattenedExpression : FlattenedExpression
         {
             var fl = FlattenedExpression.Flatten(left, this.SortExpressions);
@@ -160,7 +165,7 @@ namespace Favalet.Expressions.Algebraic
             {
                 return rightOperands.
                     SelectMany(rightOperand =>
-                        selector(this, fl, rightOperand) switch
+                        selector(this, choicer, fl, rightOperand) switch
                         {
                             ChoiceResults.Equal => new[] { fl },
                             ChoiceResults.AcceptLeft => new[] { fl },
@@ -172,7 +177,7 @@ namespace Favalet.Expressions.Algebraic
             {
                 return leftOperands.
                     SelectMany(leftOperand =>
-                        selector(this, leftOperand, fr) switch
+                        selector(this, choicer, leftOperand, fr) switch
                         {
                             ChoiceResults.Equal => new[] { leftOperand },
                             ChoiceResults.AcceptLeft => new[] { leftOperand },
@@ -189,7 +194,8 @@ namespace Favalet.Expressions.Algebraic
         private IEnumerable<IExpression> ComputeShrink<TBinaryExpression>(
             IExpression left,
             IExpression right,
-            Func<ILogicalCalculator, IExpression, IExpression, ChoiceResults> selector)
+            IExpressionChoicer choicer,
+            Func<ILogicalCalculator, IExpressionChoicer, IExpression, IExpression, ChoiceResults> selector)
             where TBinaryExpression : IBinaryExpression
         {
             var flattened = FlattenedExpression.Flatten<TBinaryExpression>(left, right);
@@ -215,7 +221,7 @@ namespace Favalet.Expressions.Algebraic
                         // The pair are both type term.
                         else
                         {
-                            switch (selector(this, origin.Value, current.Value))
+                            switch (selector(this, choicer, origin.Value, current.Value))
                             {
                                 case ChoiceResults.Equal:
                                 case ChoiceResults.AcceptLeft:
@@ -241,9 +247,9 @@ namespace Favalet.Expressions.Algebraic
         }
 
         public IExpression Calculate(IExpression operand) =>
-            this.Compute(operand, this.DefaultChoicer);
+            this.Calculate(operand, this.DefaultChoicer);
 
-        public IExpression Calculate(IExpression operand, IChoicer choicer)
+        public IExpression Calculate(IExpression operand, IExpressionChoicer choicer)
         {
             if (operand is IBinaryExpression binary)
             {
@@ -254,7 +260,7 @@ namespace Favalet.Expressions.Algebraic
                 {
                     // Absorption
                     var absorption =
-                        this.ComputeAbsorption<OrFlattenedExpression>(left, right, choicer.ChoiceForAnd).
+                        this.ComputeAbsorption<OrFlattenedExpression>(left, right, choicer, choicer.ChoiceForAnd).
                         Memoize();
                     if (ConstructNested(absorption, OrExpression.Create, binary.Range) is IExpression result1)
                     {
@@ -263,7 +269,7 @@ namespace Favalet.Expressions.Algebraic
 
                     // Shrink
                     var shrinked =
-                        this.ComputeShrink<IAndExpression>(left, right, choicer.ChoiceForAnd).
+                        this.ComputeShrink<IAndExpression>(left, right, choicer, choicer.ChoiceForAnd).
                         Memoize();
                     if (ConstructNested(shrinked, AndExpression.Create, binary.Range) is IExpression result2)
                     {
@@ -274,7 +280,7 @@ namespace Favalet.Expressions.Algebraic
                 {
                     // Absorption
                     var absorption =
-                        this.ComputeAbsorption<AndFlattenedExpression>(left, right, choicer.ChoiceForOr).
+                        this.ComputeAbsorption<AndFlattenedExpression>(left, right, choicer, choicer.ChoiceForOr).
                         Memoize();
                     if (ConstructNested(absorption, AndExpression.Create, binary.Range) is IExpression result1)
                     {
@@ -283,7 +289,7 @@ namespace Favalet.Expressions.Algebraic
 
                     // Shrink
                     var shrinked =
-                        this.ComputeShrink<IOrExpression>(left, right, choicer.ChoiceForOr).
+                        this.ComputeShrink<IOrExpression>(left, right, choicer, choicer.ChoiceForOr).
                         Memoize();
                     if (ConstructNested(shrinked, OrExpression.Create, binary.Range) is IExpression result2)
                     {

@@ -141,20 +141,54 @@ namespace Favalet.Contexts.Unifiers
                 this.GetAlias(normalized, normalized) :
                 defaultValue;
         }
+
+        // Choicer drives with the topology knowledge.
+        // This is inserting relations for between placeholders.
+        private sealed class TypeTopologyChoicer :
+            IExpressionChoicer
+        {
+            private readonly Unifier parent;
+
+            public TypeTopologyChoicer(Unifier parent) =>
+                this.parent = parent;
+            
+            public ChoiceResults ChoiceForAnd(
+                ILogicalCalculator calculator,
+                IExpressionChoicer self,
+                IExpression left, IExpression right)
+            {
+                return this.parent.TypeCalculator.DefaultChoicer.ChoiceForAnd(
+                    calculator, self, left, right);
+            }
+
+            public ChoiceResults ChoiceForOr(
+                ILogicalCalculator calculator,
+                IExpressionChoicer self,
+                IExpression left, IExpression right)
+            {
+                return this.parent.TypeCalculator.DefaultChoicer.ChoiceForOr(
+                    calculator, self, left, right);
+            }
+        }
             
         public void CalculateUnifications()
         {
             // Step 1-1: Generate alias dictionary.
-            this.aliases = this.topology.
-                Select(entry =>
+            var preExtracts = this.topology.Select(entry =>
                     (placeholder: entry.Key,
-                     aliases: entry.Value.Unifications.
-                         Where(unification =>
-                             // Both placeholder unification
-                             (unification.Polarity == UnificationPolarities.Both) && 
-                             unification.Expression is IPlaceholderTerm))).
-                SelectMany(entry => entry.aliases.Select(alias => (alias, entry.placeholder))).
-                ToDictionary(entry => (IPlaceholderTerm)entry.alias.Expression, entry => entry.placeholder);
+                        aliases: entry.Value.Unifications.Where(unification =>
+                            // Both placeholder unification
+                            (unification.Polarity == UnificationPolarities.Both) &&
+                            unification.Expression is IPlaceholderTerm))).SelectMany(entry =>
+                    entry.aliases.Select(alias => (alias: (IPlaceholderTerm) alias.Expression, entry.placeholder)))
+                .ToArray();
+
+            var validKeys = new HashSet<IPlaceholderTerm>(
+                preExtracts.Select(entry => entry.placeholder));
+            
+            this.aliases =
+                preExtracts.Where(entry => !validKeys.Contains(entry.alias)).
+                ToDictionary(entry => entry.alias, entry => entry.placeholder);
 
             // Step 1-2: Aggregate all aliased unifications.
             foreach (var (placeholder, node) in this.topology.ToArray())
@@ -182,7 +216,7 @@ namespace Favalet.Contexts.Unifiers
                     expression switch
                     {
                         IPlaceholderTerm placeholder =>
-                            this.GetAlias(placeholder, placeholder),
+                            this.GetAlias(placeholder, placeholder)!,
                         IPairExpression(IExpression left, IExpression right) pair =>
                             pair.Create(Replacer(left), Replacer(right), pair.Range),
                         _ => expression
@@ -192,6 +226,7 @@ namespace Favalet.Contexts.Unifiers
             }
 
             // Step 2: Calculate and aggregate all unifications each nodes.
+            var choicer = new TypeTopologyChoicer(this);
             foreach (var (placeholder, node) in this.topology)
             {
                 var unification = node.Unifications.
@@ -205,7 +240,8 @@ namespace Favalet.Contexts.Unifiers
                             // result: ua
                             case (UnificationPolarities.Both, UnificationPolarities.In):
                                 var r1 = this.TypeCalculator.Calculate(
-                                    OrExpression.Create(ua.Expression, ub.Expression, TextRange.Unknown));
+                                    OrExpression.Create(ua.Expression, ub.Expression, TextRange.Unknown),
+                                    choicer);
                                 if (!this.TypeCalculator.Equals(r1, ua.Expression))
                                 {
                                     throw new InvalidOperationException();
@@ -218,7 +254,8 @@ namespace Favalet.Contexts.Unifiers
                             // result: ua
                             case (UnificationPolarities.Both, UnificationPolarities.Out):
                                 var r2 = this.TypeCalculator.Calculate(
-                                    AndExpression.Create(ua.Expression, ub.Expression, TextRange.Unknown));
+                                    AndExpression.Create(ua.Expression, ub.Expression, TextRange.Unknown),
+                                    choicer);
                                 if (!this.TypeCalculator.Equals(r2, ua.Expression))
                                 {
                                     throw new InvalidOperationException();
@@ -231,7 +268,8 @@ namespace Favalet.Contexts.Unifiers
                             // result: ub
                             case (UnificationPolarities.In, UnificationPolarities.Both):
                                 var r3 = this.TypeCalculator.Calculate(
-                                    OrExpression.Create(ua.Expression, ub.Expression, TextRange.Unknown));
+                                    OrExpression.Create(ua.Expression, ub.Expression, TextRange.Unknown),
+                                    choicer);
                                 if (!this.TypeCalculator.Equals(r3, ub.Expression))
                                 {
                                     throw new InvalidOperationException();
@@ -244,7 +282,8 @@ namespace Favalet.Contexts.Unifiers
                             // result: ub
                             case (UnificationPolarities.Out, UnificationPolarities.Both):
                                 var r4 = this.TypeCalculator.Calculate(
-                                    AndExpression.Create(ua.Expression, ub.Expression, TextRange.Unknown));
+                                    AndExpression.Create(ua.Expression, ub.Expression, TextRange.Unknown),
+                                    choicer);
                                 if (!this.TypeCalculator.Equals(r4, ub.Expression))
                                 {
                                     throw new InvalidOperationException();
@@ -257,7 +296,8 @@ namespace Favalet.Contexts.Unifiers
                             // result: ub
                             case (UnificationPolarities.Out, UnificationPolarities.In):
                                 var r5 = this.TypeCalculator.Calculate(
-                                    AndExpression.Create(ua.Expression, ub.Expression, TextRange.Unknown));
+                                    AndExpression.Create(ua.Expression, ub.Expression, TextRange.Unknown),
+                                    choicer);
                                 if (!this.TypeCalculator.Equals(r5, ub.Expression))
                                 {
                                     throw new InvalidOperationException();
@@ -270,7 +310,8 @@ namespace Favalet.Contexts.Unifiers
                             // result: ua
                             case (UnificationPolarities.In, UnificationPolarities.Out):
                                 var r6 = this.TypeCalculator.Calculate(
-                                    AndExpression.Create(ua.Expression, ub.Expression, TextRange.Unknown));
+                                    AndExpression.Create(ua.Expression, ub.Expression, TextRange.Unknown),
+                                    choicer);
                                 if (!this.TypeCalculator.Equals(r6, ua.Expression))
                                 {
                                     throw new InvalidOperationException();
@@ -282,7 +323,8 @@ namespace Favalet.Contexts.Unifiers
                             // result: ua & ub
                             case (UnificationPolarities.In, UnificationPolarities.In):
                                 var r7 = this.TypeCalculator.Calculate(
-                                    AndExpression.Create(ua.Expression, ub.Expression, TextRange.Unknown));
+                                    AndExpression.Create(ua.Expression, ub.Expression, TextRange.Unknown),
+                                    choicer);
                                 return Unification.Create(r7, UnificationPolarities.In);
 
                             // ph ==> ua
@@ -290,7 +332,8 @@ namespace Favalet.Contexts.Unifiers
                             // result: ua | ub
                             case (UnificationPolarities.Out, UnificationPolarities.Out):
                                 var r8 = this.TypeCalculator.Calculate(
-                                    OrExpression.Create(ua.Expression, ub.Expression, TextRange.Unknown));
+                                    OrExpression.Create(ua.Expression, ub.Expression, TextRange.Unknown),
+                                    choicer);
                                 return Unification.Create(r8, UnificationPolarities.Out);
 
                             // ph <=> ua
@@ -298,7 +341,8 @@ namespace Favalet.Contexts.Unifiers
                             // result: ua & ub
                             case (UnificationPolarities.Both, UnificationPolarities.Both):
                                 var r9 = this.TypeCalculator.Calculate(
-                                    AndExpression.Create(ua.Expression, ub.Expression, TextRange.Unknown));
+                                    AndExpression.Create(ua.Expression, ub.Expression, TextRange.Unknown),
+                                    choicer);
                                 return Unification.Create(r9, UnificationPolarities.Both);
 
                             default:
@@ -553,11 +597,13 @@ namespace Favalet.Contexts.Unifiers
 
                 foreach (var entry in this.topology.
                     Select(entry => (ph: (IIdentityTerm)entry.Key, label: entry.Key.Symbol)).
-                    Concat(this.aliases.Keys.
-                        Select(key => (ph: (IIdentityTerm)key, label: key.Symbol))).
-                    Concat(this.aliases.Values.
+                    Concat((this.aliases != null) ? this.aliases.Keys.
+                        Select(key => (ph: (IIdentityTerm)key, label: key.Symbol)) : 
+                        Enumerable.Empty<(IIdentityTerm ph, string label)>()).
+                    Concat((this.aliases != null) ? this.aliases.Values.
                         OfType<IIdentityTerm>().
-                        Select(value => (ph: value, label: value.Symbol))).
+                        Select(value => (ph: value, label: value.Symbol)) :
+                        Enumerable.Empty<(IIdentityTerm ph, string label)>()).
                     Distinct().
                     OrderBy(entry => entry.ph, IdentityTermComparer.Instance))
                 {
