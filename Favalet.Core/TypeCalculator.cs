@@ -17,82 +17,113 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-using Favalet.Expressions.Algebraic;
 using System;
-using Favalet.Contexts;
+using Favalet.Expressions.Algebraic;
 using Favalet.Expressions;
+using Favalet.Internal;
+using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Favalet
 {
     public interface ITypeCalculator :
         ILogicalCalculator
     {
+        IChoicer DefaultChoicer { get; }
+        
+        IEnumerable<IExpression> SortExpressions(
+            Func<IExpression, IExpression> selector,
+            IEnumerable<IExpression> enumerable);
     }
     
     public class TypeCalculator :
         LogicalCalculator, ITypeCalculator
     {
-        protected override ChoiceResults ChoiceForAnd(
-            IExpression left, IExpression right)
+        [DebuggerStepThrough]
+        public class TypeCalculatorChoicer :
+            LogicalCalculatorChoicer
         {
-            // Function variance:
-            if (left is IFunctionExpression(IExpression lp, IExpression lr) &&
-                right is IFunctionExpression(IExpression rp, IExpression rr))
+            protected TypeCalculatorChoicer()
+            { }
+
+            public override ChoiceResults ChoiceForAnd(
+                ILogicalCalculator calculator,
+                IExpression left, IExpression right)
             {
-                var parameter = this.ChoiceForAnd(lp, rp);
-                var result = this.ChoiceForAnd(lr, rr);
-
-                // Contravariance.
-                switch (parameter, result)
+                // Function variance:
+                if (left is IFunctionExpression(IExpression lp, IExpression lr) &&
+                    right is IFunctionExpression(IExpression rp, IExpression rr))
                 {
-                    case (ChoiceResults.Equal, ChoiceResults.Equal):
-                        return ChoiceResults.Equal;
+                    var parameter = this.ChoiceForAnd(calculator, lp, rp);
+                    var result = this.ChoiceForAnd(calculator, lr, rr);
 
-                    case (ChoiceResults.Equal, ChoiceResults.AcceptLeft):
-                    case (ChoiceResults.AcceptLeft, ChoiceResults.Equal):
-                    case (ChoiceResults.AcceptLeft, ChoiceResults.AcceptLeft):
-                        return ChoiceResults.AcceptLeft;
+                    // Contravariance.
+                    switch (parameter, result)
+                    {
+                        case (ChoiceResults.Equal, ChoiceResults.Equal):
+                            return ChoiceResults.Equal;
+
+                        case (ChoiceResults.Equal, ChoiceResults.AcceptLeft):
+                        case (ChoiceResults.AcceptLeft, ChoiceResults.Equal):
+                        case (ChoiceResults.AcceptLeft, ChoiceResults.AcceptLeft):
+                            return ChoiceResults.AcceptLeft;
                     
-                    case (ChoiceResults.Equal, ChoiceResults.AcceptRight):
-                    case (ChoiceResults.AcceptRight, ChoiceResults.Equal):
-                    case (ChoiceResults.AcceptRight, ChoiceResults.AcceptRight):
-                        return ChoiceResults.AcceptRight;
+                        case (ChoiceResults.Equal, ChoiceResults.AcceptRight):
+                        case (ChoiceResults.AcceptRight, ChoiceResults.Equal):
+                        case (ChoiceResults.AcceptRight, ChoiceResults.AcceptRight):
+                            return ChoiceResults.AcceptRight;
+                    }
                 }
+
+                return base.ChoiceForAnd(calculator, left, right);
             }
 
-            return base.ChoiceForAnd(left, right);
-        }
-
-        protected override ChoiceResults ChoiceForOr(
-            IExpression left, IExpression right)
-        {
-            // Function variance:
-            if (left is IFunctionExpression(IExpression lp, IExpression lr) &&
-                right is IFunctionExpression(IExpression rp, IExpression rr))
+            public override ChoiceResults ChoiceForOr(
+                ILogicalCalculator calculator,
+                IExpression left, IExpression right)
             {
-                var parameter = this.ChoiceForOr(lp, rp);
-                var result = this.ChoiceForOr(lr, rr);
+                // Function variance:
+                if (left is IFunctionExpression(IExpression lp, IExpression lr) &&
+                    right is IFunctionExpression(IExpression rp, IExpression rr))
+                {
+                    var parameter = this.ChoiceForOr(calculator, lp, rp);
+                    var result = this.ChoiceForOr(calculator, lr, rr);
                 
-                // Covariance.
-                switch (parameter, result)
-                {
-                    case (ChoiceResults.Equal, ChoiceResults.Equal):
-                        return ChoiceResults.Equal;
+                    // Covariance.
+                    switch (parameter, result)
+                    {
+                        case (ChoiceResults.Equal, ChoiceResults.Equal):
+                            return ChoiceResults.Equal;
 
-                    case (ChoiceResults.Equal, ChoiceResults.AcceptLeft):
-                    case (ChoiceResults.AcceptLeft, ChoiceResults.Equal):
-                    case (ChoiceResults.AcceptLeft, ChoiceResults.AcceptLeft):
-                        return ChoiceResults.AcceptLeft;
+                        case (ChoiceResults.Equal, ChoiceResults.AcceptLeft):
+                        case (ChoiceResults.AcceptLeft, ChoiceResults.Equal):
+                        case (ChoiceResults.AcceptLeft, ChoiceResults.AcceptLeft):
+                            return ChoiceResults.AcceptLeft;
                     
-                    case (ChoiceResults.Equal, ChoiceResults.AcceptRight):
-                    case (ChoiceResults.AcceptRight, ChoiceResults.Equal):
-                    case (ChoiceResults.AcceptRight, ChoiceResults.AcceptRight):
-                        return ChoiceResults.AcceptRight;
+                        case (ChoiceResults.Equal, ChoiceResults.AcceptRight):
+                        case (ChoiceResults.AcceptRight, ChoiceResults.Equal):
+                        case (ChoiceResults.AcceptRight, ChoiceResults.AcceptRight):
+                            return ChoiceResults.AcceptRight;
+                    }
                 }
-            }
 
-            return base.ChoiceForOr(left, right);
+                return base.ChoiceForOr(calculator, left, right);
+            }
+         
+            public new static readonly TypeCalculatorChoicer Instance =
+                new TypeCalculatorChoicer();
         }
+
+        public override IChoicer DefaultChoicer =>
+            TypeCalculatorChoicer.Instance;
+
+        protected override IComparer<IExpression>? Sorter =>
+            OrderedExpressionComparer.Instance;
+
+        IEnumerable<IExpression> ITypeCalculator.SortExpressions(
+            Func<IExpression, IExpression> selector,
+            IEnumerable<IExpression> enumerable) =>
+            base.SortExpressions(selector, enumerable);
 
         public new static readonly TypeCalculator Instance =
             new TypeCalculator();

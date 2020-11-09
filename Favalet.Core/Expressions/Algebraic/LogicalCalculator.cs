@@ -19,24 +19,94 @@
 
 using Favalet.Expressions.Specialized;
 using Favalet.Internal;
+using Favalet.Ranges;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using Favalet.Ranges;
 
 namespace Favalet.Expressions.Algebraic
 {
+    public enum ChoiceResults
+    {
+        NonRelated,
+        Equal,
+        AcceptLeft,
+        AcceptRight,
+    }
+
+    public interface IChoicer
+    {
+        ChoiceResults ChoiceForAnd(
+            ILogicalCalculator calculator,
+            IExpression left, IExpression right);
+
+        ChoiceResults ChoiceForOr(
+            ILogicalCalculator calculator,
+            IExpression left, IExpression right);
+    }
+
     public interface ILogicalCalculator
     {
         bool Equals(IExpression lhs, IExpression rhs);
         bool ExactEquals(IExpression lhs, IExpression rhs);
 
         IExpression Compute(IExpression operand);
+        IExpression Compute(IExpression operand, IChoicer choicer);
     }
 
     public class LogicalCalculator :
         ILogicalCalculator
     {
+        [DebuggerStepThrough]
+        public class LogicalCalculatorChoicer :
+            IChoicer
+        {
+            protected LogicalCalculatorChoicer()
+            { }
+
+            public virtual ChoiceResults ChoiceForAnd(
+                ILogicalCalculator calculator,
+                IExpression left, IExpression right) =>
+                // Idempotence
+                calculator.Equals(left, right) ?
+                    ChoiceResults.Equal :
+                    ChoiceResults.NonRelated;
+
+            public virtual ChoiceResults ChoiceForOr(
+                ILogicalCalculator calculator,
+                IExpression left, IExpression right) =>
+                // Idempotence
+                calculator.Equals(left, right) ?
+                    ChoiceResults.Equal :
+                    ChoiceResults.NonRelated;
+
+            public static readonly LogicalCalculatorChoicer Instance =
+                new LogicalCalculatorChoicer();
+        }
+    
+        [DebuggerStepThrough]
+        protected LogicalCalculator()
+        {
+        }
+        
+        public virtual IChoicer DefaultChoicer =>
+            LogicalCalculatorChoicer.Instance;
+
+        protected virtual IComparer<IExpression>? Sorter =>
+            null;
+
+        protected IEnumerable<IExpression> SortExpressions(
+            Func<IExpression, IExpression> selector,
+            IEnumerable<IExpression> enumerable) =>
+            (this.Sorter != null) ?
+                enumerable.OrderBy(selector, this.Sorter) :
+                enumerable;
+
+        private IEnumerable<IExpression> SortExpressions(
+            IEnumerable<IExpression> enumerable) =>
+            this.SortExpressions(expression => expression, enumerable);
+
         public bool Equals(IExpression lhs, IExpression rhs)
         {
             if (object.ReferenceEquals(lhs, rhs))
@@ -45,8 +115,8 @@ namespace Favalet.Expressions.Algebraic
             }
             else
             {
-                var left = FlattenedExpression.FlattenAll(lhs);
-                var right = FlattenedExpression.FlattenAll(rhs);
+                var left = FlattenedExpression.FlattenAll(lhs, this.SortExpressions);
+                var right = FlattenedExpression.FlattenAll(rhs, this.SortExpressions);
 
                 return left.Equals(right);
             }
@@ -60,8 +130,8 @@ namespace Favalet.Expressions.Algebraic
             }
             else
             {
-                var left = FlattenedExpression.FlattenAll(lhs);
-                var right = FlattenedExpression.FlattenAll(rhs);
+                var left = FlattenedExpression.FlattenAll(lhs, this.SortExpressions);
+                var right = FlattenedExpression.FlattenAll(rhs, this.SortExpressions);
 
                 return
                     left.Equals(right) &&
@@ -77,42 +147,20 @@ namespace Favalet.Expressions.Algebraic
             }
         }
 
-        protected enum ChoiceResults
-        {
-            NonRelated,
-            Equal,
-            AcceptLeft,
-            AcceptRight,
-        }
-
-        protected virtual ChoiceResults ChoiceForAnd(
-            IExpression left, IExpression right) =>
-            // Idempotence
-            this.Equals(left, right) ?
-                ChoiceResults.Equal :
-                ChoiceResults.NonRelated;
-
-        protected virtual ChoiceResults ChoiceForOr(
-            IExpression left, IExpression right) =>
-            // Idempotence
-            this.Equals(left, right) ?
-                ChoiceResults.Equal :
-                ChoiceResults.NonRelated;
-
         private IEnumerable<IExpression> ComputeAbsorption<TFlattenedExpression>(
             IExpression left,
             IExpression right,
-            Func<IExpression, IExpression, ChoiceResults> selector)
+            Func<ILogicalCalculator, IExpression, IExpression, ChoiceResults> selector)
             where TFlattenedExpression : FlattenedExpression
         {
-            var fl = FlattenedExpression.Flatten(left);
-            var fr = FlattenedExpression.Flatten(right);
+            var fl = FlattenedExpression.Flatten(left, this.SortExpressions);
+            var fr = FlattenedExpression.Flatten(right, this.SortExpressions);
 
             if (fr is TFlattenedExpression(IExpression[] rightOperands))
             {
                 return rightOperands.
                     SelectMany(rightOperand =>
-                        selector(fl, rightOperand) switch
+                        selector(this, fl, rightOperand) switch
                         {
                             ChoiceResults.Equal => new[] { fl },
                             ChoiceResults.AcceptLeft => new[] { fl },
@@ -124,7 +172,7 @@ namespace Favalet.Expressions.Algebraic
             {
                 return leftOperands.
                     SelectMany(leftOperand =>
-                        selector(leftOperand, fr) switch
+                        selector(this, leftOperand, fr) switch
                         {
                             ChoiceResults.Equal => new[] { leftOperand },
                             ChoiceResults.AcceptLeft => new[] { leftOperand },
@@ -141,7 +189,7 @@ namespace Favalet.Expressions.Algebraic
         private IEnumerable<IExpression> ComputeShrink<TBinaryExpression>(
             IExpression left,
             IExpression right,
-            Func<IExpression, IExpression, ChoiceResults> selector)
+            Func<ILogicalCalculator, IExpression, IExpression, ChoiceResults> selector)
             where TBinaryExpression : IBinaryExpression
         {
             var flattened = FlattenedExpression.Flatten<TBinaryExpression>(left, right);
@@ -167,7 +215,7 @@ namespace Favalet.Expressions.Algebraic
                         // The pair are both type term.
                         else
                         {
-                            switch (selector(origin.Value, current.Value))
+                            switch (selector(this, origin.Value, current.Value))
                             {
                                 case ChoiceResults.Equal:
                                 case ChoiceResults.AcceptLeft:
@@ -192,7 +240,10 @@ namespace Favalet.Expressions.Algebraic
             return candidates;
         }
 
-        public IExpression Compute(IExpression operand)
+        public IExpression Compute(IExpression operand) =>
+            this.Compute(operand, this.DefaultChoicer);
+
+        public IExpression Compute(IExpression operand, IChoicer choicer)
         {
             if (operand is IBinaryExpression binary)
             {
@@ -203,7 +254,7 @@ namespace Favalet.Expressions.Algebraic
                 {
                     // Absorption
                     var absorption =
-                        this.ComputeAbsorption<OrFlattenedExpression>(left, right, this.ChoiceForAnd).
+                        this.ComputeAbsorption<OrFlattenedExpression>(left, right, choicer.ChoiceForAnd).
                         Memoize();
                     if (ConstructNested(absorption, OrExpression.Create, binary.Range) is IExpression result1)
                     {
@@ -212,7 +263,7 @@ namespace Favalet.Expressions.Algebraic
 
                     // Shrink
                     var shrinked =
-                        this.ComputeShrink<IAndExpression>(left, right, this.ChoiceForAnd).
+                        this.ComputeShrink<IAndExpression>(left, right, choicer.ChoiceForAnd).
                         Memoize();
                     if (ConstructNested(shrinked, AndExpression.Create, binary.Range) is IExpression result2)
                     {
@@ -223,7 +274,7 @@ namespace Favalet.Expressions.Algebraic
                 {
                     // Absorption
                     var absorption =
-                        this.ComputeAbsorption<AndFlattenedExpression>(left, right, this.ChoiceForOr).
+                        this.ComputeAbsorption<AndFlattenedExpression>(left, right, choicer.ChoiceForOr).
                         Memoize();
                     if (ConstructNested(absorption, AndExpression.Create, binary.Range) is IExpression result1)
                     {
@@ -232,7 +283,7 @@ namespace Favalet.Expressions.Algebraic
 
                     // Shrink
                     var shrinked =
-                        this.ComputeShrink<IOrExpression>(left, right, this.ChoiceForOr).
+                        this.ComputeShrink<IOrExpression>(left, right, choicer.ChoiceForOr).
                         Memoize();
                     if (ConstructNested(shrinked, OrExpression.Create, binary.Range) is IExpression result2)
                     {
@@ -276,7 +327,10 @@ namespace Favalet.Expressions.Algebraic
                 0 => null,
                 1 => results[0],
                 2 => creator(results[0], results[1], range),
-                _ => results.Skip(2).Aggregate(creator(results[0], results[1], range), (agg, v) => creator(agg, v, range))  // TODO: range
+                _ => results.Skip(2).
+                    Aggregate(
+                        creator(results[0], results[1], range),
+                        (agg, v) => creator(agg, v, range))  // TODO: range
             };
 
         public static readonly LogicalCalculator Instance =
