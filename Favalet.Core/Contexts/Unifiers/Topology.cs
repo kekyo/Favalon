@@ -42,36 +42,31 @@ namespace Favalet.Contexts.Unifiers
         [DebuggerStepThrough]
         private sealed class Node
         {
-            public readonly HashSet<Unification> Unifications;
+            public readonly IPlaceholderTerm Placeholder;
+            public readonly HashSet<Unification> Unifications = new HashSet<Unification>();
 
-            public Node() =>
-                this.Unifications = new HashSet<Unification>();
-
-            public void Merge(Node node)
-            {
-                foreach (var unification in node.Unifications)
-                {
-                    this.Unifications.Add(unification);
-                }
-            }
+            public Node(IPlaceholderTerm placeholder) =>
+                this.Placeholder = placeholder;
 
             public override string ToString() =>
-                "[" + StringUtilities.Join(",", this.Unifications.Select(unification => unification.ToString())) + "]";
+                $"{this.Placeholder.GetPrettyString(PrettyStringTypes.Readable)} [" + 
+                StringUtilities.Join(
+                    ",",
+                    this.Unifications.Select(unification => unification.ToString())) + "]";
         }
         
         private readonly Dictionary<IPlaceholderTerm, Node> topology =
             new Dictionary<IPlaceholderTerm, Node>(IdentityTermComparer.Instance);
-        private readonly Dictionary<IPlaceholderTerm, IExpression> aliases =
-            new Dictionary<IPlaceholderTerm, IExpression>(IdentityTermComparer.Instance);
+        private Dictionary<IPlaceholderTerm, IPlaceholderTerm>? aliases;
 
-        private bool InternalAddNormalized(
+        private bool InternalAdd(
             IPlaceholderTerm placeholder,
             IExpression expression,
             UnificationPolarities polarity)
         {
             if (!this.topology.TryGetValue(placeholder, out var node))
             {
-                node = new Node();
+                node = new Node(placeholder);
                 this.topology.Add(placeholder, node);
             }
 
@@ -79,83 +74,24 @@ namespace Favalet.Contexts.Unifiers
             return node.Unifications.Add(unification);
         }
 
-        private T? GetAlias<T>(
-            IPlaceholderTerm placeholder,
-            T? defaultValue)
-            where T : class, IExpression =>
-            this.aliases.TryGetValue(placeholder, out var alias) ?
-                (alias is IPlaceholderTerm a ? 
-                    this.GetAlias<T>(a, (T)alias) : 
-                    ((alias as T) ?? defaultValue)) :
-                defaultValue;
-        
-        private bool InternalAdd(
-            IPlaceholderTerm placeholder,
-            IExpression expression,
-            UnificationPolarities polarity)
-        {
-            var ph =
-                this.GetAlias(placeholder, placeholder)!;
-            var ex = expression is IPlaceholderTerm exph ?
-                this.GetAlias(exph, exph)! :
-                expression;
-
-            return this.InternalAddNormalized(ph, ex, polarity);
-        }
-
         public void AddBoth(
             IExpression from,
             IExpression to)
         {
-            switch (from, to)
+            if (from is IPlaceholderTerm fph)
             {
-                case (IPlaceholderTerm fph, IPlaceholderTerm tph)
-                    when !fph.Equals(tph):
-                    switch (this.GetAlias(fph, default(IPlaceholderTerm)), this.GetAlias(tph, default(IPlaceholderTerm)))
-                    {
-                        case (IPlaceholderTerm faph, null):
-                            if (!faph.Equals(to))
-                            {
-                                this.AddBoth(
-                                    faph,
-                                    to);
-                            }
-                            break;
-                        case (null, IPlaceholderTerm taph):
-                            if (!from.Equals(taph))
-                            {
-                                this.AddBoth(
-                                    from,
-                                    taph);
-                            }
-                            break;
-                        case (null, null):
-                            var formalDirection = IdentityTermComparer.Instance.Compare(fph, tph);
-                            if (formalDirection > 0)
-                            {
-                                this.aliases.Add(fph, tph);
-                            }
-                            else if (formalDirection < 0)
-                            {
-                                this.aliases.Add(tph, fph);
-                            }
-                            break;
-                    }
-                    break;
-                
-                case (IPlaceholderTerm fph, _):
-                    this.InternalAdd(
-                        fph,
-                        to,
-                        UnificationPolarities.Both);
-                    break;
-                
-                case (_, IPlaceholderTerm tph):
-                    this.InternalAdd(
-                        tph,
-                        from,
-                        UnificationPolarities.Both);
-                    break;
+                this.InternalAdd(
+                    fph,
+                    to,
+                    UnificationPolarities.Both);
+            }
+
+            if (to is IPlaceholderTerm tph)
+            {
+                this.InternalAdd(
+                    tph,
+                    from,
+                    UnificationPolarities.Both);
             }
         }
 
@@ -195,119 +131,182 @@ namespace Favalet.Contexts.Unifiers
             }
         }
 
-        public void NormalizeAliases()
+        private IPlaceholderTerm? GetAlias(IPlaceholderTerm placeholder, IPlaceholderTerm? defaultValue)
         {
-            // Will make aliases normalized topology excepts outside PlaceholderTerm instances.
+            if (this.aliases == null)
+            {
+                return null;
+            }
+            return this.aliases.TryGetValue(placeholder, out var normalized) ?
+                this.GetAlias(normalized, normalized) :
+                defaultValue;
+        }
             
-            // Step 1: Resolve and shrink placeholder aliases.
-            foreach (var entry in this.aliases)
+        public void CalculateUnifications()
+        {
+            // Step 1-1: Generate alias dictionary.
+            this.aliases = this.topology.
+                Select(entry =>
+                    (placeholder: entry.Key,
+                     aliases: entry.Value.Unifications.
+                         Where(unification =>
+                             // Both placeholder unification
+                             (unification.Polarity == UnificationPolarities.Both) && 
+                             unification.Expression is IPlaceholderTerm))).
+                SelectMany(entry => entry.aliases.Select(alias => (alias, entry.placeholder))).
+                ToDictionary(entry => (IPlaceholderTerm)entry.alias.Expression, entry => entry.placeholder);
+
+            // Step 1-2: Aggregate all aliased unifications.
+            foreach (var (placeholder, node) in this.topology.ToArray())
             {
-                if (this.topology.TryGetValue(entry.Key, out var source) &&
-                    entry.Value is IPlaceholderTerm target)
+                // If this placeholder aliasing?
+                if (this.GetAlias(placeholder, default) is IPlaceholderTerm normalized &&
+                    this.topology.TryGetValue(normalized, out var targetNode))
                 {
-                    // Already declared topology key:
-                    if (this.topology.TryGetValue(target, out var destination))
+                    // Aggregate all unifications.
+                    foreach (var unification in node.Unifications)
                     {
-                        // Merge into destination.
-                        destination.Merge(source);
+                        targetNode.Unifications.Add(unification);
                     }
-                    else
-                    {
-                        // Redeclare topology key.
-                        this.topology.Add(target, source);
-                    }
-                    this.topology.Remove(entry.Key);
+                    
+                    // Remove this placeholder from topology.
+                    this.topology.Remove(placeholder);
                 }
             }
-
-            // Step 2: Resolve inside unification expressions.
-            var removeCandidates = new List<IPlaceholderTerm>();
-            foreach (var entry in this.topology)
+            
+            // Step 1-3: Resolve aliases on all unifications.
+            foreach (var unification in this.topology.Values.
+                SelectMany(node => node.Unifications))
             {
-                foreach (var unification in entry.Value.Unifications.ToArray())
-                {
-                    switch (unification.Expression, unification.Polarity)
+                IExpression Replacer(IExpression expression) =>
+                    expression switch
                     {
-                        case (IPlaceholderTerm placeholder, _):
-                            // Alias declared placeholder:
-                            if (this.aliases.TryGetValue(placeholder, out var target1))
-                            {
-                                // Resolved.
-                                unification.UpdateExpression(target1);
-                            }
-                            break;
+                        IPlaceholderTerm placeholder =>
+                            this.GetAlias(placeholder, placeholder),
+                        IPairExpression(IExpression left, IExpression right) pair =>
+                            pair.Create(Replacer(left), Replacer(right), pair.Range),
+                        _ => expression
+                    };
+                var updated = Replacer(unification.Expression);
+                unification.UpdateExpression(updated);
+            }
 
-                        case (_, UnificationPolarities.Both):
-                            // Switch an unification to new non-placeholder alias.
-                            entry.Value.Unifications.Remove(unification);
-                            if (entry.Value.Unifications.Count == 0)
-                            {
-                                removeCandidates.Add(entry.Key);
-                            }
+            // Step 2: Calculate and aggregate all unifications each nodes.
+            foreach (var (placeholder, node) in this.topology)
+            {
+                var unification = node.Unifications.
+                    Aggregate((ua, ub) =>
+                    {
+                        switch (ua.Polarity, ub.Polarity)
+                        {
+                            // ph <=> ua
+                            // ph <== ub
+                            // check: ua == (ua | ub) : widen
+                            // result: ua
+                            case (UnificationPolarities.Both, UnificationPolarities.In):
+                                var r1 = this.TypeCalculator.Calculate(
+                                    OrExpression.Create(ua.Expression, ub.Expression, TextRange.Unknown));
+                                if (!this.TypeCalculator.Equals(r1, ua.Expression))
+                                {
+                                    throw new InvalidOperationException();
+                                }
+                                return ua;
+
+                            // ph <=> ua
+                            // ph ==> ub
+                            // check: ua == (ua & ub) : narrow
+                            // result: ua
+                            case (UnificationPolarities.Both, UnificationPolarities.Out):
+                                var r2 = this.TypeCalculator.Calculate(
+                                    AndExpression.Create(ua.Expression, ub.Expression, TextRange.Unknown));
+                                if (!this.TypeCalculator.Equals(r2, ua.Expression))
+                                {
+                                    throw new InvalidOperationException();
+                                }
+                                return ua;
+
+                            // ph <== ua
+                            // ph <=> ub
+                            // check: ub == (ua | ub) : widen
+                            // result: ub
+                            case (UnificationPolarities.In, UnificationPolarities.Both):
+                                var r3 = this.TypeCalculator.Calculate(
+                                    OrExpression.Create(ua.Expression, ub.Expression, TextRange.Unknown));
+                                if (!this.TypeCalculator.Equals(r3, ub.Expression))
+                                {
+                                    throw new InvalidOperationException();
+                                }
+                                return ub;
+
+                            // ph <=> ua
+                            // ph <== ub
+                            // check: ub == (ua & ub) : narrow
+                            // result: ub
+                            case (UnificationPolarities.Out, UnificationPolarities.Both):
+                                var r4 = this.TypeCalculator.Calculate(
+                                    AndExpression.Create(ua.Expression, ub.Expression, TextRange.Unknown));
+                                if (!this.TypeCalculator.Equals(r4, ub.Expression))
+                                {
+                                    throw new InvalidOperationException();
+                                }
+                                return ub;
                             
-                            // Alias declared placeholder:
-                            if (this.aliases.TryGetValue(entry.Key, out var target2))
-                            {
-                                // Narrow and replace
-                                var combined = AndExpression.Create(
-                                    target2, unification.Expression,
-                                    TextRange.Unknown);   // TODO: range
-                                var calculated = this.TypeCalculator.Compute(combined);
-                                this.aliases[entry.Key] = calculated;
-                            }
-                            else
-                            {
-                                // Store
-                                this.aliases.Add(entry.Key, unification.Expression);
-                            }
-                            break;
-                        
-                        case (_, UnificationPolarities.In):
-                            // Alias declared placeholder:
-                            if (this.aliases.TryGetValue(entry.Key, out var target3))
-                            {
-                                // Narrow and check
-                                var combined = AndExpression.Create(
-                                    target3, unification.Expression,
-                                    TextRange.Unknown);  // TODO: range
-                                var calculated = this.TypeCalculator.Compute(combined);
-                                
-                                // Absorb?
-                                if (this.TypeCalculator.Equals(calculated, unification.Expression))
+                            // ph ==> ua
+                            // ph <== ub
+                            // check: ub == (ua & ub) : narrow
+                            // result: ub
+                            case (UnificationPolarities.Out, UnificationPolarities.In):
+                                var r5 = this.TypeCalculator.Calculate(
+                                    AndExpression.Create(ua.Expression, ub.Expression, TextRange.Unknown));
+                                if (!this.TypeCalculator.Equals(r5, ub.Expression))
                                 {
-                                    // Switch an unification to new non-placeholder alias.
-                                    entry.Value.Unifications.Remove(unification);
-                                    this.aliases[entry.Key] = calculated;
+                                    throw new InvalidOperationException();
                                 }
-                            }
-                            break;
-
-                        case (_, UnificationPolarities.Out):
-                            // Alias declared placeholder:
-                            if (this.aliases.TryGetValue(entry.Key, out var target4))
-                            {
-                                // Narrow and check
-                                var combined = AndExpression.Create(
-                                    target4, unification.Expression,
-                                    TextRange.Unknown);  // TODO: range
-                                var calculated = this.TypeCalculator.Compute(combined);
-                                
-                                // Absorb?
-                                if (this.TypeCalculator.Equals(calculated, unification.Expression))
+                                return ub;
+                            
+                            // ph <== ua
+                            // ph ==> ub
+                            // check: ua == (ua & ub) : narrow
+                            // result: ua
+                            case (UnificationPolarities.In, UnificationPolarities.Out):
+                                var r6 = this.TypeCalculator.Calculate(
+                                    AndExpression.Create(ua.Expression, ub.Expression, TextRange.Unknown));
+                                if (!this.TypeCalculator.Equals(r6, ua.Expression))
                                 {
-                                    // Switch an unification to new non-placeholder alias.
-                                    entry.Value.Unifications.Remove(unification);
-                                    this.aliases[entry.Key] = calculated;
+                                    throw new InvalidOperationException();
                                 }
-                            }
-                            break;
-                    }
-                }
-            }
+                                return ua;
 
-            foreach (var ph in removeCandidates)
-            {
-                this.topology.Remove(ph);
+                            // ph <== ua
+                            // ph <== ub
+                            // result: ua & ub
+                            case (UnificationPolarities.In, UnificationPolarities.In):
+                                var r7 = this.TypeCalculator.Calculate(
+                                    AndExpression.Create(ua.Expression, ub.Expression, TextRange.Unknown));
+                                return Unification.Create(r7, UnificationPolarities.In);
+
+                            // ph ==> ua
+                            // ph ==> ub
+                            // result: ua | ub
+                            case (UnificationPolarities.Out, UnificationPolarities.Out):
+                                var r8 = this.TypeCalculator.Calculate(
+                                    OrExpression.Create(ua.Expression, ub.Expression, TextRange.Unknown));
+                                return Unification.Create(r8, UnificationPolarities.Out);
+
+                            // ph <=> ua
+                            // ph <=> ub
+                            // result: ua & ub
+                            case (UnificationPolarities.Both, UnificationPolarities.Both):
+                                var r9 = this.TypeCalculator.Calculate(
+                                    AndExpression.Create(ua.Expression, ub.Expression, TextRange.Unknown));
+                                return Unification.Create(r9, UnificationPolarities.Both);
+
+                            default:
+                                throw new InvalidOperationException();
+                        };
+                    });
+                node.Unifications.Clear();
+                node.Unifications.Add(unification);
             }
         }
 
@@ -334,7 +333,7 @@ namespace Favalet.Contexts.Unifiers
 
             public IExpression? Compute(IExpression[] expressions, TextRange range) =>
                 LogicalCalculator.ConstructNested(expressions, this.creator, range) is IExpression combined ?
-                    this.calculator.Compute(combined) : null;
+                    this.calculator.Calculate(combined) : null;
             
             public static ResolveContext Create(
                 ITypeCalculator calculator,
@@ -347,57 +346,53 @@ namespace Favalet.Contexts.Unifiers
             ResolveContext context,
             IPlaceholderTerm placeholder)
         {
-            var resolved = this.GetAlias<IExpression>(placeholder, placeholder)!;
-            if (resolved is IPlaceholderTerm ph)
+            if (this.topology.TryGetValue(placeholder, out var node))
             {
-                if (this.topology.TryGetValue(ph, out var node))
+                IExpression ResolveRecursive(
+                    IExpression expression)
                 {
-                    IExpression ResolveRecursive(
-                        IExpression expression)
+                    switch (expression)
                     {
-                        switch (expression)
-                        {
-                            case IPlaceholderTerm ph:
-                                return this.InternalResolve(context, ph);
-                            case IPairExpression parent:
-                                return parent.Create(
-                                    ResolveRecursive(parent.Left),
-                                    ResolveRecursive(parent.Right),
-                                    parent.Range);
-                            default:
-                                return expression;
-                        }
+                        case IPlaceholderTerm ph:
+                            return this.InternalResolve(context, ph);
+                        case IPairExpression parent:
+                            return parent.Create(
+                                ResolveRecursive(parent.Left),
+                                ResolveRecursive(parent.Right),
+                                parent.Range);
+                        default:
+                            return expression;
                     }
-            
-                    var expressions = node.Unifications.
-                        Where(unification =>
-                            (unification.Polarity == context.Polarity) ||
-                            (unification.Polarity == UnificationPolarities.Both)).
-                        Select(unification => ResolveRecursive(unification.Expression)).
-                        ToArray();
-                    if (expressions.Length >= 1)
+                }
+        
+                var expressions = node.Unifications.
+                    Where(unification =>
+                        (unification.Polarity == context.Polarity) ||
+                        (unification.Polarity == UnificationPolarities.Both)).
+                    Select(unification => ResolveRecursive(unification.Expression)).
+                    ToArray();
+                if (expressions.Length >= 1)
+                {
+                    // TODO: placeholder filtering idea is bad?
+                    if (expressions.All(expression => expression.IsContainsPlaceholder))
                     {
-                        // TODO: placeholder filtering idea is bad?
-                        if (expressions.All(expression => expression.IsContainsPlaceholder))
-                        {
-                            var calculated = context.Compute(
-                                expressions, TextRange.Unknown)!;   // TODO: range
-                            return calculated;
-                        }
-                        else
-                        {
-                            var filtered = expressions.
-                                Where(expression => !expression.IsContainsPlaceholder).
-                                ToArray();
-                            var calculated = context.Compute(
-                                filtered, TextRange.Unknown)!;   // TODO: range
-                            return calculated;
-                        }
+                        var calculated = context.Compute(
+                            expressions, TextRange.Unknown)!;   // TODO: range
+                        return calculated;
+                    }
+                    else
+                    {
+                        var filtered = expressions.
+                            Where(expression => !expression.IsContainsPlaceholder).
+                            ToArray();
+                        var calculated = context.Compute(
+                            filtered, TextRange.Unknown)!;   // TODO: range
+                        return calculated;
                     }
                 }
             }
 
-            return resolved;
+            return placeholder;
         }
         
         public override IExpression? Resolve(IPlaceholderTerm placeholder)
@@ -645,7 +640,7 @@ namespace Favalet.Contexts.Unifiers
                 foreach (var entry in this.aliases.
                     Select(entry =>
                     {
-                        var resolved = this.GetAlias<IExpression>(entry.Key, entry.Key)!;
+                        var resolved = this.GetAlias(entry.Key, entry.Key)!;
                         return
                             (from: ToSymbolString(entry.Key).symbol,
                                to: ToSymbolString(resolved).symbol);

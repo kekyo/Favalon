@@ -17,7 +17,6 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 #if NET40
 using System.Diagnostics;
 using System.Collections.Generic;
@@ -82,3 +81,4 @@ namespace System.Runtime.CompilerServices
     }
 }
 #endif
+

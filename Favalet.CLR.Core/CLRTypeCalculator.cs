@@ -21,12 +21,17 @@ using Favalet.Expressions;
 using Favalet.Internal;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Favalet
 {
     public sealed class CLRTypeCalculator :
         TypeCalculator
     {
+        [DebuggerStepThrough]
+        private CLRTypeCalculator()
+        { }
+
         protected override IComparer<IExpression>? Sorter =>
             OrderedTypeTermComparer.Instance;
 

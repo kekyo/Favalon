@@ -32,7 +32,7 @@ namespace Favalet.Expressions.Algebraic
         bool Equals(IExpression lhs, IExpression rhs);
         bool ExactEquals(IExpression lhs, IExpression rhs);
 
-        IExpression Compute(IExpression operand);
+        IExpression Calculate(IExpression operand);
     }
 
     public class LogicalCalculator :
@@ -91,8 +91,8 @@ namespace Favalet.Expressions.Algebraic
                         (DeadEndTerm _, _) => false,
                         (_, DeadEndTerm _) => false,
                         _ => this.Equals(
-                            this.Compute(lhs.HigherOrder),
-                            this.Compute(rhs.HigherOrder))
+                            this.Calculate(lhs.HigherOrder),
+                            this.Calculate(rhs.HigherOrder))
                     };
             }
         }
@@ -212,12 +212,12 @@ namespace Favalet.Expressions.Algebraic
             return candidates;
         }
 
-        public IExpression Compute(IExpression operand)
+        public IExpression Calculate(IExpression operand)
         {
             if (operand is IBinaryExpression binary)
             {
-                var left = this.Compute(binary.Left);
-                var right = this.Compute(binary.Right);
+                var left = this.Calculate(binary.Left);
+                var right = this.Calculate(binary.Right);
 
                 if (binary is IAndExpression)
                 {
@@ -227,7 +227,7 @@ namespace Favalet.Expressions.Algebraic
                         Memoize();
                     if (ConstructNested(absorption, OrExpression.Create, binary.Range) is IExpression result1)
                     {
-                        return this.Compute(result1);
+                        return this.Calculate(result1);
                     }
 
                     // Shrink
@@ -247,7 +247,7 @@ namespace Favalet.Expressions.Algebraic
                         Memoize();
                     if (ConstructNested(absorption, AndExpression.Create, binary.Range) is IExpression result1)
                     {
-                        return this.Compute(result1);
+                        return this.Calculate(result1);
                     }
 
                     // Shrink

@@ -142,7 +142,7 @@ namespace Favalet.Contexts
 
         [DebuggerStepThrough]
         public void NormalizeAliases() =>
-            this.unifier.NormalizeAliases();
+            this.unifier.CalculateUnifications();
 
         [DebuggerStepThrough]
         public IExpression Infer(IExpression expression) =>

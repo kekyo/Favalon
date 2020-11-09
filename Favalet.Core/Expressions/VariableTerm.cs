@@ -157,7 +157,7 @@ namespace Favalet.Expressions
                         OrExpression.Create,
                         this.Range)!;
 
-                    var calculated = context.TypeCalculator.Compute(
+                    var calculated = context.TypeCalculator.Calculate(
                         AndExpression.Create(
                             higherOrder, targetsHigherOrder,
                             this.Range));
@@ -165,7 +165,7 @@ namespace Favalet.Expressions
                     var filteredTargets = targets.
                         Select(target =>
                             (target,
-                             calculated: context.TypeCalculator.Compute(
+                             calculated: context.TypeCalculator.Calculate(
                                 OrExpression.Create(target.HigherOrder, calculated, this.Range)))).
                         Where(entry => entry.calculated.Equals(calculated)).
                         Select(entry => entry.target).

@@ -17,11 +17,12 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-using System;
 using Favalet.Expressions.Algebraic;
 using Favalet.Expressions;
 using Favalet.Internal;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Favalet
 {
@@ -36,6 +37,10 @@ namespace Favalet
     public class TypeCalculator :
         LogicalCalculator, ITypeCalculator
     {
+        [DebuggerStepThrough]
+        protected TypeCalculator()
+        { }
+
         protected override IComparer<IExpression>? Sorter =>
             OrderedExpressionComparer.Instance;
 

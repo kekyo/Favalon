@@ -37,6 +37,13 @@ namespace Favalet.Expressions.Specialized
 
     public static class PairExpressionExtension
     {
+        public static void Deconstruct(
+            this IPairExpression pair, out IExpression left, out IExpression right)
+        {
+            left = pair.Left;
+            right = pair.Right;
+        }
+        
         public static IEnumerable<IExpression> Children(this IPairExpression pair)
         {
             yield return pair.Left;
