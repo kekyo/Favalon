@@ -39,12 +39,12 @@ namespace Favalet.Expressions.Algebraic
     {
         ChoiceResults ChoiceForAnd(
             ILogicalCalculator calculator,
-            IExpressionChoicer self,   // drives by Y combinator
+            IExpressionChoicer self,   // drives by Y combinator likes
             IExpression left, IExpression right);
 
         ChoiceResults ChoiceForOr(
             ILogicalCalculator calculator,
-            IExpressionChoicer self,   // drives by Y combinator
+            IExpressionChoicer self,   // drives by Y combinator likes
             IExpression left, IExpression right);
     }
 

@@ -23,6 +23,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Xml;
 using Favalet.Expressions;
 using Favalet.Expressions.Algebraic;
 using Favalet.Expressions.Specialized;
@@ -148,15 +149,107 @@ namespace Favalet.Contexts.Unifiers
             IExpressionChoicer
         {
             private readonly Unifier parent;
+            private readonly Dictionary<(IExpression, IExpression), bool> cache =
+                new Dictionary<(IExpression, IExpression), bool>();
 
             public TypeTopologyChoicer(Unifier parent) =>
                 this.parent = parent;
             
+            private IEnumerable<IExpression> TraversePlaceholderTerms<TBinaryExpression>(
+                IExpression from,
+                UnificationPolarities polarity)
+                where TBinaryExpression : IBinaryExpression
+            {
+                var current = from;
+                while (true)
+                {
+                    if (current is IPlaceholderTerm ph)
+                    {
+                        var aph = this.parent.GetAlias(ph, ph)!;
+                        yield return aph;
+
+                        if (this.parent.topology.TryGetValue(aph, out var node))
+                        {
+                            foreach (var unification in node.Unifications.Where(
+                                unification => unification.Polarity == polarity))
+                            {
+                                foreach (var expression in
+                                    this.TraversePlaceholderTerms<TBinaryExpression>(
+                                    unification.Expression, polarity))
+                                {
+                                    yield return expression;
+                                }
+                            }
+                        }
+                    }
+                    else if (current is TBinaryExpression binary)
+                    {
+                        foreach (var expression in
+                            this.TraversePlaceholderTerms<TBinaryExpression>(binary.Left, polarity))
+                        {
+                            yield return expression;
+                        }
+                        foreach (var expression in
+                            this.TraversePlaceholderTerms<TBinaryExpression>(binary.Right, polarity))
+                        {
+                            yield return expression;
+                        }
+                    }
+                    else
+                    {
+                        yield return current;
+                    }
+                    break;
+                }
+            }
+
+            private bool IsAssignableFrom<TBinaryExpression>(
+                IExpression to, IExpression from)
+                where TBinaryExpression : IBinaryExpression
+            {
+                if (this.cache.TryGetValue((from, to), out var result))
+                {
+                    return result;
+                }
+                
+                if (TraversePlaceholderTerms<TBinaryExpression>(from, UnificationPolarities.Out).
+                    Any(expression => this.parent.TypeCalculator.Equals(expression, to)))
+                {
+                    this.cache.Add((from, to), true);
+                    return true;
+                }
+                else if (TraversePlaceholderTerms<TBinaryExpression>(to, UnificationPolarities.In).
+                    Any(expression => this.parent.TypeCalculator.Equals(expression, from)))
+                {
+                    this.cache.Add((from, to), true);
+                    return true;
+                }
+                else
+                {
+                    this.cache.Add((from, to), false);
+                    return false;
+                }
+            }
+
             public ChoiceResults ChoiceForAnd(
                 ILogicalCalculator calculator,
                 IExpressionChoicer self,
                 IExpression left, IExpression right)
             {
+                // Narrowing
+                var rtl = IsAssignableFrom<AndExpression>(left, right);
+                var ltr = IsAssignableFrom<AndExpression>(right, left);
+
+                switch (rtl, ltr)
+                {
+                    case (true, true):
+                        return ChoiceResults.Equal;
+                    case (true, false):
+                        return ChoiceResults.AcceptRight;
+                    case (false, true):
+                        return ChoiceResults.AcceptLeft;
+                }
+
                 return this.parent.TypeCalculator.DefaultChoicer.ChoiceForAnd(
                     calculator, self, left, right);
             }
@@ -166,29 +259,71 @@ namespace Favalet.Contexts.Unifiers
                 IExpressionChoicer self,
                 IExpression left, IExpression right)
             {
+                // Widening
+                var rtl = IsAssignableFrom<OrExpression>(left, right);
+                var ltr = IsAssignableFrom<OrExpression>(right, left);
+
+                switch (rtl, ltr)
+                {
+                    case (true, true):
+                        return ChoiceResults.Equal;
+                    case (true, false):
+                        return ChoiceResults.AcceptLeft;
+                    case (false, true):
+                        return ChoiceResults.AcceptRight;
+                }
+                
                 return this.parent.TypeCalculator.DefaultChoicer.ChoiceForOr(
                     calculator, self, left, right);
             }
         }
-            
+
+        [DebuggerStepThrough]
+        private sealed class AliasPlaceholderPairComparer :
+            IEqualityComparer<(IPlaceholderTerm ph0, IPlaceholderTerm ph1)>,
+            IComparer<(IPlaceholderTerm ph0, IPlaceholderTerm ph1)>
+        {
+            private AliasPlaceholderPairComparer()
+            { }
+
+            public bool Equals(
+                (IPlaceholderTerm ph0, IPlaceholderTerm ph1) x,
+                (IPlaceholderTerm ph0, IPlaceholderTerm ph1) y) =>
+                (x.ph0.Equals(y.ph0) && x.ph1.Equals(y.ph1)) ||
+                (x.ph0.Equals(y.ph1) && x.ph1.Equals(y.ph0));
+
+            public int GetHashCode((IPlaceholderTerm ph0, IPlaceholderTerm ph1) obj) =>
+                obj.ph0.GetHashCode() ^ obj.ph1.GetHashCode();
+
+            public int Compare(
+                (IPlaceholderTerm ph0, IPlaceholderTerm ph1) x,
+                (IPlaceholderTerm ph0, IPlaceholderTerm ph1) y) =>
+                x.ph0.Index.CompareTo(y.ph0.Index);
+
+            public static readonly AliasPlaceholderPairComparer Instance =
+                new AliasPlaceholderPairComparer();
+        }
+        
         public void CalculateUnifications()
         {
             // Step 1-1: Generate alias dictionary.
-            var preExtracts = this.topology.Select(entry =>
+            var preExtracts = this.topology.
+                Select(entry =>
                     (placeholder: entry.Key,
-                        aliases: entry.Value.Unifications.Where(unification =>
-                            // Both placeholder unification
-                            (unification.Polarity == UnificationPolarities.Both) &&
-                            unification.Expression is IPlaceholderTerm))).SelectMany(entry =>
-                    entry.aliases.Select(alias => (alias: (IPlaceholderTerm) alias.Expression, entry.placeholder)))
-                .ToArray();
-
-            var validKeys = new HashSet<IPlaceholderTerm>(
-                preExtracts.Select(entry => entry.placeholder));
-            
+                     aliases: entry.Value.Unifications.Where(unification =>
+                        // Both placeholder unification
+                        (unification.Polarity == UnificationPolarities.Both) &&
+                        unification.Expression is IPlaceholderTerm))).
+                SelectMany(entry =>
+                    entry.aliases.Select(
+                        alias => (alias: (IPlaceholderTerm)alias.Expression, entry.placeholder))).
+                OrderByDescending(entry => entry, AliasPlaceholderPairComparer.Instance).    // saves by minimal index
+                Distinct(AliasPlaceholderPairComparer.Instance).
+                ToArray();
+           
             this.aliases =
-                preExtracts.Where(entry => !validKeys.Contains(entry.alias)).
-                ToDictionary(entry => entry.alias, entry => entry.placeholder);
+                preExtracts.
+                ToDictionary(entry => entry.Item1, entry => entry.Item2);
 
             // Step 1-2: Aggregate all aliased unifications.
             foreach (var (placeholder, node) in this.topology.ToArray())
@@ -226,6 +361,7 @@ namespace Favalet.Contexts.Unifiers
             }
 
             // Step 2: Calculate and aggregate all unifications each nodes.
+            // Type relation extends by the type topology choicer inserted at run time.
             var choicer = new TypeTopologyChoicer(this);
             foreach (var (placeholder, node) in this.topology)
             {
