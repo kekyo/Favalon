@@ -166,8 +166,13 @@ namespace Favalet.Expressions
         }
 
         [DebuggerStepThrough]
-        IExpression IPairExpression.Create(IExpression left, IExpression right, TextRange range) =>
-            this.Factory.Create(left, right, range);
+        IExpression IPairExpression.Create(
+            IExpression left, IExpression right, IExpression higherOrder, TextRange range)
+        {
+            Debug.Assert(higherOrder is UnspecifiedTerm);
+
+            return this.Factory.Create(left, right, range);
+        }
 
         public override int GetHashCode() =>
             this.Parameter.GetHashCode() ^ this.Result.GetHashCode();

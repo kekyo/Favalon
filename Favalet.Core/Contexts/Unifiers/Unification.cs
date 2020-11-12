@@ -19,7 +19,6 @@
 
 using System;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using Favalet.Expressions;
 
 namespace Favalet.Contexts.Unifiers
@@ -35,10 +34,10 @@ namespace Favalet.Contexts.Unifiers
     }
 
     [DebuggerStepThrough]
-    internal sealed class Unification :
-        IEquatable<Unification?>
+    internal readonly struct Unification :
+        IEquatable<Unification>
     {
-        public IExpression Expression { get; private set; }
+        public readonly IExpression Expression;
         public readonly UnificationPolarities Polarity;
 
         private Unification(
@@ -49,15 +48,11 @@ namespace Favalet.Contexts.Unifiers
             this.Polarity = polarity;
         }
 
-        public void UpdateExpression(IExpression expression) =>
-            this.Expression = expression;
-
         public override int GetHashCode() =>
             this.Expression.GetHashCode() ^
             this.Polarity.GetHashCode();
         
-        public bool Equals(Unification? rhs) =>
-            rhs != null &&
+        public bool Equals(Unification rhs) =>
             this.Expression.Equals(rhs.Expression) &&
             (this.Polarity == rhs.Polarity);
 

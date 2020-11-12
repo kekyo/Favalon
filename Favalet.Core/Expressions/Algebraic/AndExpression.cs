@@ -19,8 +19,8 @@
 
 using Favalet.Contexts;
 using Favalet.Expressions.Specialized;
-using System.Diagnostics;
 using Favalet.Ranges;
+using System.Diagnostics;
 
 namespace Favalet.Expressions.Algebraic
 {
@@ -38,16 +38,13 @@ namespace Favalet.Expressions.Algebraic
             base(left, right, higherOrder, range)
         { }
 
-        [DebuggerStepThrough]
         internal override IExpression OnCreate(
             IExpression left, IExpression right, IExpression higherOrder, TextRange range) =>
             new AndExpression(left, right, higherOrder, range);
 
-        [DebuggerStepThrough]
         public static AndExpression Create(
             IExpression left, IExpression right, IExpression higherOrder, TextRange range) =>
             new AndExpression(left, right, higherOrder, range);
-        [DebuggerStepThrough]
         public static AndExpression Create(
             IExpression left, IExpression right, TextRange range) =>
             new AndExpression(left, right, UnspecifiedTerm.Instance, range);

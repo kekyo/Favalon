@@ -43,17 +43,29 @@ namespace Favalet.Contexts.Unifiers
         [DebuggerStepThrough]
         private sealed class Node
         {
+#if DEBUG
             public readonly IPlaceholderTerm Placeholder;
+#endif
             public readonly HashSet<Unification> Unifications = new HashSet<Unification>();
 
-            public Node(IPlaceholderTerm placeholder) =>
-                this.Placeholder = placeholder;
-
+            public Node(IPlaceholderTerm placeholder)
+#if DEBUG
+                => this.Placeholder = placeholder;
+#else
+                { }
+#endif
+            
             public override string ToString() =>
+#if DEBUG
                 $"{this.Placeholder.GetPrettyString(PrettyStringTypes.Readable)} [" + 
                 StringUtilities.Join(
                     ",",
                     this.Unifications.Select(unification => unification.ToString())) + "]";
+#else
+                $"[" + StringUtilities.Join(
+                    ",",
+                    this.Unifications.Select(unification => unification.ToString())) + "]";
+#endif
         }
         
         private readonly Dictionary<IPlaceholderTerm, Node> topology =
@@ -307,7 +319,7 @@ namespace Favalet.Contexts.Unifiers
         public void CalculateUnifications()
         {
             // Step 1-1: Generate alias dictionary.
-            var preExtracts = this.topology.
+            this.aliases = this.topology.
                 Select(entry =>
                     (placeholder: entry.Key,
                      aliases: entry.Value.Unifications.Where(unification =>
@@ -319,10 +331,6 @@ namespace Favalet.Contexts.Unifiers
                         alias => (alias: (IPlaceholderTerm)alias.Expression, entry.placeholder))).
                 OrderByDescending(entry => entry, AliasPlaceholderPairComparer.Instance).    // saves by minimal index
                 Distinct(AliasPlaceholderPairComparer.Instance).
-                ToArray();
-           
-            this.aliases =
-                preExtracts.
                 ToDictionary(entry => entry.Item1, entry => entry.Item2);
 
             // Step 1-2: Aggregate all aliased unifications.
@@ -332,34 +340,65 @@ namespace Favalet.Contexts.Unifiers
                 if (this.GetAlias(placeholder, default) is IPlaceholderTerm normalized &&
                     this.topology.TryGetValue(normalized, out var targetNode))
                 {
-                    // Aggregate all unifications.
-                    foreach (var unification in node.Unifications)
+                    // Aggregate all unifications except self.
+                    foreach (var unification in node.Unifications.
+                        Where(unification =>
+                            !((unification.Polarity == UnificationPolarities.Both) &&
+                              unification.Expression.Equals(normalized))))
                     {
                         targetNode.Unifications.Add(unification);
                     }
-                    
+                                        
+                    // Remove duplicate equality unifications.
+                    foreach (var unification in targetNode.Unifications.
+                        ToArray().
+                        Where(unification =>
+                            ((unification.Polarity == UnificationPolarities.Both) &&
+                             unification.Expression.Equals(placeholder))))
+                    {
+                        targetNode.Unifications.Remove(unification);
+                    }
+
                     // Remove this placeholder from topology.
                     this.topology.Remove(placeholder);
                 }
             }
             
             // Step 1-3: Resolve aliases on all unifications.
-            foreach (var unification in this.topology.Values.
-                SelectMany(node => node.Unifications))
+            foreach (var (placeholder, node) in this.topology.ToArray())
             {
-                IExpression Replacer(IExpression expression) =>
-                    expression switch
-                    {
-                        IPlaceholderTerm placeholder =>
-                            this.GetAlias(placeholder, placeholder)!,
-                        IPairExpression(IExpression left, IExpression right) pair =>
-                            pair.Create(Replacer(left), Replacer(right), pair.Range),
-                        _ => expression
-                    };
-                var updated = Replacer(unification.Expression);
-                unification.UpdateExpression(updated);
-            }
+                foreach (var unification in node.Unifications.ToArray())
+                {
+                    IExpression Replacer(IExpression expression) =>
+                        expression switch
+                        {
+                            IPlaceholderTerm placeholder =>
+                                this.GetAlias(placeholder, placeholder)!,
+                            IPairExpression(IExpression left, IExpression right) pair =>
+                                pair.Create(
+                                    Replacer(left),
+                                    Replacer(right),
+                                    UnspecifiedTerm.Instance,
+                                    pair.Range),
+                            _ => expression
+                        };
+                    
+                    node.Unifications.Remove(unification);
 
+                    var updated = Replacer(unification.Expression);
+                    if (!((unification.Polarity == UnificationPolarities.Both) &&
+                        updated.Equals(placeholder)))
+                    {
+                        node.Unifications.Add(Unification.Create(updated, unification.Polarity));
+                    }
+                }
+
+                if (node.Unifications.Count == 0)
+                {
+                    this.topology.Remove(placeholder);
+                }
+            }
+#if false
             // Step 2: Calculate and aggregate all unifications each nodes.
             // Type relation extends by the type topology choicer inserted at run time.
             var choicer = new TypeTopologyChoicer(this);
@@ -488,6 +527,7 @@ namespace Favalet.Contexts.Unifiers
                 node.Unifications.Clear();
                 node.Unifications.Add(unification);
             }
+#endif
         }
 
         #region Resolve
@@ -526,53 +566,53 @@ namespace Favalet.Contexts.Unifiers
             ResolveContext context,
             IPlaceholderTerm placeholder)
         {
-            if (this.topology.TryGetValue(placeholder, out var node))
+            var resolved = this.GetAlias(placeholder, placeholder)!;
+            if (resolved is IPlaceholderTerm ph)
             {
-                IExpression ResolveRecursive(
-                    IExpression expression)
+                if (this.topology.TryGetValue(ph, out var node))
                 {
-                    switch (expression)
+                    IExpression ResolveRecursive(
+                        IExpression expression)
                     {
-                        case IPlaceholderTerm ph:
-                            return this.InternalResolve(context, ph);
-                        case IPairExpression parent:
-                            return parent.Create(
-                                ResolveRecursive(parent.Left),
-                                ResolveRecursive(parent.Right),
-                                parent.Range);
-                        default:
-                            return expression;
+                        switch (expression)
+                        {
+                            case IPlaceholderTerm ph:
+                                return this.InternalResolve(context, ph);
+                            case IPairExpression parent:
+                                return parent.Create(
+                                    ResolveRecursive(parent.Left),
+                                    ResolveRecursive(parent.Right),
+                                    UnspecifiedTerm.Instance,
+                                    parent.Range);
+                            default:
+                                return expression;
+                        }
                     }
-                }
-        
-                var expressions = node.Unifications.
-                    Where(unification =>
-                        (unification.Polarity == context.Polarity) ||
-                        (unification.Polarity == UnificationPolarities.Both)).
-                    Select(unification => ResolveRecursive(unification.Expression)).
-                    ToArray();
-                if (expressions.Length >= 1)
-                {
-                    // TODO: placeholder filtering idea is bad?
-                    if (expressions.All(expression => expression.IsContainsPlaceholder))
+
+                    var expressions = node.Unifications.Where(unification =>
+                            (unification.Polarity == context.Polarity) ||
+                            (unification.Polarity == UnificationPolarities.Both))
+                        .Select(unification => ResolveRecursive(unification.Expression)).ToArray();
+                    if (expressions.Length >= 1)
                     {
-                        var calculated = context.Compute(
-                            expressions, TextRange.Unknown)!;   // TODO: range
-                        return calculated;
-                    }
-                    else
-                    {
-                        var filtered = expressions.
-                            Where(expression => !expression.IsContainsPlaceholder).
-                            ToArray();
-                        var calculated = context.Compute(
-                            filtered, TextRange.Unknown)!;   // TODO: range
-                        return calculated;
+                        // TODO: placeholder filtering idea is bad?
+                        if (expressions.All(expression => expression.IsContainsPlaceholder))
+                        {
+                            var calculated = context.Compute(
+                                expressions, TextRange.Unknown)!; // TODO: range
+                            return calculated;
+                        }
+                        else
+                        {
+                            var filtered = expressions.Where(expression => !expression.IsContainsPlaceholder).ToArray();
+                            var calculated = context.Compute(
+                                filtered, TextRange.Unknown)!; // TODO: range
+                            return calculated;
+                        }
                     }
                 }
             }
-
-            return placeholder;
+            return resolved;
         }
         
         public override IExpression? Resolve(IPlaceholderTerm placeholder)
