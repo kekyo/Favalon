@@ -126,7 +126,7 @@ namespace Favalet.Expressions
         public abstract bool Equals(IExpression? other);
 
         [DebuggerStepThrough]
-        public override bool Equals(object obj) =>
+        public override bool Equals(object? obj) =>
             this.Equals(obj as IExpression);
     }
 

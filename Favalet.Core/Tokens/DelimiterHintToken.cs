@@ -37,7 +37,7 @@ namespace Favalet.Tokens
         public bool Equals(DelimiterHintToken? other) =>
             other != null;
 
-        public override bool Equals(object obj) =>
+        public override bool Equals(object? obj) =>
             this.Equals(obj as DelimiterHintToken);
 
         public override string ToString() =>

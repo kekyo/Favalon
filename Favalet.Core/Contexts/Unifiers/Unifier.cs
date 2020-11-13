@@ -72,19 +72,15 @@ namespace Favalet.Contexts.Unifiers
                 // Placeholder unification.
                 case (_, IPlaceholderTerm tph, false, _):
                     this.AddForward(tph, from);
-                    //this.Validate(tp2);
                     return true;
                 case (IPlaceholderTerm fph, _, false, _):
                     this.AddBackward(fph, to);
-                    //this.Validate(fp2);
                     return true;
                 case (_, IPlaceholderTerm tph, true, _):
                      this.AddBoth(tph, from);
-                     //this.Validate(tp2);
                      return true;
                 case (IPlaceholderTerm fph, _, true, _):
                     this.AddBoth(fph, to);
-                    //this.Validate(fp2);
                     return true;
 
                 // Binary expression unification.

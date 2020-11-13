@@ -70,7 +70,11 @@ namespace Favalet.Contexts.Unifiers
         
         private readonly Dictionary<IPlaceholderTerm, Node> topology =
             new Dictionary<IPlaceholderTerm, Node>(IdentityTermComparer.Instance);
-        private Dictionary<IPlaceholderTerm, IPlaceholderTerm>? aliases;
+
+        private static readonly Dictionary<IPlaceholderTerm, IPlaceholderTerm> emptyAliases =
+            new Dictionary<IPlaceholderTerm, IPlaceholderTerm>();
+
+        private Dictionary<IPlaceholderTerm, IPlaceholderTerm> aliases = emptyAliases;
 
         private bool InternalAdd(
             IPlaceholderTerm placeholder,
@@ -144,15 +148,24 @@ namespace Favalet.Contexts.Unifiers
             }
         }
 
-        private IPlaceholderTerm? GetAlias(IPlaceholderTerm placeholder, IPlaceholderTerm? defaultValue)
+        private IPlaceholderTerm? GetAlias(
+            IPlaceholderTerm placeholder, IPlaceholderTerm? defaultValue)
         {
-            if (this.aliases == null)
+            var current = placeholder;
+            var dv = defaultValue;
+            while (true)
             {
-                return null;
+                if (this.aliases.TryGetValue(current, out var normalized))
+                {
+                    current = normalized;
+                    dv = normalized;
+                    continue;
+                }
+                else
+                {
+                    return dv;
+                }
             }
-            return this.aliases.TryGetValue(placeholder, out var normalized) ?
-                this.GetAlias(normalized, normalized) :
-                defaultValue;
         }
 
         // Choicer drives with the topology knowledge.
@@ -372,8 +385,8 @@ namespace Favalet.Contexts.Unifiers
                     IExpression Replacer(IExpression expression) =>
                         expression switch
                         {
-                            IPlaceholderTerm placeholder =>
-                                this.GetAlias(placeholder, placeholder)!,
+                            IPlaceholderTerm ph =>
+                                this.GetAlias(ph, ph)!,
                             IPairExpression(IExpression left, IExpression right) pair =>
                                 pair.Create(
                                     Replacer(left),
@@ -655,61 +668,6 @@ namespace Favalet.Contexts.Unifiers
             }
         }
         #endregion
-        
-        #region Validator
-        [DebuggerStepThrough]
-        private void Validate(PlaceholderMarker marker, IExpression expression)
-        {
-            if (expression is IPlaceholderTerm placeholder)
-            {
-                this.Validate(marker, placeholder);
-            }
-            else if (expression is IPairExpression parent)
-            {
-                this.Validate(marker.Fork(), parent.Left);
-                this.Validate(marker.Fork(), parent.Right);
-            }
-        }
-
-        [DebuggerStepThrough]
-        private void Validate(PlaceholderMarker marker, IPlaceholderTerm placeholder)
-        {
-            var targetPlaceholder = placeholder;
-            while (true)
-            {
-                if (marker.Mark(targetPlaceholder))
-                {
-                    if (this.topology.TryGetValue(targetPlaceholder, out var node))
-                    {
-                        if (node.Unifications is IPlaceholderTerm pnext)
-                        {
-                            targetPlaceholder = pnext;
-                            continue;
-                        }
-                        else
-                        {
-                            Validate(marker, (IIdentityTerm)node.Unifications);
-                        }
-                    }
-
-                    return;
-                }
-#if DEBUG
-                Debug.WriteLine(
-                    "Detected circular variable reference: " + marker);
-                throw new InvalidOperationException(
-                    "Detected circular variable reference: " + marker);
-#else
-                throw new InvalidOperationException(
-                    "Detected circular variable reference: " + marker);
-#endif
-            }
-        }
-        
-        [DebuggerStepThrough]
-        public void Validate(IPlaceholderTerm placeholder) =>
-            this.Validate(PlaceholderMarker.Create(), placeholder);
-        #endregion
 
         public string View
         {
@@ -773,13 +731,11 @@ namespace Favalet.Contexts.Unifiers
 
                 foreach (var entry in this.topology.
                     Select(entry => (ph: (IIdentityTerm)entry.Key, label: entry.Key.Symbol)).
-                    Concat((this.aliases != null) ? this.aliases.Keys.
-                        Select(key => (ph: (IIdentityTerm)key, label: key.Symbol)) : 
-                        Enumerable.Empty<(IIdentityTerm ph, string label)>()).
-                    Concat((this.aliases != null) ? this.aliases.Values.
+                    Concat(this.aliases.Keys.
+                        Select(key => (ph: (IIdentityTerm)key, label: key.Symbol))).
+                    Concat(this.aliases.Values.
                         OfType<IIdentityTerm>().
-                        Select(value => (ph: value, label: value.Symbol)) :
-                        Enumerable.Empty<(IIdentityTerm ph, string label)>()).
+                        Select(value => (ph: value, label: value.Symbol))).
                     Distinct().
                     OrderBy(entry => entry.ph, IdentityTermComparer.Instance))
                 {
