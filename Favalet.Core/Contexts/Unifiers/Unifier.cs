@@ -58,6 +58,45 @@ namespace Favalet.Contexts.Unifiers
                 targetRoot.GetPrettyString(PrettyStringTypes.ReadableAll);
 #endif
 
+        private readonly struct UnifyResult
+        {
+            private readonly Action? finish;
+
+            private UnifyResult(Action? finish) =>
+                this.finish = finish;
+
+            public bool IsSuccess =>
+                this.finish != null;
+
+            public void Finish()
+            {
+                Debug.Assert(this.finish != null);
+                this.finish!();
+            }
+
+            public UnifyResult Combine(Action finish)
+            {
+                if (this.finish != null)
+                {
+                    var last = this.finish;
+                    return new UnifyResult(() =>
+                    {
+                        last();
+                        finish();
+                    });
+                }
+                else
+                {
+                    return this;
+                }
+            }
+            
+            public static UnifyResult Success(Action finish) =>
+                new UnifyResult(finish);
+            public static UnifyResult Failed() =>
+                new UnifyResult(null);
+        }
+
         private bool InternalUnifyCore(
             IExpression from,
             IExpression to,
@@ -67,66 +106,72 @@ namespace Favalet.Contexts.Unifiers
             Debug.Assert(!(from is IIgnoreUnificationTerm));
             Debug.Assert(!(to is IIgnoreUnificationTerm));
 
-            switch (from, to, bidirectional, raiseIfCouldNotUnify)
+            switch (from, to, bidirectional)
             {
-                // Placeholder unification.
-                case (_, IPlaceholderTerm tph, false, _):
-                    this.AddForward(tph, from);
-                    return true;
-                case (IPlaceholderTerm fph, _, false, _):
-                    this.AddBackward(fph, to);
-                    return true;
-                case (_, IPlaceholderTerm tph, true, _):
-                     this.AddBoth(tph, from);
-                     return true;
-                case (IPlaceholderTerm fph, _, true, _):
-                    this.AddBoth(fph, to);
-                    return true;
-
                 // Binary expression unification.
-                case (IBinaryExpression fb, _, _, _):
-                    this.InternalUnify(fb.Left, to, false, false);
-                    this.InternalUnify(fb.Right, to, false, false);
-                    return true;
-                case (_, IBinaryExpression tb, _, _):
-                    this.InternalUnify(from, tb.Left, false, false);
-                    this.InternalUnify(from, tb.Right, false, false);
-                    return true;
+                case (IBinaryExpression fb, _, _):
+                    var br1 = this.InternalUnify(fb.Left, to, false, raiseIfCouldNotUnify);
+                    var br2 = this.InternalUnify(fb.Right, to, false, raiseIfCouldNotUnify);
+                    return br1 && br2;
+                case (_, IBinaryExpression tb, _):
+                    var br3 = this.InternalUnify(from, tb.Left, false, raiseIfCouldNotUnify);
+                    var br4 = this.InternalUnify(from, tb.Right, false, raiseIfCouldNotUnify);
+                    return br3 && br4;
 
                 // Applied function unification.
                 case (IFunctionExpression(IExpression fp, IExpression fr),
                       IAppliedFunctionExpression(IExpression tp, IExpression tr),
-                      _, _):
+                      _):
                     // unify(C +> A): But parameters aren't binder.
-                    this.InternalUnify(tp, fp, false, true);
+                    var fr1 = this.InternalUnify(tp, fp, false, raiseIfCouldNotUnify);
                     // unify(B +> D)
-                    this.InternalUnify(fr, tr, false, true);
-                    return true;
+                    var fr2 = this.InternalUnify(fr, tr, false, raiseIfCouldNotUnify);
+                    return fr1 && fr2;
 
                 // Function unification.
                 case (IFunctionExpression(IExpression fp, IExpression fr),
                       IFunctionExpression(IExpression tp, IExpression tr),
-                      _, _):
+                      _):
                     // unify(C +> A): Parameters are binder.
-                    this.InternalUnify(tp, fp, false, true);
+                    var fr3 = this.InternalUnify(tp, fp, false, raiseIfCouldNotUnify);
                     // unify(B +> D)
-                    this.InternalUnify(fr, tr, false, true);
-                    return true;
+                    var fr4 = this.InternalUnify(fr, tr, false, raiseIfCouldNotUnify);
+                    return fr3 && fr4;
                 
-                case (_, _, _, true):
-                    // Validate polarity.
-                    // from <: to
-                    var f = this.TypeCalculator.Calculate(
-                        OrExpression.Create(from, to, TextRange.Unknown));
-                    if (!this.TypeCalculator.Equals(f, to))
-                    {
-                        throw new ArgumentException(
-                            $"Couldn't unify: {from.GetPrettyString(PrettyStringTypes.Minimum)} <: {to.GetPrettyString(PrettyStringTypes.Minimum)}");
-                    }
+                // TODO: IApplyExpression (applicable type functions)
+                
+                // Placeholder unification.
+                case (_, IPlaceholderTerm tph, false):
+                    this.AddForward(tph, from);
+                    return true;
+                case (IPlaceholderTerm fph, _, false):
+                    this.AddBackward(fph, to);
+                    return true;
+                case (_, IPlaceholderTerm tph, true):
+                     this.AddBoth(tph, from);
+                     return true;
+                case (IPlaceholderTerm fph, _, true):
+                    this.AddBoth(fph, to);
                     return true;
             }
-
-            return false;
+            
+            if (raiseIfCouldNotUnify)
+            {
+                // Validate polarity.
+                // from <: to
+                var f = this.TypeCalculator.Calculate(
+                    OrExpression.Create(from, to, TextRange.Unknown));
+                if (!this.TypeCalculator.Equals(f, to))
+                {
+                    throw new ArgumentException(
+                        $"Couldn't unify: {from.GetPrettyString(PrettyStringTypes.Minimum)} <: {to.GetPrettyString(PrettyStringTypes.Minimum)}");
+                }
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         private bool InternalUnify(

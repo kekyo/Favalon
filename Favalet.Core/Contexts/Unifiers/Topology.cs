@@ -87,8 +87,61 @@ namespace Favalet.Contexts.Unifiers
                 this.topology.Add(placeholder, node);
             }
 
-            var unification = Unification.Create(expression, polarity);
-            return node.Unifications.Add(unification);
+            var unified = false;
+            foreach (var unification in node.Unifications)
+            {
+                if ((unification.Polarity, polarity) switch
+                {
+                    // ph <=> u
+                    // ph <== ex
+                    (UnificationPolarities.Both, UnificationPolarities.In) =>
+                        this.InternalUnify(expression, unification.Expression, false, false),
+                    // ph <=> u
+                    // ph ==> ex
+                    (UnificationPolarities.Both, UnificationPolarities.Out) =>
+                        this.InternalUnify(unification.Expression, expression, false, false),
+                    // ph <== u
+                    // ph <=> ex
+                    (UnificationPolarities.In, UnificationPolarities.Both) =>
+                        this.InternalUnify(unification.Expression, expression, false, false),
+                    // ph ==> u
+                    // ph <=> ex
+                    (UnificationPolarities.Out, UnificationPolarities.Both) =>
+                        this.InternalUnify(expression, unification.Expression, false, false),
+                    // ph ==> u
+                    // ph <== ex
+                    (UnificationPolarities.Out, UnificationPolarities.In) =>
+                        this.InternalUnify(expression, unification.Expression, false, false),
+                    // ph <== u
+                    // ph ==> ex
+                    (UnificationPolarities.In, UnificationPolarities.Out) =>
+                        this.InternalUnify(unification.Expression, expression, false, false),
+                    // ph <== u
+                    // ph <== ex
+                    (UnificationPolarities.In, UnificationPolarities.In) =>
+                        false,
+                    // ph ==> u
+                    // ph ==> ex
+                    (UnificationPolarities.Out, UnificationPolarities.Out) =>
+                        false,
+                    // ph <=> u
+                    // ph <=> ex
+                    _ =>
+                        this.InternalUnify(unification.Expression, expression, true, false)
+                })
+                {
+                    unified = true;
+                }
+            }
+
+            if (unified)
+            {
+                return true;
+            }
+            else
+            {
+                return node.Unifications.Add(Unification.Create(expression, polarity));
+            }
         }
 
         public void AddBoth(
@@ -382,19 +435,29 @@ namespace Favalet.Contexts.Unifiers
             {
                 foreach (var unification in node.Unifications.ToArray())
                 {
-                    IExpression Replacer(IExpression expression) =>
-                        expression switch
+                    IExpression Replacer(IExpression expression)
+                    {
+                        switch (expression)
                         {
-                            IPlaceholderTerm ph =>
-                                this.GetAlias(ph, ph)!,
-                            IPairExpression(IExpression left, IExpression right) pair =>
-                                pair.Create(
-                                    Replacer(left),
-                                    Replacer(right),
-                                    UnspecifiedTerm.Instance,
-                                    pair.Range),
-                            _ => expression
+                            case IPlaceholderTerm ph:
+                                return this.GetAlias(ph, ph)!;
+                            case IPairExpression(IExpression left, IExpression right) pair:
+                                var lr = Replacer(left);
+                                var rr = Replacer(right);
+                                if (!object.ReferenceEquals(left, lr) ||
+                                    !object.ReferenceEquals(right, rr))
+                                {
+                                    return pair.Create(
+                                        lr, rr, UnspecifiedTerm.Instance, pair.Range);
+                                }
+                                else
+                                {
+                                    return pair;
+                                }
+                            default:
+                                return expression;
                         };
+                    }
                     
                     node.Unifications.Remove(unification);
 
@@ -544,6 +607,69 @@ namespace Favalet.Contexts.Unifiers
         }
 
         #region Resolve
+#if true
+        private IExpression InternalResolve(
+            IPlaceholderTerm placeholder,
+            UnificationPolarities direction,
+            Func<IExpression, IExpression, IExpression, TextRange, IExpression> creator)
+        {
+            if (this.topology.TryGetValue(placeholder, out var node))
+            {
+                var expressionsByDirection = node.Unifications.
+                    Where(unification => unification.Polarity == direction).
+                    Select(unification => unification.Expression switch
+                    {
+                        IPlaceholderTerm ph => this.InternalResolve(ph, direction, creator),
+                        _ => unification.Expression
+                    }).
+                    Memoize();
+                if (expressionsByDirection.Length >= 1)
+                {
+                    var combined = LogicalCalculator.ConstructNested(
+                        expressionsByDirection, UnspecifiedTerm.Instance, creator, TextRange.Unknown)!;
+                    return combined;
+                }
+            }
+
+            return placeholder;
+        }
+        
+        public override IExpression? Resolve(IPlaceholderTerm placeholder)
+        {
+            var normalized = this.GetAlias(placeholder, placeholder)!;
+            
+            var narrow = this.InternalResolve(
+                normalized,
+                UnificationPolarities.In,
+                AndExpression.Create);
+            if (!narrow.IsContainsPlaceholder)
+            {
+                return narrow;
+            }
+            
+            var widen = this.InternalResolve(
+                normalized,
+                UnificationPolarities.Out,
+                OrExpression.Create);
+            if (!widen.IsContainsPlaceholder)
+            {
+                return widen;
+            }
+
+            // TODO: logic is stable?
+            if (narrow is IPlaceholderTerm)
+            {
+                return narrow;
+            }
+            
+            if (widen is IPlaceholderTerm)
+            {
+                return widen;
+            }
+
+            return narrow;
+        }
+#else
         [DebuggerStepThrough]
         private sealed class ResolveContext
         {
@@ -667,6 +793,7 @@ namespace Favalet.Contexts.Unifiers
                     //    AndExpression.Create(outMost0, inMost0, placeholder.Range));  // TODO: range
             }
         }
+#endif
         #endregion
 
         public string View

@@ -106,14 +106,16 @@ namespace Favalet.Expressions
                 if (targets.Length >= 1)
                 {
                     var symbolHigherOrder = LogicalCalculator.ConstructNested(
-                            targets.Select(v => v.symbolHigherOrder).Memoize(),
-                            OrExpression.Create,
-                            this.Range)!;
+                        targets.Select(v => v.symbolHigherOrder).Memoize(),
+                        UnspecifiedTerm.Instance,
+                        OrExpression.Create,
+                        this.Range)!;
 
                     var expressionHigherOrder = LogicalCalculator.ConstructNested(
-                            targets.Select(v => v.expression.HigherOrder).Memoize(),
-                            OrExpression.Create,
-                            this.Range)!;
+                        targets.Select(v => v.expression.HigherOrder).Memoize(),
+                        UnspecifiedTerm.Instance,
+                        OrExpression.Create,
+                        this.Range)!;
                
                     context.Unify(symbolHigherOrder, expressionHigherOrder, true);
                     context.Unify(expressionHigherOrder, higherOrder, true);
@@ -154,6 +156,7 @@ namespace Favalet.Expressions
                         targets.
                             Select(target => target.HigherOrder).
                             Memoize(),
+                        UnspecifiedTerm.Instance,
                         OrExpression.Create,
                         this.Range)!;
 
