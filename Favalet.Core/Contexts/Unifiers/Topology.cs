@@ -76,7 +76,7 @@ namespace Favalet.Contexts.Unifiers
 
         private Dictionary<IPlaceholderTerm, IPlaceholderTerm> aliases = emptyAliases;
 
-        private bool InternalAdd(
+        private UnifyResult InternalAdd(
             IPlaceholderTerm placeholder,
             IExpression expression,
             UnificationPolarities polarity)
@@ -86,119 +86,120 @@ namespace Favalet.Contexts.Unifiers
                 node = new Node(placeholder);
                 this.topology.Add(placeholder, node);
             }
-
-            var unified = false;
-            foreach (var unification in node.Unifications)
+            else if (node.Unifications.Count >= 1)
             {
-                if ((unification.Polarity, polarity) switch
+                var r = node.Unifications.Aggregate(
+                    UnifyResult.Succeeded(),
+                    (agg, unification) => agg & ((unification.Polarity, polarity) switch
+                    {
+                        // ph <=> u
+                        // ph <== ex
+                        (UnificationPolarities.Both, UnificationPolarities.In) =>
+                            this.InternalUnify(expression, unification.Expression, false, false),
+                        // ph <=> u
+                        // ph ==> ex
+                        (UnificationPolarities.Both, UnificationPolarities.Out) =>
+                            this.InternalUnify(unification.Expression, expression, false, false),
+                        // ph <== u
+                        // ph <=> ex
+                        (UnificationPolarities.In, UnificationPolarities.Both) =>
+                            this.InternalUnify(unification.Expression, expression, false, false),
+                        // ph ==> u
+                        // ph <=> ex
+                        (UnificationPolarities.Out, UnificationPolarities.Both) =>
+                            this.InternalUnify(expression, unification.Expression, false, false),
+                        // ph ==> u
+                        // ph <== ex
+                        (UnificationPolarities.Out, UnificationPolarities.In) =>
+                            this.InternalUnify(expression, unification.Expression, false, false),
+                        // ph <== u
+                        // ph ==> ex
+                        (UnificationPolarities.In, UnificationPolarities.Out) =>
+                            this.InternalUnify(unification.Expression, expression, false, false),
+                        // ph <== u
+                        // ph <== ex
+                        (UnificationPolarities.In, UnificationPolarities.In) =>
+                            this.TypeCalculator.Equals(unification.Expression, expression) ?
+                                UnifyResult.Succeeded() :
+                                UnifyResult.Failed(),
+                        // ph ==> u
+                        // ph ==> ex
+                        (UnificationPolarities.Out, UnificationPolarities.Out) =>
+                            this.TypeCalculator.Equals(unification.Expression, expression) ?
+                                UnifyResult.Succeeded() :
+                                UnifyResult.Failed(),
+                        // ph <=> u
+                        // ph <=> ex
+                        _ =>
+                            this.InternalUnify(unification.Expression, expression, true, false)
+                    }));
+                if (r.IsSucceeded)
                 {
-                    // ph <=> u
-                    // ph <== ex
-                    (UnificationPolarities.Both, UnificationPolarities.In) =>
-                        this.InternalUnify(expression, unification.Expression, false, false),
-                    // ph <=> u
-                    // ph ==> ex
-                    (UnificationPolarities.Both, UnificationPolarities.Out) =>
-                        this.InternalUnify(unification.Expression, expression, false, false),
-                    // ph <== u
-                    // ph <=> ex
-                    (UnificationPolarities.In, UnificationPolarities.Both) =>
-                        this.InternalUnify(unification.Expression, expression, false, false),
-                    // ph ==> u
-                    // ph <=> ex
-                    (UnificationPolarities.Out, UnificationPolarities.Both) =>
-                        this.InternalUnify(expression, unification.Expression, false, false),
-                    // ph ==> u
-                    // ph <== ex
-                    (UnificationPolarities.Out, UnificationPolarities.In) =>
-                        this.InternalUnify(expression, unification.Expression, false, false),
-                    // ph <== u
-                    // ph ==> ex
-                    (UnificationPolarities.In, UnificationPolarities.Out) =>
-                        this.InternalUnify(unification.Expression, expression, false, false),
-                    // ph <== u
-                    // ph <== ex
-                    (UnificationPolarities.In, UnificationPolarities.In) =>
-                        false,
-                    // ph ==> u
-                    // ph ==> ex
-                    (UnificationPolarities.Out, UnificationPolarities.Out) =>
-                        false,
-                    // ph <=> u
-                    // ph <=> ex
-                    _ =>
-                        this.InternalUnify(unification.Expression, expression, true, false)
-                })
-                {
-                    unified = true;
+                    return r;
                 }
             }
 
-            if (unified)
-            {
-                return true;
-            }
-            else
-            {
-                return node.Unifications.Add(Unification.Create(expression, polarity));
-            }
+            return UnifyResult.Succeeded(
+                () => node.Unifications.Add(Unification.Create(expression, polarity)));
         }
 
-        public void AddBoth(
+        private UnifyResult AddBoth(
             IExpression from,
             IExpression to)
         {
-            if (from is IPlaceholderTerm fph)
-            {
+            var fr = (from is IPlaceholderTerm fph) ?
                 this.InternalAdd(
                     fph,
                     to,
-                    UnificationPolarities.Both);
-            }
+                    UnificationPolarities.Both) :
+                UnifyResult.Succeeded();
 
-            if (to is IPlaceholderTerm tph)
-            {
+            var tr = (to is IPlaceholderTerm tph) ?
                 this.InternalAdd(
                     tph,
                     from,
-                    UnificationPolarities.Both);
-            }
+                    UnificationPolarities.Both) :
+                UnifyResult.Succeeded();
+
+            return fr & tr;
         }
 
-        public void AddForward(
+        private UnifyResult AddForward(
             IPlaceholderTerm placeholder,
             IExpression from)
         {
-            this.InternalAdd(
+            var fr = this.InternalAdd(
                 placeholder,
                 from,
                 UnificationPolarities.In);
             
-            if (from is IPlaceholderTerm ei)
-            {
+            var tr = (from is IPlaceholderTerm ei) ?
                 this.InternalAdd(
                     ei,
                     placeholder,
-                    UnificationPolarities.Out);
-            }
+                    UnificationPolarities.Out) :
+                UnifyResult.Succeeded();
+
+            return fr & tr;
         }
 
-        public void AddBackward(
+        private UnifyResult AddBackward(
             IPlaceholderTerm placeholder,
             IExpression to)
         {
-            this.InternalAdd(
+            var tr = this.InternalAdd(
                 placeholder,
                 to,
                 UnificationPolarities.Out);
-            
-            if (to is IPlaceholderTerm ei)
-            {
+
+            var fr = (to is IPlaceholderTerm ei) ?
                 this.InternalAdd(
                     ei,
                     placeholder,
-                    UnificationPolarities.In);
-            }
+                    UnificationPolarities.In) :
+                UnifyResult.Succeeded();
+
+            return tr & fr;
         }
 
         private IPlaceholderTerm? GetAlias(

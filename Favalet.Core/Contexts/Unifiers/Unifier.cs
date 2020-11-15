@@ -60,44 +60,45 @@ namespace Favalet.Contexts.Unifiers
 
         private readonly struct UnifyResult
         {
+            private static readonly Action empty = () => { };
+            
             private readonly Action? finish;
 
             private UnifyResult(Action? finish) =>
                 this.finish = finish;
 
-            public bool IsSuccess =>
+            public bool IsSucceeded =>
                 this.finish != null;
 
-            public void Finish()
-            {
-                Debug.Assert(this.finish != null);
-                this.finish!();
-            }
-
-            public UnifyResult Combine(Action finish)
+            public UnifyResult Finish()
             {
                 if (this.finish != null)
                 {
-                    var last = this.finish;
-                    return new UnifyResult(() =>
-                    {
-                        last();
-                        finish();
-                    });
+                    this.finish!();
+                    return Succeeded();
                 }
                 else
                 {
-                    return this;
+                    return Failed();
                 }
             }
+
+            public static UnifyResult operator &(UnifyResult lhs, UnifyResult rhs) =>
+                (lhs.finish, rhs.finish) switch
+                {
+                    (Action l, Action r) => new UnifyResult(() => { l(); r(); }),
+                    _ => UnifyResult.Failed()
+                };
             
-            public static UnifyResult Success(Action finish) =>
+            public static UnifyResult Succeeded() =>
+                new UnifyResult(empty);
+            public static UnifyResult Succeeded(Action finish) =>
                 new UnifyResult(finish);
             public static UnifyResult Failed() =>
                 new UnifyResult(null);
         }
 
-        private bool InternalUnifyCore(
+        private UnifyResult InternalUnifyCore(
             IExpression from,
             IExpression to,
             bool bidirectional,
@@ -112,11 +113,11 @@ namespace Favalet.Contexts.Unifiers
                 case (IBinaryExpression fb, _, _):
                     var br1 = this.InternalUnify(fb.Left, to, false, raiseIfCouldNotUnify);
                     var br2 = this.InternalUnify(fb.Right, to, false, raiseIfCouldNotUnify);
-                    return br1 && br2;
+                    return br1 & br2;
                 case (_, IBinaryExpression tb, _):
                     var br3 = this.InternalUnify(from, tb.Left, false, raiseIfCouldNotUnify);
                     var br4 = this.InternalUnify(from, tb.Right, false, raiseIfCouldNotUnify);
-                    return br3 && br4;
+                    return br3 & br4;
 
                 // Applied function unification.
                 case (IFunctionExpression(IExpression fp, IExpression fr),
@@ -126,7 +127,7 @@ namespace Favalet.Contexts.Unifiers
                     var fr1 = this.InternalUnify(tp, fp, false, raiseIfCouldNotUnify);
                     // unify(B +> D)
                     var fr2 = this.InternalUnify(fr, tr, false, raiseIfCouldNotUnify);
-                    return fr1 && fr2;
+                    return (fr1 & fr2).Finish();
 
                 // Function unification.
                 case (IFunctionExpression(IExpression fp, IExpression fr),
@@ -136,23 +137,19 @@ namespace Favalet.Contexts.Unifiers
                     var fr3 = this.InternalUnify(tp, fp, false, raiseIfCouldNotUnify);
                     // unify(B +> D)
                     var fr4 = this.InternalUnify(fr, tr, false, raiseIfCouldNotUnify);
-                    return fr3 && fr4;
+                    return (fr3 & fr4).Finish();
                 
                 // TODO: IApplyExpression (applicable type functions)
                 
                 // Placeholder unification.
                 case (_, IPlaceholderTerm tph, false):
-                    this.AddForward(tph, from);
-                    return true;
+                    return this.AddForward(tph, from);
                 case (IPlaceholderTerm fph, _, false):
-                    this.AddBackward(fph, to);
-                    return true;
+                    return this.AddBackward(fph, to);
                 case (_, IPlaceholderTerm tph, true):
-                     this.AddBoth(tph, from);
-                     return true;
+                    return this.AddBoth(tph, from);
                 case (IPlaceholderTerm fph, _, true):
-                    this.AddBoth(fph, to);
-                    return true;
+                    return this.AddBoth(fph, to);
             }
             
             if (raiseIfCouldNotUnify)
@@ -166,15 +163,13 @@ namespace Favalet.Contexts.Unifiers
                     throw new ArgumentException(
                         $"Couldn't unify: {from.GetPrettyString(PrettyStringTypes.Minimum)} <: {to.GetPrettyString(PrettyStringTypes.Minimum)}");
                 }
-                return true;
+                return UnifyResult.Succeeded();
             }
-            else
-            {
-                return false;
-            }
+
+            return UnifyResult.Failed();
         }
 
-        private bool InternalUnify(
+        private UnifyResult InternalUnify(
             IExpression from,
             IExpression to,
             bool bidirectional,
@@ -183,7 +178,7 @@ namespace Favalet.Contexts.Unifiers
             // Same as.
             if (this.TypeCalculator.ExactEquals(from, to))
             {
-                return true;
+                return UnifyResult.Succeeded();
             }
 
             switch (from, to)
@@ -191,27 +186,29 @@ namespace Favalet.Contexts.Unifiers
                 // Ignore IIgnoreUnificationTerm unification.
                 case (IIgnoreUnificationTerm _, _):
                 case (_, IIgnoreUnificationTerm _):
-                    return true;
+                    return UnifyResult.Succeeded();
 
                 default:
                     // Unify higher order.
-                    if (this.InternalUnify(
+                    var hr = this.InternalUnify(
                         from.HigherOrder,
                         to.HigherOrder,
                         bidirectional,
-                        raiseIfCouldNotUnify))
+                        raiseIfCouldNotUnify);
+                    if (hr.IsSucceeded)
                     {
                         // Unify if succeeded higher order.
-                        return this.InternalUnifyCore(
+                        var r = this.InternalUnifyCore(
                             from,
                             to,
                             bidirectional,
                             raiseIfCouldNotUnify);
+                        return hr & r;
                     }
                     break;
             }
 
-            return false;
+            return UnifyResult.Failed();
         }
 
         [DebuggerStepThrough]
@@ -219,7 +216,8 @@ namespace Favalet.Contexts.Unifiers
             IExpression from,
             IExpression to,
             bool bidirectional) =>
-            this.InternalUnify(from, to, bidirectional, true);
+            this.InternalUnify(from, to, bidirectional, true).
+            Finish();
 
         [DebuggerStepThrough]
         public override string ToString() =>
