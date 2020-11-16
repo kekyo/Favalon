@@ -38,13 +38,16 @@ namespace Favalet.Contexts.Unifiers
             if (this.topology.TryGetValue(placeholder, out var node))
             {
                 var expressionsByDirection = node.Unifications.
-                    Where(unification => unification.Polarity == direction).
+                    Where(unification => 
+                        (unification.Polarity == direction) ||
+                        (unification.Polarity == UnificationPolarities.Both)).
                     Select(unification => unification.Expression switch
                     {
                         IPlaceholderTerm ph => this.InternalResolve(ph, direction, creator),
                         _ => unification.Expression
                     }).
                     Memoize();
+                
                 if (expressionsByDirection.Length >= 1)
                 {
                     var combined = LogicalCalculator.ConstructNested(
@@ -64,7 +67,7 @@ namespace Favalet.Contexts.Unifiers
                 normalized,
                 UnificationPolarities.In,
                 AndExpression.Create);
-            if (!narrow.IsContainsPlaceholder)
+            if (!narrow.IsContainsPlaceholder(true))
             {
                 return narrow;
             }
@@ -73,7 +76,17 @@ namespace Favalet.Contexts.Unifiers
                 normalized,
                 UnificationPolarities.Out,
                 OrExpression.Create);
-            if (!widen.IsContainsPlaceholder)
+            if (!widen.IsContainsPlaceholder(true))
+            {
+                return widen;
+            }
+
+            if (!narrow.IsContainsPlaceholder(false))
+            {
+                return narrow;
+            }
+
+            if (!widen.IsContainsPlaceholder(false))
             {
                 return widen;
             }

@@ -123,7 +123,7 @@ namespace Favalet.Contexts.Unifiers
                         alias => (alias: (IPlaceholderTerm)alias.Expression, entry.placeholder))).
                 OrderByDescending(entry => entry, AliasPlaceholderPairComparer.Instance).    // saves by minimal index
                 Distinct(AliasPlaceholderPairComparer.Instance).
-                ToDictionary(entry => entry.Item1, entry => entry.Item2);
+                ToDictionary(entry => entry.Item2, entry => entry.Item1);
 
             // Step 1-2: Aggregate all aliased unification.
             foreach (var (placeholder, node) in this.topology.ToArray())

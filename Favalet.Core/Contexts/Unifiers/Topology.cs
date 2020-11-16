@@ -77,6 +77,8 @@ namespace Favalet.Contexts.Unifiers
                 node = new Node(placeholder);
                 this.topology.Add(placeholder, node);
                 node.Unifications.Add(Unification.Create(expression, polarity));
+                
+                return UnifyResult.Succeeded();
             }
             
             Debug.Assert(node.Unifications.Count >= 1);
