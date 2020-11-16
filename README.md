@@ -4,6 +4,8 @@
 
 Still under construction.
 
+Earlier proof of concept graveyard repository: [Favalon.PoC](https://github.com/kekyo/Favalon.PoC)
+
 ## License
 
 Under Apache v2.

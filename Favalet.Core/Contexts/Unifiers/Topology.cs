@@ -82,66 +82,80 @@ namespace Favalet.Contexts.Unifiers
             }
             
             Debug.Assert(node.Unifications.Count >= 1);
-            
+
+            var removeCandidates = new List<Unification>();
             var succeeded = false;
-            foreach (var unification in node.Unifications.ToArray())
+            var append = false;
+            foreach (var unification in node.Unifications)
             {
-                var unified = (unification.Polarity, polarity) switch
+                var (ru, ra) = (unification.Polarity, polarity) switch
                 {
                     // ph <=> u
                     // ph <== ex
                     (UnificationPolarities.Both, UnificationPolarities.In) =>
-                        this.InternalUnify(expression, unification.Expression, false, false),
+                        (this.InternalUnify(expression, unification.Expression, false, false), false),
                     // ph <=> u
                     // ph ==> ex
                     (UnificationPolarities.Both, UnificationPolarities.Out) =>
-                        this.InternalUnify(unification.Expression, expression, false, false),
+                        (this.InternalUnify(unification.Expression, expression, false, false), false),
                     // ph <== u
                     // ph <=> ex
                     (UnificationPolarities.In, UnificationPolarities.Both) =>
-                        this.InternalUnify(unification.Expression, expression, false, false),
+                        (this.InternalUnify(unification.Expression, expression, false, false), false),
                     // ph ==> u
                     // ph <=> ex
                     (UnificationPolarities.Out, UnificationPolarities.Both) =>
-                        this.InternalUnify(expression, unification.Expression, false, false),
+                        (this.InternalUnify(expression, unification.Expression, false, false), false),
                     // ph ==> u
                     // ph <== ex
                     (UnificationPolarities.Out, UnificationPolarities.In) =>
-                        this.InternalUnify(expression, unification.Expression, false, false),
+                        (this.InternalUnify(expression, unification.Expression, false, false), false),
                     // ph <== u
                     // ph ==> ex
                     (UnificationPolarities.In, UnificationPolarities.Out) =>
-                        this.InternalUnify(unification.Expression, expression, false, false),
+                        (this.InternalUnify(unification.Expression, expression, false, false), false),
                     // ph <== u
                     // ph <== ex
                     (UnificationPolarities.In, UnificationPolarities.In) =>
                         this.TypeCalculator.Equals(unification.Expression, expression) ?
-                            UnifyResult.Succeeded() :
-                            UnifyResult.Failed(),
+                            (UnifyResult.Succeeded(), false) :
+                            (UnifyResult.Succeeded(), true),
                     // ph ==> u
                     // ph ==> ex
                     (UnificationPolarities.Out, UnificationPolarities.Out) =>
                         this.TypeCalculator.Equals(unification.Expression, expression) ?
-                            UnifyResult.Succeeded() :
-                            UnifyResult.Failed(),
+                            (UnifyResult.Succeeded(), false) :
+                            (UnifyResult.Succeeded(), true),
                     // ph <=> u
                     // ph <=> ex
                     _ =>
-                        this.InternalUnify(unification.Expression, expression, true, false)
+                        (this.InternalUnify(unification.Expression, expression, true, false), false)
                 };
-                
-                if (unified.IsSucceeded)
+
+                switch (ru.IsSucceeded, ra)
                 {
-                    unified.Finish();
-                    succeeded = true;
-                }
-                else
-                {
-                    node.Unifications.Remove(unification);
+                    case (true, false):
+                        ru.Finish();
+                        succeeded = true;
+                        break;
+                    case (false, false):
+                        removeCandidates.Add(unification);
+                        break;
+                    case (true, true):
+                        succeeded = true;
+                        append = true;
+                        break;
+                    default:
+                        throw new InvalidOperationException();
                 }
             }
 
-            if (!succeeded)
+            foreach (var unification in removeCandidates)
+            {
+                node.Unifications.Remove(unification);
+            }
+
+            if (!succeeded || append)
             {
                 node.Unifications.Add(Unification.Create(expression, polarity));
             }

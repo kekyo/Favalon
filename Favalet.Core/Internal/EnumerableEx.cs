@@ -86,5 +86,13 @@ namespace Favalet.Internal
             var r = new HashSet<T>(rhs);
             return lhs.All(r.Contains) && rhs.All(l.Contains);
         }
+
+        public static void AddRange<T>(this HashSet<T> hashSet, IEnumerable<T> enumerable)
+        {
+            foreach (var value in enumerable)
+            {
+                hashSet.Add(value);
+            }
+        }
     }
 }
