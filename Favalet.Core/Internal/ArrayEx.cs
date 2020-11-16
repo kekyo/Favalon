@@ -23,11 +23,11 @@ using System.Runtime.CompilerServices;
 
 namespace Favalet.Internal
 {
+    [DebuggerStepThrough]
     internal static class ArrayEx
     {
 #if NETSTANDARD2_0
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        [DebuggerStepThrough]
         public static T[] Empty<T>() =>
             Array.Empty<T>();
 #else
@@ -39,7 +39,6 @@ namespace Favalet.Internal
 #if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        [DebuggerStepThrough]
         public static T[] Empty<T>() =>
             EmptyHolder<T>.Empty;
 #endif

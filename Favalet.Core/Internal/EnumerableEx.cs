@@ -24,9 +24,9 @@ using System.Linq;
 
 namespace Favalet.Internal
 {
+    [DebuggerStepThrough]
     internal static class EnumerableEx
     {
-        [DebuggerStepThrough]
         public static T[] Memoize<T>(
             this IEnumerable<T> enumerable) =>
             enumerable switch
@@ -37,7 +37,6 @@ namespace Favalet.Internal
             };
 
         // unfold
-        [DebuggerStepThrough]
         public static IEnumerable<U> Traverse<T, U>(
             this T? seed,
             Func<T, U?> predicate)
@@ -52,7 +51,6 @@ namespace Favalet.Internal
             }
         }
 
-        [DebuggerStepThrough]
         public static IEnumerable<U> Collect<T, U>(
             this IEnumerable<T> enumerable,
             Func<T, U?> predicate)
@@ -68,7 +66,6 @@ namespace Favalet.Internal
         }
 
 #if NET40 || NET45 || NETSTANDARD1_1
-        [DebuggerStepThrough]
         public static IEnumerable<T> Append<T>(
             this IEnumerable<T> enumerable,
             T value)
@@ -81,7 +78,6 @@ namespace Favalet.Internal
         }
 #endif
 
-        [DebuggerStepThrough]
         public static bool EqualsPartiallyOrdered<T>(
             this IEnumerable<T> lhs,
             IEnumerable<T> rhs)

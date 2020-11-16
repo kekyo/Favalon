@@ -17,10 +17,10 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-using System.Diagnostics;
 using System.Collections.Generic;
+using System.Diagnostics;
 
-namespace System.Collections.Generic
+namespace Favalet.Internal
 {
     [DebuggerStepThrough]
     internal static class KeyValuePairExtension

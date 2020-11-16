@@ -20,9 +20,9 @@
 using Favalet.Expressions;
 using Favalet.Expressions.Algebraic;
 using Favalet.Expressions.Specialized;
+using Favalet.Ranges;
 using System;
 using System.Diagnostics;
-using Favalet.Ranges;
 
 namespace Favalet.Contexts.Unifiers
 {
@@ -58,46 +58,6 @@ namespace Favalet.Contexts.Unifiers
                 targetRoot.GetPrettyString(PrettyStringTypes.ReadableAll);
 #endif
 
-        private readonly struct UnifyResult
-        {
-            private static readonly Action empty = () => { };
-            
-            private readonly Action? finish;
-
-            private UnifyResult(Action? finish) =>
-                this.finish = finish;
-
-            public bool IsSucceeded =>
-                this.finish != null;
-
-            public UnifyResult Finish()
-            {
-                if (this.finish != null)
-                {
-                    this.finish!();
-                    return Succeeded();
-                }
-                else
-                {
-                    return Failed();
-                }
-            }
-
-            public static UnifyResult operator &(UnifyResult lhs, UnifyResult rhs) =>
-                (lhs.finish, rhs.finish) switch
-                {
-                    (Action l, Action r) => new UnifyResult(() => { l(); r(); }),
-                    _ => UnifyResult.Failed()
-                };
-            
-            public static UnifyResult Succeeded() =>
-                new UnifyResult(empty);
-            public static UnifyResult Succeeded(Action finish) =>
-                new UnifyResult(finish);
-            public static UnifyResult Failed() =>
-                new UnifyResult(null);
-        }
-
         private UnifyResult InternalUnifyCore(
             IExpression from,
             IExpression to,
@@ -113,11 +73,11 @@ namespace Favalet.Contexts.Unifiers
                 case (IBinaryExpression fb, _, _):
                     var br1 = this.InternalUnify(fb.Left, to, false, raiseIfCouldNotUnify);
                     var br2 = this.InternalUnify(fb.Right, to, false, raiseIfCouldNotUnify);
-                    return br1 & br2;
+                    return (br1 & br2).Finish();
                 case (_, IBinaryExpression tb, _):
                     var br3 = this.InternalUnify(from, tb.Left, false, raiseIfCouldNotUnify);
                     var br4 = this.InternalUnify(from, tb.Right, false, raiseIfCouldNotUnify);
-                    return br3 & br4;
+                    return (br3 & br4).Finish();
 
                 // Applied function unification.
                 case (IFunctionExpression(IExpression fp, IExpression fr),
@@ -152,21 +112,24 @@ namespace Favalet.Contexts.Unifiers
                     return this.AddBoth(fph, to);
             }
             
-            if (raiseIfCouldNotUnify)
+            // Validate polarity.
+            // from <: to
+            var f = this.TypeCalculator.Calculate(
+                OrExpression.Create(from, to, TextRange.Unknown));
+            if (!this.TypeCalculator.Equals(f, to))
             {
-                // Validate polarity.
-                // from <: to
-                var f = this.TypeCalculator.Calculate(
-                    OrExpression.Create(from, to, TextRange.Unknown));
-                if (!this.TypeCalculator.Equals(f, to))
+                if (raiseIfCouldNotUnify)
                 {
                     throw new ArgumentException(
                         $"Couldn't unify: {from.GetPrettyString(PrettyStringTypes.Minimum)} <: {to.GetPrettyString(PrettyStringTypes.Minimum)}");
                 }
-                return UnifyResult.Succeeded();
+                else
+                {
+                    return UnifyResult.Failed();
+                }
             }
 
-            return UnifyResult.Failed();
+            return UnifyResult.Succeeded();
         }
 
         private UnifyResult InternalUnify(
