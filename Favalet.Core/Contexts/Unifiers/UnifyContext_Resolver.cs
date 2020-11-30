@@ -27,7 +27,7 @@ using Favalet.Ranges;
 
 namespace Favalet.Contexts.Unifiers
 {
-    partial class Unifier
+    partial class UnifyContext
     {
 #if true
         private IExpression InternalResolve(
@@ -59,7 +59,7 @@ namespace Favalet.Contexts.Unifiers
             return placeholder;
         }
         
-        public override IExpression? Resolve(IPlaceholderTerm placeholder)
+        public IExpression? Resolve(IPlaceholderTerm placeholder)
         {
             var normalized = this.GetAlias(placeholder, placeholder)!;
             

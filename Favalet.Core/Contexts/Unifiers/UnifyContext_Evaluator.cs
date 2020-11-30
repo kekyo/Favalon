@@ -17,16 +17,16 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using Favalet.Expressions;
 using Favalet.Expressions.Specialized;
 using Favalet.Internal;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 
 namespace Favalet.Contexts.Unifiers
 {
-    partial class Unifier
+    partial class UnifyContext
     {
         [DebuggerStepThrough]
         private sealed class AliasPlaceholderPairComparer :
@@ -108,7 +108,7 @@ namespace Favalet.Contexts.Unifiers
         }
         
         // Evaluate topology.
-        public void Evaluate()
+        public void EvaluateTopology()
         {
             // Step 1-1: Generate alias dictionary.
             this.aliases = this.topology.
