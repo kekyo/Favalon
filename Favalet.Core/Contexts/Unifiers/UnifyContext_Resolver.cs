@@ -91,13 +91,12 @@ namespace Favalet.Contexts.Unifiers
                 return widen;
             }
 
-            // TODO: logic is stable?
-            if (narrow is IPlaceholderTerm)
+            if (!(narrow is IPlaceholderTerm))
             {
                 return narrow;
             }
             
-            if (widen is IPlaceholderTerm)
+            if (!(widen is IPlaceholderTerm))
             {
                 return widen;
             }

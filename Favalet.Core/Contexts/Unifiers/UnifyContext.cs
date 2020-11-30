@@ -49,8 +49,11 @@ namespace Favalet.Contexts.Unifiers
 #else
         private string targetRootString;
 #endif
+        private bool couldNotUnify;
 
-        private readonly Dictionary<IPlaceholderTerm, Node> topology =
+        private readonly Stack<Dictionary<IPlaceholderTerm, Node>> stack =
+            new Stack<Dictionary<IPlaceholderTerm, Node>>();
+        private Dictionary<IPlaceholderTerm, Node> topology =
             new Dictionary<IPlaceholderTerm, Node>(IdentityTermComparer.Instance);
 
         public readonly ITypeCalculator TypeCalculator;
@@ -91,6 +94,49 @@ namespace Favalet.Contexts.Unifiers
             this.topology.Add(placeholder, node);
             node.Unifications.Add(Unification.Create(expression, polarity));
             return GetOrAddNodeResults.Added;
+        }
+
+        [DebuggerStepThrough]
+        public void MarkCouldNotUnify(IExpression from, IExpression to) =>
+            this.couldNotUnify = true;
+
+        [DebuggerStepThrough]
+        private sealed class Disposer : IDisposable
+        {
+            private UnifyContext? parent;
+
+            public Disposer(UnifyContext parent) =>
+                this.parent = parent;
+
+            public void Dispose()
+            {
+                if (this.parent != null)
+                {
+                    this.parent.EndScope();
+                    this.parent = null;
+                }
+            }
+        }
+
+        [DebuggerStepThrough]
+        public IDisposable AllScope()
+        {
+            this.stack.Push(this.topology);
+            
+            // TODO: suppress copy
+            this.topology = new Dictionary<IPlaceholderTerm, Node>(this.topology);
+            
+            return new Disposer(this);
+        }
+
+        private void EndScope()
+        {
+            var last = this.stack.Pop();
+            if (this.couldNotUnify)
+            {
+                this.topology = last;
+                this.couldNotUnify = false;
+            }
         }
         
         public string View

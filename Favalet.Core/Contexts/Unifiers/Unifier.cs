@@ -24,6 +24,8 @@ using Favalet.Ranges;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
 
 namespace Favalet.Contexts.Unifiers
 {
@@ -34,238 +36,188 @@ namespace Favalet.Contexts.Unifiers
         { }
 
         ///////////////////////////////////////////////////////////////////////////////////
+
+        private enum UnifyPartialResults
+        {
+            Left,
+            Right,
+            Both
+        }
         
         private bool InternalAdd(
             UnifyContext context,
             IPlaceholderTerm placeholder,
             IExpression expression,
-            UnificationPolarities polarity)
+            UnificationPolarities polarity,
+            bool raiseCouldNotUnify)
         {
             if (context.GetOrAddNode(placeholder, expression, polarity, out var node) ==
                 GetOrAddNodeResults.Added)
             {
+                Debug.Assert(node.Unifications.Count >= 1);
                 return true;
             }
             
             Debug.Assert(node.Unifications.Count >= 1);
 
-            var removeCandidates = new List<Unification>();
-            var succeeded = false;
-            var append = false;
-            foreach (var unification in node.Unifications)
+            var requireRight = false;
+            
+            foreach (var unification in node.Unifications.ToArray())
             {
-                var (ru, ra) = (unification.Polarity, polarity) switch
+                UnifyPartialResults result;
+                switch (unification.Polarity, polarity)
                 {
                     // ph <=> u
                     // ph <== ex
-                    (UnificationPolarities.Both, UnificationPolarities.In) =>
-                        (this.InternalUnify(context, expression, unification.Expression, false, false), false),
+                    case (UnificationPolarities.Both, UnificationPolarities.In):
+                        this.InternalUnify(context, expression, unification.Expression, false, false);
+                        result = UnifyPartialResults.Left;
+                        break;
                     // ph <=> u
                     // ph ==> ex
-                    (UnificationPolarities.Both, UnificationPolarities.Out) =>
-                        (this.InternalUnify(context, unification.Expression, expression, false, false), false),
+                    case (UnificationPolarities.Both, UnificationPolarities.Out):
+                        this.InternalUnify(context, unification.Expression, expression, false, false);
+                        result = UnifyPartialResults.Left;
+                        break;
                     // ph <== u
                     // ph <=> ex
-                    (UnificationPolarities.In, UnificationPolarities.Both) =>
-                        (this.InternalUnify(context, unification.Expression, expression, false, false), false),
+                    case (UnificationPolarities.In, UnificationPolarities.Both):
+                        this.InternalUnify(context, unification.Expression, expression, false, false);
+                        result = UnifyPartialResults.Right;
+                        break;
                     // ph ==> u
                     // ph <=> ex
-                    (UnificationPolarities.Out, UnificationPolarities.Both) =>
-                        (this.InternalUnify(context, expression, unification.Expression, false, false), false),
+                    case (UnificationPolarities.Out, UnificationPolarities.Both):
+                        this.InternalUnify(context, expression, unification.Expression, false, false);
+                        result = UnifyPartialResults.Right;
+                        break;
                     // ph ==> u
                     // ph <== ex
-                    (UnificationPolarities.Out, UnificationPolarities.In) =>
-                        (this.InternalUnify(context, expression, unification.Expression, false, false), false),
+                    case (UnificationPolarities.Out, UnificationPolarities.In):
+                        result = this.InternalUnify(context, expression, unification.Expression, false, false) ?
+                            UnifyPartialResults.Right : UnifyPartialResults.Left;
+                        break;
                     // ph <== u
                     // ph ==> ex
-                    (UnificationPolarities.In, UnificationPolarities.Out) =>
-                        (this.InternalUnify(context, unification.Expression, expression, false, false), false),
+                    case (UnificationPolarities.In, UnificationPolarities.Out):
+                        result = this.InternalUnify(context, unification.Expression, expression, false, false) ?
+                            UnifyPartialResults.Left : UnifyPartialResults.Right;
+                        break;
                     // ph <== u
                     // ph <== ex
-                    (UnificationPolarities.In, UnificationPolarities.In) =>
-                        context.TypeCalculator.Equals(unification.Expression, expression) ?
-                            (true, false) :
-                            (true, true),
+                    case (UnificationPolarities.In, UnificationPolarities.In):
+                        result = context.TypeCalculator.Equals(unification.Expression, expression) ?
+                            UnifyPartialResults.Left : UnifyPartialResults.Both;
+                        break;
                     // ph ==> u
                     // ph ==> ex
-                    (UnificationPolarities.Out, UnificationPolarities.Out) =>
-                        context.TypeCalculator.Equals(unification.Expression, expression) ?
-                            (true, false) :
-                            (true, true),
+                    case (UnificationPolarities.Out, UnificationPolarities.Out):
+                        result = context.TypeCalculator.Equals(unification.Expression, expression) ?
+                            UnifyPartialResults.Left : UnifyPartialResults.Both;
+                        break;
                     // ph <=> u
                     // ph <=> ex
-                    _ =>
-                        (this.InternalUnify(context, unification.Expression, expression, true, false), false)
+                    default:
+                        result = this.InternalUnify(context, unification.Expression, expression, true, false) ?
+                            UnifyPartialResults.Left : UnifyPartialResults.Both;
+                        break;
                 };
 
-                switch (ru, ra)
+                switch (result)
                 {
-                    case (true, false):
-                        //ru.Finish();
-                        succeeded = true;
+                    case UnifyPartialResults.Right:
+                        node.Unifications.Remove(unification);
+                        requireRight = true;
                         break;
-                    case (false, false):
-                        removeCandidates.Add(unification);
+                    case UnifyPartialResults.Both:
+                        requireRight = true;
                         break;
-                    case (true, true):
-                        succeeded = true;
-                        append = true;
-                        break;
-                    default:
-                        throw new InvalidOperationException();
                 }
             }
 
-            foreach (var unification in removeCandidates)
-            {
-                node.Unifications.Remove(unification);
-            }
-
-            if (!succeeded || append)
+            if (requireRight)
             {
                 node.Unifications.Add(Unification.Create(expression, polarity));
             }
 
-            return true;
+            if (node.Unifications.Count >= 1)
+            {
+                return true;
+            }
+
+            if (raiseCouldNotUnify)
+            {
+                throw new ArgumentException(
+                    $"Couldn't unify: {placeholder.GetPrettyString(PrettyStringTypes.Minimum)}, {expression.GetPrettyString(PrettyStringTypes.Minimum)}");
+            }
+            else
+            {
+                return false;
+            }
         }
 
         private bool AddBoth(
             UnifyContext context,
             IExpression from,
-            IExpression to)
+            IExpression to,
+            bool raiseCouldNotUnify)
         {
-            var fr = (from is IPlaceholderTerm fph) ?
-                this.InternalAdd(
-                    context,
-                    fph,
-                    to,
-                    UnificationPolarities.Both) :
-                true;
+            using (context.AllScope())
+            {
+                if (from is IPlaceholderTerm fph &&
+                    !this.InternalAdd(context, fph, to, UnificationPolarities.Both, raiseCouldNotUnify))
+                {
+                    return false;
+                }
+                
+                if (to is IPlaceholderTerm tph &&
+                    !this.InternalAdd(context, tph, from, UnificationPolarities.Both, raiseCouldNotUnify))
+                {
+                    return false;
+                }
+            }
 
-            var tr = (to is IPlaceholderTerm tph) ?
-                this.InternalAdd(
-                    context,
-                    tph,
-                    from,
-                    UnificationPolarities.Both) :
-                true;
-
-            return fr && tr;
+            return true;
         }
 
         private bool AddForward(
             UnifyContext context,
             IPlaceholderTerm placeholder,
-            IExpression from)
+            IExpression from,
+            bool raiseCouldNotUnify)
         {
-            var fr = this.InternalAdd(
-                context,
-                placeholder,
-                from,
-                UnificationPolarities.In);
-            
-            var tr = (from is IPlaceholderTerm ei) ?
-                this.InternalAdd(
-                    context,
-                    ei,
-                    placeholder,
-                    UnificationPolarities.Out) :
-                true;
+            using (context.AllScope())
+            {
+                if (!this.InternalAdd(context, placeholder, from, UnificationPolarities.In, raiseCouldNotUnify))
+                {
+                    return false;
+                }
 
-            return fr && tr;
+                if (from is IPlaceholderTerm ei &&
+                    !this.InternalAdd(context, ei, placeholder, UnificationPolarities.Out, raiseCouldNotUnify))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private bool AddBackward(
             UnifyContext context,
             IPlaceholderTerm placeholder,
-            IExpression to)
-        {
-            var tr = this.InternalAdd(
-                context,
-                placeholder,
-                to,
-                UnificationPolarities.Out);
-
-            var fr = (to is IPlaceholderTerm ei) ?
-                this.InternalAdd(
-                    context,
-                    ei,
-                    placeholder,
-                    UnificationPolarities.In) :
-                true;
-
-            return tr && fr;
-        }
-
-        ///////////////////////////////////////////////////////////////////////////////////
-        
-        private bool InternalUnifyCore(
-            UnifyContext context,
-            IExpression from,
             IExpression to,
-            bool bidirectional,
-            bool raiseIfCouldNotUnify)
+            bool raiseCouldNotUnify)
         {
-            Debug.Assert(!(from is IIgnoreUnificationTerm));
-            Debug.Assert(!(to is IIgnoreUnificationTerm));
-
-            switch (from, to, bidirectional)
+            using (context.AllScope())
             {
-                // Binary expression unification.
-                case (IBinaryExpression fb, _, _):
-                    var br1 = this.InternalUnify(context, fb.Left, to, false, raiseIfCouldNotUnify);
-                    var br2 = this.InternalUnify(context, fb.Right, to, false, raiseIfCouldNotUnify);
-                    return br1 && br2;
-                case (_, IBinaryExpression tb, _):
-                    var br3 = this.InternalUnify(context, from, tb.Left, false, raiseIfCouldNotUnify);
-                    var br4 = this.InternalUnify(context, from, tb.Right, false, raiseIfCouldNotUnify);
-                    return br3 && br4;
-
-                // Applied function unification.
-                case (IFunctionExpression(IExpression fp, IExpression fr),
-                      IAppliedFunctionExpression(IExpression tp, IExpression tr),
-                      _):
-                    // unify(C +> A): But parameters aren't binder.
-                    var fr1 = this.InternalUnify(context, tp, fp, false, raiseIfCouldNotUnify);
-                    // unify(B +> D)
-                    var fr2 = this.InternalUnify(context, fr, tr, false, raiseIfCouldNotUnify);
-                    return fr1 && fr2;
-
-                // Function unification.
-                case (IFunctionExpression(IExpression fp, IExpression fr),
-                      IFunctionExpression(IExpression tp, IExpression tr),
-                      _):
-                    // unify(C +> A): Parameters are binder.
-                    var fr3 = this.InternalUnify(context, tp, fp, false, raiseIfCouldNotUnify);
-                    // unify(B +> D)
-                    var fr4 = this.InternalUnify(context, fr, tr, false, raiseIfCouldNotUnify);
-                    return fr3 && fr4;
-                
-                // TODO: IApplyExpression (applicable type functions)
-                
-                // Placeholder unification.
-                case (_, IPlaceholderTerm tph, false):
-                    return this.AddForward(context, tph, from);
-                case (IPlaceholderTerm fph, _, false):
-                    return this.AddBackward(context, fph, to);
-                case (_, IPlaceholderTerm tph, true):
-                    return this.AddBoth(context, tph, from);
-                case (IPlaceholderTerm fph, _, true):
-                    return this.AddBoth(context, fph, to);
-            }
-            
-            // Validate polarity.
-            // from <: to
-            var f = context.TypeCalculator.Calculate(
-                OrExpression.Create(from, to, TextRange.Unknown));
-            if (!context.TypeCalculator.Equals(f, to))
-            {
-                if (raiseIfCouldNotUnify)
+                if (!this.InternalAdd(context, placeholder, to, UnificationPolarities.Out, raiseCouldNotUnify))
                 {
-                    throw new ArgumentException(
-                        $"Couldn't unify: {from.GetPrettyString(PrettyStringTypes.Minimum)} <: {to.GetPrettyString(PrettyStringTypes.Minimum)}");
+                    return false;
                 }
-                else
+
+                if (to is IPlaceholderTerm ei &&
+                    this.InternalAdd(context, ei, placeholder, UnificationPolarities.In, raiseCouldNotUnify))
                 {
                     return false;
                 }
@@ -275,13 +227,99 @@ namespace Favalet.Contexts.Unifiers
         }
 
         ///////////////////////////////////////////////////////////////////////////////////
+        
+        private bool InternalUnifyCore(
+            UnifyContext context,
+            IExpression from,
+            IExpression to,
+            bool bidirectional,
+            bool raiseCouldNotUnify)
+        {
+            Debug.Assert(!(from is IIgnoreUnificationTerm));
+            Debug.Assert(!(to is IIgnoreUnificationTerm));
+
+            switch (from, to, bidirectional)
+            {
+                // Binary expression unification.
+                case (IBinaryExpression fb, _, _):
+                    var rfl = this.InternalUnify(context, fb.Left, to, false, raiseCouldNotUnify);
+                    var rfr = this.InternalUnify(context, fb.Right, to, false, raiseCouldNotUnify);
+                    return rfl && rfr;
+                case (_, IBinaryExpression tb, _):
+                    var rtl = this.InternalUnify(context, from, tb.Left, false, raiseCouldNotUnify);
+                    var rtr = this.InternalUnify(context, from, tb.Right, false, raiseCouldNotUnify);
+                    return rtl && rtr;
+
+                // Applied function unification.
+                case (IFunctionExpression(IExpression fp, IExpression fr),
+                      IAppliedFunctionExpression(IExpression tp, IExpression tr),
+                      _):
+                    using (context.AllScope())
+                    {
+                        // unify(C +> A): But parameters aren't binder.
+                        var rp = this.InternalUnify(context, tp, fp, false, raiseCouldNotUnify);
+                        // unify(B +> D)
+                        var rr = this.InternalUnify(context, fr, tr, false, raiseCouldNotUnify);
+                        return rp && rr;
+                    }
+
+                // Function unification.
+                case (IFunctionExpression(IExpression fp, IExpression fr),
+                      IFunctionExpression(IExpression tp, IExpression tr),
+                      _):
+                    using (context.AllScope())
+                    {
+                        // unify(C +> A): Parameters are binder.
+                        var rp = this.InternalUnify(context, tp, fp, false, raiseCouldNotUnify);
+                        // unify(B +> D)
+                        var rr = this.InternalUnify(context, fr, tr, false, raiseCouldNotUnify);
+                        return rp && rr;
+                    }
+                
+                // TODO: IApplyExpression (applicable type functions)
+                
+                // Placeholder unification.
+                case (_, IPlaceholderTerm tph, false):
+                    return this.AddForward(context, tph, from, raiseCouldNotUnify);
+                case (IPlaceholderTerm fph, _, false):
+                    return this.AddBackward(context, fph, to, raiseCouldNotUnify);
+                case (_, IPlaceholderTerm tph, true):
+                    return this.AddBoth(context, tph, from, raiseCouldNotUnify);
+                case (IPlaceholderTerm fph, _, true):
+                    return this.AddBoth(context, fph, to, raiseCouldNotUnify);
+            }
+            
+            // Validate polarity.
+            // from <: to
+            var f = context.TypeCalculator.Calculate(
+                OrExpression.Create(from, to, TextRange.Unknown));
+            if (!context.TypeCalculator.Equals(f, to))
+            {
+                if (raiseCouldNotUnify)
+                {
+                    throw new ArgumentException(
+                        $"Couldn't unify: {from.GetPrettyString(PrettyStringTypes.Minimum)} <: {to.GetPrettyString(PrettyStringTypes.Minimum)}");
+                }
+                else
+                {
+                    context.MarkCouldNotUnify(from, to);
+                    return false;
+                }
+            }
+            else
+            {
+                return true;
+            }
+        }
+
+        ///////////////////////////////////////////////////////////////////////////////////
 
         private bool InternalUnify(
             UnifyContext context,
             IExpression from,
             IExpression to,
             bool bidirectional,
-            bool raiseIfCouldNotUnify)
+            bool raiseCouldNotUnify)
         {
             // Same as.
             if (context.TypeCalculator.ExactEquals(from, to))
@@ -297,24 +335,32 @@ namespace Favalet.Contexts.Unifiers
                     return true;
             }
 
-            // Unify higher order.
-            if (!this.InternalUnify(
-                context,
-                from.HigherOrder,
-                to.HigherOrder,
-                bidirectional,
-                raiseIfCouldNotUnify))
+            using (context.AllScope())
             {
-                return false;
+                // Unify higher order.
+                if (!this.InternalUnify(
+                    context,
+                    from.HigherOrder,
+                    to.HigherOrder,
+                    bidirectional,
+                    raiseCouldNotUnify))
+                {
+                    return false;
+                }
+
+                // Unify if succeeded higher order.
+                if (!this.InternalUnifyCore(
+                    context,
+                    from,
+                    to,
+                    bidirectional,
+                    raiseCouldNotUnify))
+                {
+                    return false;
+                }
             }
 
-            // Unify if succeeded higher order.
-            return this.InternalUnifyCore(
-                context,
-                from,
-                to,
-                bidirectional,
-                raiseIfCouldNotUnify);
+            return true;
         }
 
         ///////////////////////////////////////////////////////////////////////////////////
