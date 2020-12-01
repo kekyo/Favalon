@@ -164,20 +164,19 @@ namespace Favalet.Contexts.Unifiers
         {
             using (context.AllScope())
             {
-                if (from is IPlaceholderTerm fph &&
-                    !this.InternalAdd(context, fph, to, UnificationPolarities.Both, raiseCouldNotUnify))
+                switch (from, to)
                 {
-                    return false;
-                }
-                
-                if (to is IPlaceholderTerm tph &&
-                    !this.InternalAdd(context, tph, from, UnificationPolarities.Both, raiseCouldNotUnify))
-                {
-                    return false;
+                    case (IPlaceholderTerm fph, IPlaceholderTerm tph):
+                        context.AddAlias(fph, tph);
+                        return true;
+                    case (IPlaceholderTerm fph2, _):
+                        return this.InternalAdd(context, fph2, to, UnificationPolarities.Both, raiseCouldNotUnify);
+                    case (_, IPlaceholderTerm tph2):
+                        return this.InternalAdd(context, tph2, from, UnificationPolarities.Both, raiseCouldNotUnify);
                 }
             }
 
-            return true;
+            throw new InvalidOperationException();
         }
 
         private bool AddForward(

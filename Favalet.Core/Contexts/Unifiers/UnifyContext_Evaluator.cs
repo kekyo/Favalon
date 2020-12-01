@@ -54,10 +54,8 @@ namespace Favalet.Contexts.Unifiers
                 new AliasPlaceholderPairComparer();
         }
 
-        private static readonly Dictionary<IPlaceholderTerm, IPlaceholderTerm> emptyAliases =
-            new Dictionary<IPlaceholderTerm, IPlaceholderTerm>();
-
-        private Dictionary<IPlaceholderTerm, IPlaceholderTerm> aliases = emptyAliases;
+        public void AddAlias(IPlaceholderTerm placeholder, IPlaceholderTerm alias) =>
+            this.aliases[placeholder] = alias;
 
         // Normalize placeholder by declared alias.
         [DebuggerStepThrough]
@@ -111,7 +109,7 @@ namespace Favalet.Contexts.Unifiers
         public void EvaluateTopology()
         {
             // Step 1-1: Generate alias dictionary.
-            this.aliases = this.topology.
+            foreach (var entry in this.topology.
                 Select(entry =>
                     (placeholder: entry.Key,
                      aliases: entry.Value.Unifications.Where(unification =>
@@ -122,9 +120,11 @@ namespace Favalet.Contexts.Unifiers
                     entry.aliases.Select(
                         alias => (alias: (IPlaceholderTerm)alias.Expression, entry.placeholder))).
                 OrderByDescending(entry => entry, AliasPlaceholderPairComparer.Instance).    // saves by minimal index
-                Distinct(AliasPlaceholderPairComparer.Instance).
-                ToDictionary(entry => entry.Item2, entry => entry.Item1);
-
+                Distinct(AliasPlaceholderPairComparer.Instance))
+            {
+                this.aliases[entry.Item2] = entry.Item1;
+            }
+            
             // Step 1-2: Aggregate all aliased unification.
             foreach (var (placeholder, node) in this.topology.ToArray())
             {

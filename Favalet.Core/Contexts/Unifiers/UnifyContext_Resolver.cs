@@ -19,6 +19,7 @@
 
 using System;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Favalet.Expressions;
 using Favalet.Expressions.Algebraic;
 using Favalet.Expressions.Specialized;
@@ -52,7 +53,13 @@ namespace Favalet.Contexts.Unifiers
                 {
                     var combined = LogicalCalculator.ConstructNested(
                         expressionsByDirection, UnspecifiedTerm.Instance, creator, TextRange.Unknown)!;
-                    return combined;
+                    
+                    // Will not use type calculator at this time.
+                    // Because have to resolve calculative expressions except type related
+                    // (function and covariant/contravariant).
+                    var calculated = LogicalCalculator.Instance.Calculate(
+                        combined, this.choicer);
+                    return calculated;
                 }
             }
 

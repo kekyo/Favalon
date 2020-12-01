@@ -17,27 +17,26 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-using System.Collections.Generic;
-using System.Linq;
 using Favalet.Expressions;
 using Favalet.Expressions.Algebraic;
 using Favalet.Expressions.Specialized;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Favalet.Contexts.Unifiers
 {
-    partial class Unifier
+    partial class UnifyContext
     {
-#if false
         // Choicer drives with the topology knowledge.
         // This is inserting relations for between placeholders.
         private sealed class TypeTopologyChoicer :
             IExpressionChoicer
         {
-            private readonly Unifier parent;
+            private readonly UnifyContext parent;
             private readonly Dictionary<(IExpression, IExpression), bool> cache =
                 new Dictionary<(IExpression, IExpression), bool>();
 
-            public TypeTopologyChoicer(Unifier parent) =>
+            private TypeTopologyChoicer(UnifyContext parent) =>
                 this.parent = parent;
             
             private IEnumerable<IExpression> TraversePlaceholderTerms<TBinaryExpression>(
@@ -161,7 +160,9 @@ namespace Favalet.Contexts.Unifiers
                 return this.parent.TypeCalculator.DefaultChoicer.ChoiceForOr(
                     calculator, self, left, right);
             }
+        
+            public static TypeTopologyChoicer Create(UnifyContext parent) =>
+                new TypeTopologyChoicer(parent);
         }
-#endif
     }
 }

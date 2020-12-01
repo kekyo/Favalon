@@ -53,15 +53,22 @@ namespace Favalet.Contexts.Unifiers
 
         private readonly Stack<Dictionary<IPlaceholderTerm, Node>> stack =
             new Stack<Dictionary<IPlaceholderTerm, Node>>();
+
         private Dictionary<IPlaceholderTerm, Node> topology =
             new Dictionary<IPlaceholderTerm, Node>(IdentityTermComparer.Instance);
+        
+        private readonly Dictionary<IPlaceholderTerm, IPlaceholderTerm> aliases =
+            new Dictionary<IPlaceholderTerm, IPlaceholderTerm>();
+
+        private readonly TypeTopologyChoicer choicer;
 
         public readonly ITypeCalculator TypeCalculator;
-        
+
         [DebuggerStepThrough]
         private UnifyContext(ITypeCalculator typeCalculator, IExpression targetRoot)
         {
             this.TypeCalculator = typeCalculator;
+            this.choicer = TypeTopologyChoicer.Create(this);
 #if DEBUG
             this.targetRoot = targetRoot;
 #else
