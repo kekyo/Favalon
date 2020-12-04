@@ -54,31 +54,6 @@ namespace Favalet.Contexts.Unifiers
                 new AliasPlaceholderPairComparer();
         }
 
-        public void AddAlias(IPlaceholderTerm placeholder, IPlaceholderTerm alias) =>
-            this.aliases[placeholder] = alias;
-
-        // Normalize placeholder by declared alias.
-        [DebuggerStepThrough]
-        private IPlaceholderTerm? GetAlias(
-            IPlaceholderTerm placeholder, IPlaceholderTerm? defaultValue)
-        {
-            var current = placeholder;
-            var dv = defaultValue;
-            while (true)
-            {
-                if (this.aliases.TryGetValue(current, out var normalized))
-                {
-                    current = normalized;
-                    dv = normalized;
-                    continue;
-                }
-                else
-                {
-                    return dv;
-                }
-            }
-        }
-
         // Traverse AST and will replace all alias.
         [DebuggerStepThrough]
         private IExpression ReplaceAlias(IExpression expression)

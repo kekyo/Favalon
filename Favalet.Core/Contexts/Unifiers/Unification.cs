@@ -26,11 +26,9 @@ namespace Favalet.Contexts.Unifiers
     internal enum UnificationPolarities
     {
         // Indicate "==>", forward polarity, will make covariant (widen)
-        Out,
+        Forward,
         // Indicate "<==", backward polarity, will make contravariant (narrow)
-        In,
-        // Both direction "<=>"  
-        Both
+        Backward
     }
 
     [DebuggerStepThrough]
@@ -58,12 +56,7 @@ namespace Favalet.Contexts.Unifiers
 
         public string ToString(PrettyStringTypes type)
         {
-            var polarity = this.Polarity switch
-            {
-                UnificationPolarities.Out => "==>",
-                UnificationPolarities.In => "<==",
-                _ => "<=>"
-            };
+            var polarity = this.Polarity == UnificationPolarities.Forward ? "==>" : "<==";
             return $"{polarity} {this.Expression.GetPrettyString(type)}";
         }
         public override string ToString() =>

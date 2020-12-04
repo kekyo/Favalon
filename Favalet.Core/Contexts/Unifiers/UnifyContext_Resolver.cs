@@ -72,7 +72,7 @@ namespace Favalet.Contexts.Unifiers
             
             var narrow = this.InternalResolve(
                 normalized,
-                UnificationPolarities.In,
+                UnificationPolarities.Backward,
                 AndExpression.Create);
             if (!narrow.IsContainsPlaceholder(true))
             {
@@ -81,7 +81,7 @@ namespace Favalet.Contexts.Unifiers
             
             var widen = this.InternalResolve(
                 normalized,
-                UnificationPolarities.Out,
+                UnificationPolarities.Forward,
                 OrExpression.Create);
             if (!widen.IsContainsPlaceholder(true))
             {

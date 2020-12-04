@@ -96,13 +96,13 @@ namespace Favalet.Contexts.Unifiers
                     return result;
                 }
                 
-                if (TraversePlaceholderTerms<TBinaryExpression>(from, UnificationPolarities.Out).
+                if (TraversePlaceholderTerms<TBinaryExpression>(from, UnificationPolarities.Forward).
                     Any(expression => this.parent.TypeCalculator.Equals(expression, to)))
                 {
                     this.cache.Add((from, to), true);
                     return true;
                 }
-                else if (TraversePlaceholderTerms<TBinaryExpression>(to, UnificationPolarities.In).
+                else if (TraversePlaceholderTerms<TBinaryExpression>(to, UnificationPolarities.Backward).
                     Any(expression => this.parent.TypeCalculator.Equals(expression, from)))
                 {
                     this.cache.Add((from, to), true);

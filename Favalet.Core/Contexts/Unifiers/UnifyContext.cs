@@ -57,8 +57,8 @@ namespace Favalet.Contexts.Unifiers
         private Dictionary<IPlaceholderTerm, Node> topology =
             new Dictionary<IPlaceholderTerm, Node>(IdentityTermComparer.Instance);
         
-        private readonly Dictionary<IPlaceholderTerm, IPlaceholderTerm> aliases =
-            new Dictionary<IPlaceholderTerm, IPlaceholderTerm>();
+        private readonly Dictionary<IPlaceholderTerm, IExpression> aliases =
+            new Dictionary<IPlaceholderTerm, IExpression>();
 
         private readonly TypeTopologyChoicer choicer;
 
@@ -101,6 +101,50 @@ namespace Favalet.Contexts.Unifiers
             this.topology.Add(placeholder, node);
             node.Unifications.Add(Unification.Create(expression, polarity));
             return GetOrAddNodeResults.Added;
+        }
+
+        // Normalize placeholder by declared alias.
+        [DebuggerStepThrough]
+        private IExpression GetAlias(IPlaceholderTerm placeholder)
+        {
+            var current = placeholder;
+            while (true)
+            {
+                if (this.aliases.TryGetValue(current, out var resolved))
+                {
+                    if (resolved is IPlaceholderTerm ph)
+                    {
+                        current = ph;
+                        continue;
+                    }
+                    else
+                    {
+                        return resolved;
+                    }
+                }
+                else
+                {
+                    return current;
+                }
+            }
+        }
+
+        [DebuggerStepThrough]
+        public bool TryAddAlias(
+            IPlaceholderTerm placeholder,
+            IExpression expression,
+            out IExpression alias)
+        {
+            alias = this.GetAlias(placeholder);
+            if (alias is IPlaceholderTerm ph)
+            {
+                this.aliases.Add(ph, expression);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         [DebuggerStepThrough]
@@ -250,11 +294,11 @@ namespace Favalet.Contexts.Unifiers
                     var phSymbol = ToSymbolString(placeholder).symbol;
                     switch (unification.Polarity, unification.Expression)
                     {
-                        case (UnificationPolarities.Out, IPairExpression parent):
+                        case (UnificationPolarities.Forward, IPairExpression parent):
                             yield return (phSymbol, $"{ToSymbolString(parent).symbol}:i0", "");
                             yield return (phSymbol, $"{ToSymbolString(parent).symbol}:i1", "");
                             break;
-                        case (UnificationPolarities.In, IPairExpression parent):
+                        case (UnificationPolarities.Backward, IPairExpression parent):
                             yield return ($"{ToSymbolString(parent).symbol}:i0", phSymbol, "");
                             yield return ($"{ToSymbolString(parent).symbol}:i1", phSymbol, "");
                             break;
@@ -262,10 +306,10 @@ namespace Favalet.Contexts.Unifiers
                             yield return ($"{ToSymbolString(parent).symbol}:i0", phSymbol, " [dir=none]");
                             yield return ($"{ToSymbolString(parent).symbol}:i1", phSymbol, " [dir=none]");
                             break;
-                        case (UnificationPolarities.Out, _):
+                        case (UnificationPolarities.Forward, _):
                             yield return (phSymbol, ToSymbolString(unification.Expression).symbol, "");
                             break;
-                        case (UnificationPolarities.In, _):
+                        case (UnificationPolarities.Backward, _):
                             yield return (ToSymbolString(unification.Expression).symbol, phSymbol, "");
                             break;
                         case (UnificationPolarities.Both, _):
