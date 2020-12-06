@@ -105,9 +105,10 @@ namespace Favalet.Contexts.Unifiers
 
         // Normalize placeholder by declared alias.
         [DebuggerStepThrough]
-        private IExpression GetAlias(IPlaceholderTerm placeholder)
+        private bool TryGetAlias(IPlaceholderTerm placeholder, out IExpression alias)
         {
             var current = placeholder;
+            var result = false;
             while (true)
             {
                 if (this.aliases.TryGetValue(current, out var resolved))
@@ -115,16 +116,19 @@ namespace Favalet.Contexts.Unifiers
                     if (resolved is IPlaceholderTerm ph)
                     {
                         current = ph;
+                        result = true;
                         continue;
                     }
                     else
                     {
-                        return resolved;
+                        alias = resolved;
+                        return true;
                     }
                 }
                 else
                 {
-                    return current;
+                    alias = current;
+                    return result;
                 }
             }
         }
@@ -135,7 +139,7 @@ namespace Favalet.Contexts.Unifiers
             IExpression expression,
             out IExpression alias)
         {
-            alias = this.GetAlias(placeholder);
+            alias = this.TryGetAlias(placeholder, out var a) ? a : placeholder;
             if (alias is IPlaceholderTerm ph)
             {
                 this.aliases.Add(ph, expression);
@@ -302,18 +306,11 @@ namespace Favalet.Contexts.Unifiers
                             yield return ($"{ToSymbolString(parent).symbol}:i0", phSymbol, "");
                             yield return ($"{ToSymbolString(parent).symbol}:i1", phSymbol, "");
                             break;
-                        case (UnificationPolarities.Both, IPairExpression parent):
-                            yield return ($"{ToSymbolString(parent).symbol}:i0", phSymbol, " [dir=none]");
-                            yield return ($"{ToSymbolString(parent).symbol}:i1", phSymbol, " [dir=none]");
-                            break;
                         case (UnificationPolarities.Forward, _):
                             yield return (phSymbol, ToSymbolString(unification.Expression).symbol, "");
                             break;
                         case (UnificationPolarities.Backward, _):
                             yield return (ToSymbolString(unification.Expression).symbol, phSymbol, "");
-                            break;
-                        case (UnificationPolarities.Both, _):
-                            yield return (ToSymbolString(unification.Expression).symbol, phSymbol, " [dir=none]");
                             break;
                         default:
                             throw new InvalidOperationException();
@@ -339,7 +336,7 @@ namespace Favalet.Contexts.Unifiers
                 foreach (var entry in this.aliases.
                     Select(entry =>
                     {
-                        var resolved = this.GetAlias(entry.Key, entry.Key)!;
+                        var resolved = this.TryGetAlias(entry.Key, out var a) ? a : entry.Key;
                         return
                             (from: ToSymbolString(entry.Key).symbol,
                                to: ToSymbolString(resolved).symbol);

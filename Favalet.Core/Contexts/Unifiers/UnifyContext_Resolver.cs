@@ -39,12 +39,15 @@ namespace Favalet.Contexts.Unifiers
             if (this.topology.TryGetValue(placeholder, out var node))
             {
                 var expressionsByDirection = node.Unifications.
-                    Where(unification => 
-                        (unification.Polarity == direction) ||
-                        (unification.Polarity == UnificationPolarities.Both)).
+                    Where(unification => unification.Polarity == direction).
                     Select(unification => unification.Expression switch
                     {
-                        IPlaceholderTerm ph => this.InternalResolve(ph, direction, creator),
+                        IPlaceholderTerm ph =>
+                            this.TryGetAlias(ph, out var a) ?
+                                (a is IPlaceholderTerm aph ?
+                                    this.InternalResolve(aph, direction, creator) :
+                                    a) :
+                            ph,
                         _ => unification.Expression
                     }).
                     Memoize();
@@ -68,10 +71,14 @@ namespace Favalet.Contexts.Unifiers
         
         public IExpression? Resolve(IPlaceholderTerm placeholder)
         {
-            var normalized = this.GetAlias(placeholder, placeholder)!;
+            var normalized = this.TryGetAlias(placeholder, out var a) ? a : placeholder;
+            if (!(normalized is IPlaceholderTerm ph))
+            {
+                return normalized;
+            }
             
             var narrow = this.InternalResolve(
-                normalized,
+                ph,
                 UnificationPolarities.Backward,
                 AndExpression.Create);
             if (!narrow.IsContainsPlaceholder(true))
@@ -80,7 +87,7 @@ namespace Favalet.Contexts.Unifiers
             }
             
             var widen = this.InternalResolve(
-                normalized,
+                ph,
                 UnificationPolarities.Forward,
                 OrExpression.Create);
             if (!widen.IsContainsPlaceholder(true))

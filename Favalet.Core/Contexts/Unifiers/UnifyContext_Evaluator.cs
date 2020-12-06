@@ -61,7 +61,7 @@ namespace Favalet.Contexts.Unifiers
             switch (expression)
             {
                 case IPlaceholderTerm ph:
-                    return this.GetAlias(ph, ph)!;
+                    return this.TryGetAlias(ph, out var a) ? a : ph;
                 case IPairExpression(IExpression left, IExpression right) pair:
                     var lr = this.ReplaceAlias(left);
                     var rr = this.ReplaceAlias(right);
@@ -83,54 +83,6 @@ namespace Favalet.Contexts.Unifiers
         // Evaluate topology.
         public void EvaluateTopology()
         {
-            // Step 1-1: Generate alias dictionary.
-            foreach (var entry in this.topology.
-                Select(entry =>
-                    (placeholder: entry.Key,
-                     aliases: entry.Value.Unifications.Where(unification =>
-                        // Both placeholder unification
-                        (unification.Polarity == UnificationPolarities.Both) &&
-                        unification.Expression is IPlaceholderTerm))).
-                SelectMany(entry =>
-                    entry.aliases.Select(
-                        alias => (alias: (IPlaceholderTerm)alias.Expression, entry.placeholder))).
-                OrderByDescending(entry => entry, AliasPlaceholderPairComparer.Instance).    // saves by minimal index
-                Distinct(AliasPlaceholderPairComparer.Instance))
-            {
-                this.aliases[entry.Item2] = entry.Item1;
-            }
-            
-            // Step 1-2: Aggregate all aliased unification.
-            foreach (var (placeholder, node) in this.topology.ToArray())
-            {
-                // If this placeholder aliasing?
-                if (this.GetAlias(placeholder, default) is IPlaceholderTerm normalized &&
-                    this.topology.TryGetValue(normalized, out var targetNode))
-                {
-                    // Aggregate all unification except self.
-                    foreach (var unification in node.Unifications.
-                        Where(unification =>
-                            !((unification.Polarity == UnificationPolarities.Both) &&
-                              unification.Expression.Equals(normalized))))
-                    {
-                        targetNode.Unifications.Add(unification);
-                    }
-                                        
-                    // Remove duplicate equality unification.
-                    foreach (var unification in targetNode.Unifications.
-                        ToArray().
-                        Where(unification =>
-                            ((unification.Polarity == UnificationPolarities.Both) &&
-                             unification.Expression.Equals(placeholder))))
-                    {
-                        targetNode.Unifications.Remove(unification);
-                    }
-
-                    // Remove this placeholder from topology.
-                    this.topology.Remove(placeholder);
-                }
-            }
-            
             // Step 1-3: Resolve aliases on all unification.
             foreach (var (placeholder, node) in this.topology.ToArray())
             {
@@ -139,8 +91,7 @@ namespace Favalet.Contexts.Unifiers
                     node.Unifications.Remove(unification);
 
                     var updated = this.ReplaceAlias(unification.Expression);
-                    if (!((unification.Polarity == UnificationPolarities.Both) &&
-                        updated.Equals(placeholder)))
+                    if (!updated.Equals(placeholder))
                     {
                         node.Unifications.Add(Unification.Create(updated, unification.Polarity));
                     }

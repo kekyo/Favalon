@@ -49,10 +49,11 @@ namespace Favalet.Contexts.Unifiers
                 {
                     if (current is IPlaceholderTerm ph)
                     {
-                        var aph = this.parent.GetAlias(ph, ph)!;
-                        yield return aph;
+                        var alias = this.parent.TryGetAlias(ph, out var a) ? a : ph;
+                        yield return alias;
 
-                        if (this.parent.topology.TryGetValue(aph, out var node))
+                        if (alias is IPlaceholderTerm aph &&
+                            this.parent.topology.TryGetValue(aph, out var node))
                         {
                             foreach (var unification in node.Unifications.Where(
                                 unification => unification.Polarity == polarity))
