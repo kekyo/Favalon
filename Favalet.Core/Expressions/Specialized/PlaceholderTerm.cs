@@ -98,10 +98,10 @@ namespace Favalet.Expressions.Specialized
 
         protected override IExpression Fixup(IFixupContext context)
         {
-            if (context.Resolve(this) is IExpression resolved &&
-                !(resolved is IPlaceholderTerm))
+            if (context.Resolve(this) is { } resolved &&
+                !resolved.Equals(this))
             {
-                Debug.WriteLine(resolved.GetPrettyString(PrettyStringTypes.Readable));
+                //Debug.WriteLine(resolved.GetPrettyString(PrettyStringTypes.Readable));
                 return context.Fixup(resolved);
             }
             else

@@ -105,8 +105,6 @@ namespace Favalet
             Debug.WriteLine($"Infer[{context.GetHashCode()}:inferred] :");
 #endif
 
-            unifyContext.EvaluateTopology();
-
             var fixedup = context.Fixup(inferred);
             unifyContext.SetTargetRoot(fixedup);
 

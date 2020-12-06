@@ -45,86 +45,27 @@ namespace Favalet.Contexts.Unifiers
 
         ///////////////////////////////////////////////////////////////////////////////////
 
-        private bool AddAlias(
-            UnifyContext context,
-            IExpression from,
-            IExpression to,
-            bool raiseCouldNotUnify)
-        {
-            switch (from, to)
-            {
-                case (IPlaceholderTerm fph, _):
-                    if (context.TryAddAlias(fph, to, out var alias1))
-                    {
-                        return true;
-                    }
-                    else
-                    {
-                        return this.InternalUnify(
-                            context, alias1, to, UnifyDirections.BiDirectional, raiseCouldNotUnify);
-                    }
-                case (_, IPlaceholderTerm tph):
-                    if (context.TryAddAlias(tph, from, out var alias2))
-                    {
-                        return true;
-                    }
-                    else
-                    {
-                        return this.InternalUnify(
-                            context, alias2, from, UnifyDirections.BiDirectional, raiseCouldNotUnify);
-                    }
-            }
-
-            throw new InvalidOperationException();
-        }
-
         private bool AddUnification(
             UnifyContext context,
             IPlaceholderTerm placeholder,
             IExpression expression,
-            UnificationPolarities polarity,
+            UnifyDirections direction,
             bool raiseCouldNotUnify)
         {
-            if (context.GetOrAddNode(placeholder, expression, polarity, out var node) ==
-                GetOrAddNodeResults.Added)
+            var lookup = context.Resolve(placeholder);
+            if (lookup is IPlaceholderTerm ph)
             {
+                if (!ph.Equals(expression))
+                {
+                    context.Add(ph, expression);
+                }
                 return true;
             }
-
-            using (context.AllScope())
+            else
             {
-                var entries = node.Unifications.
-                    Where(unification => unification.Polarity == polarity).
-                    Select(unification =>
-                        (unification,
-                         result: this.InternalUnify(
-                            context, expression, unification.Expression,
-                            polarity switch {
-                                UnificationPolarities.Forward => UnifyDirections.Forward,
-                                _ => UnifyDirections.Backward
-                            },
-                            false))).
-                    Memoize();
-
-                if (entries.All(entry => !entry.result))
-                {
-                    if (raiseCouldNotUnify)
-                    {
-                        throw new InvalidOperationException("Couldn't unify");
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-                
-                foreach (var entry in entries.Where(entry => !entry.result))
-                {
-                    node.Unifications.Remove(entry.unification);
-                }
+                return this.InternalUnify(
+                    context, lookup, expression, direction, raiseCouldNotUnify);
             }
-
-            return true;
         }
 
         ///////////////////////////////////////////////////////////////////////////////////
@@ -139,7 +80,7 @@ namespace Favalet.Contexts.Unifiers
             Debug.Assert(!(expression1 is IIgnoreUnificationTerm));
             Debug.Assert(!(expression2 is IIgnoreUnificationTerm));
 
-            switch (@from: expression1, to: expression2, direction)
+            switch (expression1, expression2, direction)
             {
                 // Binary expression unification.
                 case (IBinaryExpression fb, _, _):
@@ -156,10 +97,10 @@ namespace Favalet.Contexts.Unifiers
                     return rtl && rtr;
 
                 // Applied function unification.
-                case (IFunctionExpression(IExpression fp, IExpression fr),
-                      IAppliedFunctionExpression(IExpression tp, IExpression tr),
+                case (IFunctionExpression({ } fp, { } fr),
+                      IAppliedFunctionExpression({ } tp, { } tr),
                       _):
-                    using (context.AllScope())
+                    using (context.BeginScope())
                     {
                         // unify(C +> A): But parameters aren't binder.
                         var rp = this.InternalUnify(
@@ -181,14 +122,14 @@ namespace Favalet.Contexts.Unifiers
                                 _ => UnifyDirections.Forward
                             },
                             raiseCouldNotUnify);
-                        return rp && rr;
+                        return context.Commit(rp && rr);
                     }
 
                 // Function unification.
-                case (IFunctionExpression(IExpression fp, IExpression fr),
-                      IFunctionExpression(IExpression tp, IExpression tr),
+                case (IFunctionExpression({ } fp, { } fr),
+                      IFunctionExpression({ } tp, { } tr),
                       _):
-                    using (context.AllScope())
+                    using (context.BeginScope())
                     {
                         // unify(C +> A): Parameters are binder.
                         var rp = this.InternalUnify(
@@ -208,24 +149,24 @@ namespace Favalet.Contexts.Unifiers
                                 _ => UnifyDirections.Forward
                             },
                             raiseCouldNotUnify);
-                        return rp && rr;
+                        return context.Commit(rp && rr);
                     }
                 
                 // TODO: IApplyExpression (applicable type functions)
                 
                 // Placeholder unification.
                 case (IPlaceholderTerm fph, _, UnifyDirections.BiDirectional):
-                    return this.AddAlias(context, fph, expression2, raiseCouldNotUnify);
+                    return this.AddUnification(context, fph, expression2, UnifyDirections.BiDirectional, raiseCouldNotUnify);
                 case (_, IPlaceholderTerm tph, UnifyDirections.BiDirectional):
-                    return this.AddAlias(context, tph, expression1, raiseCouldNotUnify);
+                    return this.AddUnification(context, tph, expression1, UnifyDirections.BiDirectional, raiseCouldNotUnify);
                 case (IPlaceholderTerm fph, _, UnifyDirections.Forward):
-                    return this.AddUnification(context, fph, expression2, UnificationPolarities.Forward, raiseCouldNotUnify);
+                    return this.AddUnification(context, fph, expression2, UnifyDirections.Forward, raiseCouldNotUnify);
                 case (IPlaceholderTerm fph, _, UnifyDirections.Backward):
-                    return this.AddUnification(context, fph, expression2, UnificationPolarities.Backward, raiseCouldNotUnify);
+                    return this.AddUnification(context, fph, expression2, UnifyDirections.Backward, raiseCouldNotUnify);
                 case (_, IPlaceholderTerm tph, UnifyDirections.Forward):
-                    return this.AddUnification(context, tph, expression1, UnificationPolarities.Backward, raiseCouldNotUnify);
+                    return this.AddUnification(context, tph, expression1, UnifyDirections.Backward, raiseCouldNotUnify);
                 case (_, IPlaceholderTerm tph, UnifyDirections.Backward):
-                    return this.AddUnification(context, tph, expression1, UnificationPolarities.Forward, raiseCouldNotUnify);
+                    return this.AddUnification(context, tph, expression1, UnifyDirections.Forward, raiseCouldNotUnify);
             }
             
             // Validate polarity.
@@ -241,7 +182,6 @@ namespace Favalet.Contexts.Unifiers
                 }
                 else
                 {
-                    context.MarkCouldNotUnify(expression1, expression2);
                     return false;
                 }
             }
@@ -266,7 +206,7 @@ namespace Favalet.Contexts.Unifiers
                 return true;
             }
 
-            switch (@from: expression1, to: expression2)
+            switch (expression1, expression2)
             {
                 // Ignore IIgnoreUnificationTerm unification.
                 case (IIgnoreUnificationTerm _, _):
@@ -274,7 +214,7 @@ namespace Favalet.Contexts.Unifiers
                     return true;
             }
 
-            using (context.AllScope())
+            using (context.BeginScope())
             {
                 // Unify higher order.
                 if (!this.InternalUnify(
@@ -284,22 +224,18 @@ namespace Favalet.Contexts.Unifiers
                     direction,
                     raiseCouldNotUnify))
                 {
-                    return false;
+                    return context.Commit(false);
                 }
 
                 // Unify if succeeded higher order.
-                if (!this.InternalUnifyCore(
-                    context,
-                    expression1,
-                    expression2,
-                    direction,
-                    raiseCouldNotUnify))
-                {
-                    return false;
-                }
+                return context.Commit(
+                    this.InternalUnifyCore(
+                        context,
+                        expression1,
+                        expression2,
+                        direction,
+                        raiseCouldNotUnify));
             }
-
-            return true;
         }
 
         ///////////////////////////////////////////////////////////////////////////////////

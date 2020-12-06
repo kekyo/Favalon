@@ -23,44 +23,25 @@ using Favalet.Internal;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 
 namespace Favalet.Contexts.Unifiers
 {
     public interface ITopology
     {
-        string View { get; }    
-        string Dot { get; }    
-    }
-    
-    internal enum GetOrAddNodeResults
-    {
-        Got,
-        Added
     }
 
     [DebuggerDisplay("{View}")]
-    internal sealed partial class UnifyContext :
+    internal sealed class UnifyContext :
         ITopology
     {
-#if DEBUG
         private IExpression targetRoot;
-#else
-        private string targetRootString;
-#endif
-        private bool couldNotUnify;
 
-        private readonly Stack<Dictionary<IPlaceholderTerm, Node>> stack =
-            new Stack<Dictionary<IPlaceholderTerm, Node>>();
+        private readonly Stack<Dictionary<IPlaceholderTerm, IExpression>> scopes =
+            new Stack<Dictionary<IPlaceholderTerm, IExpression>>();
 
-        private Dictionary<IPlaceholderTerm, Node> topology =
-            new Dictionary<IPlaceholderTerm, Node>(IdentityTermComparer.Instance);
-        
-        private readonly Dictionary<IPlaceholderTerm, IExpression> aliases =
-            new Dictionary<IPlaceholderTerm, IExpression>();
-
-        private readonly TypeTopologyChoicer choicer;
+        private Dictionary<IPlaceholderTerm, IExpression>? topology =
+            new Dictionary<IPlaceholderTerm, IExpression>(IdentityTermComparer.Instance);
 
         public readonly ITypeCalculator TypeCalculator;
 
@@ -68,7 +49,6 @@ namespace Favalet.Contexts.Unifiers
         private UnifyContext(ITypeCalculator typeCalculator, IExpression targetRoot)
         {
             this.TypeCalculator = typeCalculator;
-            this.choicer = TypeTopologyChoicer.Create(this);
 #if DEBUG
             this.targetRoot = targetRoot;
 #else
@@ -86,75 +66,42 @@ namespace Favalet.Contexts.Unifiers
                 targetRoot.GetPrettyString(PrettyStringTypes.ReadableAll);
 #endif
 
-        public GetOrAddNodeResults GetOrAddNode(
-            IPlaceholderTerm placeholder,
-            IExpression expression,
-            UnificationPolarities polarity,
-            out Node node)
-        {
-            if (this.topology.TryGetValue(placeholder, out node!))
-            {
-                return GetOrAddNodeResults.Got;
-            }
-
-            node = Node.Create(placeholder);
-            this.topology.Add(placeholder, node);
-            node.Unifications.Add(Unification.Create(expression, polarity));
-            return GetOrAddNodeResults.Added;
-        }
-
-        // Normalize placeholder by declared alias.
         [DebuggerStepThrough]
-        private bool TryGetAlias(IPlaceholderTerm placeholder, out IExpression alias)
+        public IExpression Resolve(IPlaceholderTerm placeholder)
         {
-            var current = placeholder;
-            var result = false;
+            var topology = this.topology ?? this.scopes.Peek();
+            var ph = placeholder;
             while (true)
             {
-                if (this.aliases.TryGetValue(current, out var resolved))
+                if (topology.TryGetValue(ph, out var expression))
                 {
-                    if (resolved is IPlaceholderTerm ph)
+                    if (expression is IPlaceholderTerm ph2)
                     {
-                        current = ph;
-                        result = true;
+                        ph = ph2;
                         continue;
                     }
                     else
                     {
-                        alias = resolved;
-                        return true;
+                        return expression;
                     }
                 }
                 else
                 {
-                    alias = current;
-                    return result;
+                    return ph;
                 }
             }
         }
 
         [DebuggerStepThrough]
-        public bool TryAddAlias(
-            IPlaceholderTerm placeholder,
-            IExpression expression,
-            out IExpression alias)
+        public void Add(IPlaceholderTerm placeholder, IExpression expression)
         {
-            alias = this.TryGetAlias(placeholder, out var a) ? a : placeholder;
-            if (alias is IPlaceholderTerm ph)
-            {
-                this.aliases.Add(ph, expression);
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            Debug.Assert(!placeholder.Equals(expression));
+            
+            // TODO: copy
+            this.topology ??= new Dictionary<IPlaceholderTerm, IExpression>(this.scopes.Peek());
+            this.topology.Add(placeholder, expression);
         }
-
-        [DebuggerStepThrough]
-        public void MarkCouldNotUnify(IExpression from, IExpression to) =>
-            this.couldNotUnify = true;
-
+        
         [DebuggerStepThrough]
         private sealed class Disposer : IDisposable
         {
@@ -173,192 +120,40 @@ namespace Favalet.Contexts.Unifiers
             }
         }
 
-        [DebuggerStepThrough]
-        public IDisposable AllScope()
+        public IDisposable BeginScope()
         {
-            this.stack.Push(this.topology);
-            
-            // TODO: suppress copy
-            this.topology = new Dictionary<IPlaceholderTerm, Node>(this.topology);
-            
+            this.scopes.Push(this.topology ?? this.scopes.Peek());
+            this.topology = null;
             return new Disposer(this);
         }
 
-        private void EndScope()
+        public bool Commit(bool commit)
         {
-            var last = this.stack.Pop();
-            if (this.couldNotUnify)
+            if (commit)
             {
-                this.topology = last;
-                this.couldNotUnify = false;
+                if (this.topology != null)
+                {
+                    this.scopes.Pop();
+                    this.scopes.Push(this.topology);
+                }
             }
+            this.topology = null;
+            return commit;
         }
+
+        private void EndScope() =>
+            this.topology = this.scopes.Pop();
         
         public string View
         {
             [DebuggerStepThrough]
             get => StringUtilities.Join(
                 System.Environment.NewLine,
-                this.topology.
-                    // TODO: alias
+                (this.topology ?? this.scopes.Peek()).
                     OrderBy(entry => entry.Key, IdentityTermComparer.Instance).
-                    SelectMany(entry =>
-                        entry.Value.Unifications.Select(unification =>
-                            $"{entry.Key.Symbol} {unification.ToString(PrettyStringTypes.Minimum)}")));
-        }
-
-        public string Dot
-        {
-            [DebuggerStepThrough]
-            get
-            {
-                var tw = new StringWriter();
-                tw.WriteLine("digraph topology");
-                tw.WriteLine("{");
-#if DEBUG
-                tw.WriteLine(
-                    "    graph [label=\"{0}\"];",
-                    this.targetRoot.GetPrettyString(PrettyStringTypes.ReadableAll));
-#else
-                tw.WriteLine(
-                    "    graph [label=\"{0}\"];",
-                    this.targetRootString);
-#endif
-                tw.WriteLine();
-                tw.WriteLine("    # nodes");
-
-                var symbolMap = new Dictionary<IExpression, string>();
-                
-                (string symbol, IExpression expression) ToSymbolString(IExpression expression)
-                {
-                    switch (expression)
-                    {
-                        case IPlaceholderTerm ph:
-                            return ($"ph{ph.Index}", expression);
-                        case IPairExpression parent:
-                            if (!symbolMap!.TryGetValue(parent, out var symbol2))
-                            {
-                                var index = symbolMap.Count;
-                                symbol2 = $"pe{index}";
-                                symbolMap.Add(parent, symbol2);
-                            }
-                            return (symbol2, parent);
-                        default:
-                            if (!symbolMap!.TryGetValue(expression, out var symbol1))
-                            {
-                                var index = symbolMap.Count;
-                                symbol1 = $"ex{index}";
-                                symbolMap.Add(expression, symbol1);
-                            }
-                            return (symbol1, expression);
-                    }
-                }
-
-                foreach (var entry in this.topology.
-                    Select(entry => (ph: (IIdentityTerm)entry.Key, label: entry.Key.Symbol)).
-                    Concat(this.aliases.Keys.
-                        Select(key => (ph: (IIdentityTerm)key, label: key.Symbol))).
-                    Concat(this.aliases.Values.
-                        OfType<IIdentityTerm>().
-                        Select(value => (ph: value, label: value.Symbol))).
-                    Distinct().
-                    OrderBy(entry => entry.ph, IdentityTermComparer.Instance))
-                {
-                    tw.WriteLine(
-                        "    {0} [label=\"{1}\",shape=circle];",
-                        ToSymbolString(entry.ph).symbol,
-                        entry.label);
-                }
-
-                foreach (var entry in this.topology.
-                    SelectMany(entry =>
-                        entry.Value.Unifications.
-                        Where(unification => !(unification.Expression is IPlaceholderTerm)).
-                        Select(unification => ToSymbolString(unification.Expression))).
-                    Distinct().
-                    OrderBy(entry => entry.symbol))
-                {
-                    tw.WriteLine(
-                        "    {0} [{1}];",
-                        entry.symbol,
-                        entry.expression switch
-                        {
-                            IPairExpression parent =>
-                                $"xlabel=\"{parent.GetPrettyString(PrettyStringTypes.Minimum)}\",label=\"<i0>[0]\",shape=record",
-                            _ =>
-                                $"label=\"{entry.expression.GetPrettyString(PrettyStringTypes.Minimum)}\",shape=box",
-                        });
-                }
-
-                tw.WriteLine();
-                tw.WriteLine("    # topology");
-
-                IEnumerable<(string from, string to, string attribute)> ToSymbols(IPlaceholderTerm placeholder, Unification unification)
-                {
-                    var phSymbol = ToSymbolString(placeholder).symbol;
-                    switch (unification.Polarity, unification.Expression)
-                    {
-                        case (UnificationPolarities.Forward, IPairExpression parent):
-                            yield return (phSymbol, $"{ToSymbolString(parent).symbol}:i0", "");
-                            yield return (phSymbol, $"{ToSymbolString(parent).symbol}:i1", "");
-                            break;
-                        case (UnificationPolarities.Backward, IPairExpression parent):
-                            yield return ($"{ToSymbolString(parent).symbol}:i0", phSymbol, "");
-                            yield return ($"{ToSymbolString(parent).symbol}:i1", phSymbol, "");
-                            break;
-                        case (UnificationPolarities.Forward, _):
-                            yield return (phSymbol, ToSymbolString(unification.Expression).symbol, "");
-                            break;
-                        case (UnificationPolarities.Backward, _):
-                            yield return (ToSymbolString(unification.Expression).symbol, phSymbol, "");
-                            break;
-                        default:
-                            throw new InvalidOperationException();
-                    }
-                }
-                    
-                foreach (var entry in this.topology.
-                    SelectMany(entry => entry.Value.Unifications.
-                        SelectMany(unification => ToSymbols(entry.Key, unification))).
-                    Distinct().
-                    OrderBy(entry => entry.Item1))
-                {
-                    tw.WriteLine(
-                        "    {0} -> {1}{2};",
-                        entry.from,
-                        entry.to,
-                        entry.attribute);
-                }
-                
-                tw.WriteLine();
-                tw.WriteLine("    # aliases");
-
-                foreach (var entry in this.aliases.
                     Select(entry =>
-                    {
-                        var resolved = this.TryGetAlias(entry.Key, out var a) ? a : entry.Key;
-                        return
-                            (from: ToSymbolString(entry.Key).symbol,
-                               to: ToSymbolString(resolved).symbol);
-                    }).
-                    Distinct().
-                    OrderBy(entry => entry.from))
-                {
-                    tw.WriteLine(
-                        "    {0} -> {1} [dir=none];",
-                        entry.from,
-                        entry.to);
-                }
-
-                tw.WriteLine("}");
-
-                return tw.ToString();
-            }
+                        $"{entry.Key.Symbol} === {entry.Value.GetPrettyString(PrettyStringTypes.Minimum)}"));
         }
-
-        [DebuggerStepThrough]
-        public override string ToString() =>
-            "UnifyContext: " + this.View;
 
         [DebuggerStepThrough]
         public static UnifyContext Create(ITypeCalculator typeCalculator, IExpression targetRoot) =>
