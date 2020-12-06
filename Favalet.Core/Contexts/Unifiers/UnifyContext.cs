@@ -39,8 +39,7 @@ namespace Favalet.Contexts.Unifiers
 
         private readonly Stack<Dictionary<IPlaceholderTerm, IExpression>> scopes =
             new Stack<Dictionary<IPlaceholderTerm, IExpression>>();
-
-        private Dictionary<IPlaceholderTerm, IExpression>? topology =
+        private Dictionary<IPlaceholderTerm, IExpression> topology =
             new Dictionary<IPlaceholderTerm, IExpression>(IdentityTermComparer.Instance);
 
         public readonly ITypeCalculator TypeCalculator;
@@ -68,16 +67,15 @@ namespace Favalet.Contexts.Unifiers
 
         [DebuggerStepThrough]
         public bool TryResolve(IPlaceholderTerm placeholder, out IExpression expression) =>
-            (this.topology ?? this.scopes.Peek()).TryGetValue(placeholder, out expression!);
+            this.topology.TryGetValue(placeholder, out expression!);
 
         [DebuggerStepThrough]
         public bool TryResolveRecursive(IPlaceholderTerm placeholder, out IExpression expression)
         {
-            var topology = this.topology ?? this.scopes.Peek();
             var ph = placeholder;
             while (true)
             {
-                if (topology.TryGetValue(ph, out expression!))
+                if (this.topology.TryGetValue(ph, out expression!))
                 {
                     if (expression is IPlaceholderTerm ph2)
                     {
@@ -103,7 +101,11 @@ namespace Favalet.Contexts.Unifiers
             Debug.Assert(!placeholder.Equals(expression));
             
             // TODO: copy
-            this.topology ??= new Dictionary<IPlaceholderTerm, IExpression>(this.scopes.Peek());
+            if ((this.scopes.Count >= 1) &&
+                object.ReferenceEquals(this.topology, this.scopes.Peek()))
+            {
+                this.topology = new Dictionary<IPlaceholderTerm, IExpression>(this.topology);
+            }
             this.topology.Add(placeholder, expression);
         }
         
@@ -127,22 +129,21 @@ namespace Favalet.Contexts.Unifiers
 
         public IDisposable BeginScope()
         {
-            this.scopes.Push(this.topology ?? this.scopes.Peek());
-            this.topology = null;
+            this.scopes.Push(this.topology);
             return new Disposer(this);
         }
 
-        public bool Commit(bool commit)
+        public bool Commit(bool commit, bool raiseCouldNotUnify)
         {
             if (commit)
             {
-                if (this.topology != null)
-                {
-                    this.scopes.Pop();
-                    this.scopes.Push(this.topology);
-                }
+                this.scopes.Pop();
+                this.scopes.Push(this.topology);
             }
-            this.topology = null;
+            else if (raiseCouldNotUnify)
+            {
+                throw new InvalidOperationException();
+            }
             return commit;
         }
 
@@ -157,7 +158,7 @@ namespace Favalet.Contexts.Unifiers
                 (this.topology ?? this.scopes.Peek()).
                     OrderBy(entry => entry.Key, IdentityTermComparer.Instance).
                     Select(entry =>
-                        $"{entry.Key.Symbol} === {entry.Value.GetPrettyString(PrettyStringTypes.Minimum)}"));
+                        $"{entry.Key.Symbol} ==> {entry.Value.GetPrettyString(PrettyStringTypes.Minimum)}"));
         }
 
         [DebuggerStepThrough]

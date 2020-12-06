@@ -116,17 +116,23 @@ namespace Favalet.Contexts.Unifiers
             {
                 // Binary expression unification.
                 case (IBinaryExpression fb, _, _):
-                    var rfl = this.InternalUnify(
-                        context, fb.Left, expression2, direction, raiseCouldNotUnify);
-                    var rfr = this.InternalUnify(
-                        context, fb.Right, expression2, direction, raiseCouldNotUnify);
-                    return rfl && rfr;
+                    using (context.BeginScope())
+                    {
+                        var rfl = this.InternalUnify(
+                            context, fb.Left, expression2, direction, false);
+                        var rfr = this.InternalUnify(
+                            context, fb.Right, expression2, direction, raiseCouldNotUnify);
+                        return context.Commit(rfl && rfr, raiseCouldNotUnify);
+                    }
                 case (_, IBinaryExpression tb, _):
-                    var rtl = this.InternalUnify(
-                        context, expression1, tb.Left, direction, raiseCouldNotUnify);
-                    var rtr = this.InternalUnify(
-                        context, expression1, tb.Right, direction, raiseCouldNotUnify);
-                    return rtl && rtr;
+                    using (context.BeginScope())
+                    {
+                        var rtl = this.InternalUnify(
+                            context, expression1, tb.Left, direction, false);
+                        var rtr = this.InternalUnify(
+                            context, expression1, tb.Right, direction, raiseCouldNotUnify);
+                        return context.Commit(rtl && rtr, raiseCouldNotUnify);
+                    }
 
                 // Applied function unification.
                 case (IFunctionExpression({ } fp, { } fr),
@@ -154,7 +160,7 @@ namespace Favalet.Contexts.Unifiers
                                 _ => UnifyDirections.Forward
                             },
                             raiseCouldNotUnify);
-                        return context.Commit(rp && rr);
+                        return context.Commit(rp && rr, raiseCouldNotUnify);
                     }
 
                 // Function unification.
@@ -183,7 +189,7 @@ namespace Favalet.Contexts.Unifiers
                                 _ => UnifyDirections.Forward
                             },
                             raiseCouldNotUnify);
-                        return context.Commit(rp && rr);
+                        return context.Commit(rp && rr, raiseCouldNotUnify);
                     }
                 
                 // TODO: IApplyExpression (applicable type functions)
@@ -299,7 +305,7 @@ namespace Favalet.Contexts.Unifiers
                     direction,
                     raiseCouldNotUnify))
                 {
-                    return context.Commit(false);
+                    return context.Commit(false, raiseCouldNotUnify);
                 }
 
                 // Unify if succeeded higher order.
@@ -309,7 +315,8 @@ namespace Favalet.Contexts.Unifiers
                         expression1,
                         expression2,
                         direction,
-                        raiseCouldNotUnify));
+                        raiseCouldNotUnify),
+                    raiseCouldNotUnify);
             }
         }
 
