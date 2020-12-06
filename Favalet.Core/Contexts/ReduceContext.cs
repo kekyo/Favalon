@@ -200,7 +200,7 @@ namespace Favalet.Contexts
 
         [DebuggerStepThrough]
         public IExpression? Resolve(IPlaceholderTerm placeholder) =>
-            this.unifyContext.Resolve(placeholder);
+            this.unifyContext.TryResolveRecursive(placeholder, out var resolved) ? resolved : null;
 
         [DebuggerStepThrough]
         public override string ToString() =>

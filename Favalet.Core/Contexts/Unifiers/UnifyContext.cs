@@ -67,13 +67,17 @@ namespace Favalet.Contexts.Unifiers
 #endif
 
         [DebuggerStepThrough]
-        public IExpression Resolve(IPlaceholderTerm placeholder)
+        public bool TryResolve(IPlaceholderTerm placeholder, out IExpression expression) =>
+            (this.topology ?? this.scopes.Peek()).TryGetValue(placeholder, out expression!);
+
+        [DebuggerStepThrough]
+        public bool TryResolveRecursive(IPlaceholderTerm placeholder, out IExpression expression)
         {
             var topology = this.topology ?? this.scopes.Peek();
             var ph = placeholder;
             while (true)
             {
-                if (topology.TryGetValue(ph, out var expression))
+                if (topology.TryGetValue(ph, out expression!))
                 {
                     if (expression is IPlaceholderTerm ph2)
                     {
@@ -82,12 +86,13 @@ namespace Favalet.Contexts.Unifiers
                     }
                     else
                     {
-                        return expression;
+                        return true;
                     }
                 }
                 else
                 {
-                    return ph;
+                    expression = ph;
+                    return !object.ReferenceEquals(ph, placeholder);
                 }
             }
         }
