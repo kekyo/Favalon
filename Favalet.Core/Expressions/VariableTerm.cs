@@ -169,7 +169,7 @@ namespace Favalet.Expressions
                         Select(target =>
                             (target,
                              calculated: context.TypeCalculator.Calculate(
-                                OrExpression.Create(target.HigherOrder, calculated, this.Range)))).
+                                 AndExpression.Create(target.HigherOrder, calculated, this.Range)))).
                         Where(entry => entry.calculated.Equals(calculated)).
                         Select(entry => entry.target).
                         Memoize();

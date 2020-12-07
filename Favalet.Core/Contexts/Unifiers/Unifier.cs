@@ -41,7 +41,29 @@ namespace Favalet.Contexts.Unifiers
 
         ///////////////////////////////////////////////////////////////////////////////////
 
-        private bool AddUnification(
+        private bool Substitute(
+            UnifyContext context,
+            IPlaceholderTerm placeholder,
+            IExpression expression,
+            UnifyDirections direction,
+            bool raiseCouldNotUnify)
+        {
+            if (context.TryResolve(placeholder, out var resolved))
+            {
+                Debug.WriteLine($"Substitute: {placeholder.GetPrettyString(PrettyStringTypes.Minimum)} [{resolved.GetPrettyString(PrettyStringTypes.Minimum)}] --> {expression.GetPrettyString(PrettyStringTypes.Minimum)}");
+                context.Set(placeholder, expression);
+                return this.InternalUnify(
+                    context, resolved, expression, direction, raiseCouldNotUnify);
+            }
+            else
+            {
+                Debug.WriteLine($"Substitute: {placeholder.GetPrettyString(PrettyStringTypes.Minimum)} --> {expression.GetPrettyString(PrettyStringTypes.Minimum)}");
+                context.Set(placeholder, expression);
+                return true;
+            }
+        }
+
+        private bool Substitute2(
             UnifyContext context,
             IPlaceholderTerm placeholder1,
             IPlaceholderTerm placeholder2,
@@ -54,7 +76,7 @@ namespace Favalet.Contexts.Unifiers
             switch (r1, r2)
             {
                 case (true, true):
-                    Debug.WriteLine($"AddUnification: {placeholder1.GetPrettyString(PrettyStringTypes.Minimum)} [{resolved1.GetPrettyString(PrettyStringTypes.Minimum)}] --> {placeholder2.GetPrettyString(PrettyStringTypes.Minimum)} [{resolved2.GetPrettyString(PrettyStringTypes.Minimum)}]");
+                    Debug.WriteLine($"Substitute2: {placeholder1.GetPrettyString(PrettyStringTypes.Minimum)} [{resolved1.GetPrettyString(PrettyStringTypes.Minimum)}] --> {placeholder2.GetPrettyString(PrettyStringTypes.Minimum)} [{resolved2.GetPrettyString(PrettyStringTypes.Minimum)}]");
                     if (resolved1.Equals(resolved2))
                     {
                         return true;
@@ -65,38 +87,17 @@ namespace Favalet.Contexts.Unifiers
                             context, resolved1, resolved2, direction, raiseCouldNotUnify);
                     }
                 case (true, false):
-                    Debug.WriteLine($"AddUnification: {placeholder1.GetPrettyString(PrettyStringTypes.Minimum)} [{resolved1.GetPrettyString(PrettyStringTypes.Minimum)}] --> {placeholder2.GetPrettyString(PrettyStringTypes.Minimum)}");
+                    Debug.WriteLine($"Substitute2: {placeholder1.GetPrettyString(PrettyStringTypes.Minimum)} [{resolved1.GetPrettyString(PrettyStringTypes.Minimum)}] --> {placeholder2.GetPrettyString(PrettyStringTypes.Minimum)}");
                     return this.InternalUnify(
                         context, resolved1, placeholder2, direction, raiseCouldNotUnify);
                 case (false, true):
-                    Debug.WriteLine($"AddUnification: {placeholder1.GetPrettyString(PrettyStringTypes.Minimum)} --> {placeholder2.GetPrettyString(PrettyStringTypes.Minimum)} [{resolved2.GetPrettyString(PrettyStringTypes.Minimum)}]");
+                    Debug.WriteLine($"Substitute2: {placeholder1.GetPrettyString(PrettyStringTypes.Minimum)} --> {placeholder2.GetPrettyString(PrettyStringTypes.Minimum)} [{resolved2.GetPrettyString(PrettyStringTypes.Minimum)}]");
                     return this.InternalUnify(
                         context, placeholder1, resolved2, direction, raiseCouldNotUnify);
                 default:
-                    Debug.WriteLine($"AddUnification: {placeholder1.GetPrettyString(PrettyStringTypes.Minimum)} --> {placeholder2.GetPrettyString(PrettyStringTypes.Minimum)}");
-                    context.Add(placeholder1, placeholder2);
+                    Debug.WriteLine($"Substitute2: {placeholder1.GetPrettyString(PrettyStringTypes.Minimum)} --> {placeholder2.GetPrettyString(PrettyStringTypes.Minimum)}");
+                    context.Set(placeholder1, placeholder2);
                     return true;
-            }
-        }
-
-        private bool AddUnification(
-            UnifyContext context,
-            IPlaceholderTerm placeholder,
-            IExpression expression,
-            UnifyDirections direction,
-            bool raiseCouldNotUnify)
-        {
-            if (context.TryResolve(placeholder, out var resolved))
-            {
-                Debug.WriteLine($"AddUnification: {placeholder.GetPrettyString(PrettyStringTypes.Minimum)} [{resolved.GetPrettyString(PrettyStringTypes.Minimum)}] --> {expression.GetPrettyString(PrettyStringTypes.Minimum)}");
-                return this.InternalUnify(
-                    context, resolved, expression, direction, raiseCouldNotUnify);
-            }
-            else
-            {
-                Debug.WriteLine($"AddUnification: {placeholder.GetPrettyString(PrettyStringTypes.Minimum)} --> {expression.GetPrettyString(PrettyStringTypes.Minimum)}");
-                context.Add(placeholder, expression);
-                return true;
             }
         }
 
@@ -176,25 +177,25 @@ namespace Favalet.Contexts.Unifiers
                 
                 // Placeholder unification.
                 case (IPlaceholderTerm fph, IPlaceholderTerm tph, _):
-                    return this.AddUnification(
+                    return this.Substitute2(
                         context, fph, tph, direction, raiseCouldNotUnify);
                 case (IPlaceholderTerm fph, _, UnifyDirections.BiDirectional):
-                    return this.AddUnification(
+                    return this.Substitute(
                         context, fph, expression2, UnifyDirections.BiDirectional, raiseCouldNotUnify);
                 case (_, IPlaceholderTerm tph, UnifyDirections.BiDirectional):
-                    return this.AddUnification(
+                    return this.Substitute(
                         context, tph, expression1, UnifyDirections.BiDirectional, raiseCouldNotUnify);
                 case (IPlaceholderTerm fph, _, UnifyDirections.Forward):
-                    return this.AddUnification(
+                    return this.Substitute(
                         context, fph, expression2, UnifyDirections.Forward, raiseCouldNotUnify);
                 case (IPlaceholderTerm fph, _, UnifyDirections.Backward):
-                    return this.AddUnification(
+                    return this.Substitute(
                         context, fph, expression2, UnifyDirections.Backward, raiseCouldNotUnify);
                 case (_, IPlaceholderTerm tph, UnifyDirections.Forward):
-                    return this.AddUnification(
+                    return this.Substitute(
                         context, tph, expression1, UnifyDirections.Backward, raiseCouldNotUnify);
                 case (_, IPlaceholderTerm tph, UnifyDirections.Backward):
-                    return this.AddUnification(
+                    return this.Substitute(
                         context, tph, expression1, UnifyDirections.Forward, raiseCouldNotUnify);
                 
                 // Binary expression unification.

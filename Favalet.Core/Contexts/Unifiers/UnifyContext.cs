@@ -96,7 +96,7 @@ namespace Favalet.Contexts.Unifiers
         }
 
         [DebuggerStepThrough]
-        public void Add(IPlaceholderTerm placeholder, IExpression expression)
+        public void Set(IPlaceholderTerm placeholder, IExpression expression)
         {
             Debug.Assert(!placeholder.Equals(expression));
             
@@ -106,9 +106,9 @@ namespace Favalet.Contexts.Unifiers
             {
                 this.topology = new Dictionary<IPlaceholderTerm, IExpression>(this.topology);
             }
-            this.topology.Add(placeholder, expression);
+            this.topology[placeholder] = expression;
         }
-        
+     
         [DebuggerStepThrough]
         private sealed class Disposer : IDisposable
         {
