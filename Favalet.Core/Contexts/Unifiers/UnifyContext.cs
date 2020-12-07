@@ -24,12 +24,14 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 
 namespace Favalet.Contexts.Unifiers
 {
     public interface ITopology
     {
         string View { get; }
+        string Dot { get; }
     }
 
     [DebuggerStepThrough]
@@ -181,6 +183,72 @@ namespace Favalet.Contexts.Unifiers
                     OrderBy(entry => entry.Key, IdentityTermComparer.Instance).
                     Select(entry =>
                         $"{entry.Key.Symbol} {entry.Value}"));
+        }
+
+        [DebuggerStepThrough]
+        public string GetDot(IExpression header)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("digraph topology");
+            sb.AppendLine("{");
+            sb.AppendLine($"    graph [label=\"{header.GetPrettyString(PrettyStringTypes.ReadableAll)}\"];");
+            sb.AppendLine();
+
+            /////////////////////////////////////////////////////////////////
+
+            string GetIdentity(IExpression expression) =>
+                expression switch
+                {
+                    IPlaceholderTerm ph => $"ph{ph.Index}",
+                    // TODO: IPairExpression _ => $"",
+                    _ => $"ex{expression.GetHashCode()}",
+                };
+            
+            sb.AppendLine("    #nodes");
+            foreach (var expression in this.topology.Keys.
+                Concat(this.topology.Values.Select(unification => unification.Expression)).
+                Distinct().
+                OrderBy(expression => expression, OrderedExpressionComparer.Instance))
+            {
+                var shape = expression switch
+                {
+                    IPlaceholderTerm _ => "circle",
+                    // TODO: IPairExpression _ => $"",
+                    _ => "box"
+                };
+                sb.AppendLine($"    {GetIdentity(expression)} [label=\"{expression.GetPrettyString(PrettyStringTypes.Minimum)}\",shape={shape}];");
+            }
+            sb.AppendLine();
+            
+            /////////////////////////////////////////////////////////////////
+            
+            sb.AppendLine("    #topology");
+            foreach (var entry in this.topology.
+                OrderBy(entry => entry.Key, OrderedExpressionComparer.Instance))
+            {
+                switch (entry.Value.Direction)
+                {
+                    case UnifyDirections.Forward:
+                        sb.AppendLine($"    {GetIdentity(entry.Key)} -> {GetIdentity(entry.Value.Expression)};");
+                        break;
+                    case UnifyDirections.Backward:
+                        sb.AppendLine($"    {GetIdentity(entry.Value.Expression)} -> {GetIdentity(entry.Key)};");
+                        break;
+                    case UnifyDirections.BiDirectional:
+                        sb.AppendLine($"    {GetIdentity(entry.Key)} -> {GetIdentity(entry.Value.Expression)} [dir=none];");
+                        break;
+                }
+            }
+
+            sb.AppendLine("}");
+
+            return sb.ToString();
+        }
+
+        public string Dot
+        {
+            [DebuggerStepThrough]
+            get => this.GetDot(this.targetRoot);
         }
 
         [DebuggerStepThrough]

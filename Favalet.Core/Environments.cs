@@ -94,23 +94,20 @@ namespace Favalet
             var rewritable = context.MakeRewritable(expression);
             unifyContext.SetTargetRoot(rewritable);
 
-#if DEBUG
             Debug.WriteLine($"Infer[{context.GetHashCode()}:rewritable] :");
-#endif            
+            Debug.WriteLine(rewritable.GetXml());
 
             var inferred = context.Infer(rewritable);
             unifyContext.SetTargetRoot(inferred);
             
-#if DEBUG
             Debug.WriteLine($"Infer[{context.GetHashCode()}:inferred] :");
-#endif
+            Debug.WriteLine(inferred.GetXml());
 
             var fixedup = context.Fixup(inferred);
-            unifyContext.SetTargetRoot(fixedup);
+            //unifyContext.SetTargetRoot(fixedup);
 
-#if DEBUG
             Debug.WriteLine($"Infer[{context.GetHashCode()}:fixedup] :");
-#endif
+            Debug.WriteLine(fixedup.GetXml());
 
             return fixedup;
         }
@@ -138,9 +135,9 @@ namespace Favalet
             var inferred = this.InternalInfer(unifyContext, context, expression);
             var reduced = context.Reduce(inferred);
             
-#if DEBUG
             Debug.WriteLine($"Reduce[{context.GetHashCode()}:reduced] :");
-#endif
+            Debug.WriteLine(reduced.GetXml());
+
             if (this.saveLastTopology)
             {
                 this.lastContext = unifyContext;
