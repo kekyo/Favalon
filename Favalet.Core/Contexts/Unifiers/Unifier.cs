@@ -115,35 +115,6 @@ namespace Favalet.Contexts.Unifiers
 
             switch (expression1, expression2, direction)
             {
-                // Applied function unification.
-                case (IFunctionExpression({ } fp, { } fr),
-                      IAppliedFunctionExpression({ } tp, { } tr),
-                      _):
-                    using (context.BeginScope())
-                    {
-                        // unify(C +> A): But parameters aren't binder.
-                        var rp = this.InternalUnify(
-                            context, fp, tp,
-                            direction switch
-                            {
-                                UnifyDirections.Backward => UnifyDirections.Forward,
-                                //UnifyDirections.BiDirectional => UnifyDirections.Backward,
-                                _ => UnifyDirections.Backward
-                            },
-                            raiseCouldNotUnify);
-                        // unify(B +> D)
-                        var rr = this.InternalUnify(
-                            context, fr, tr,
-                            direction switch
-                            {
-                                UnifyDirections.Backward => UnifyDirections.Backward,
-                                //UnifyDirections.BiDirectional => UnifyDirections.Forward,
-                                _ => UnifyDirections.Forward
-                            },
-                            raiseCouldNotUnify);
-                        return context.Commit(rp && rr, raiseCouldNotUnify);
-                    }
-
                 // Function unification.
                 case (IFunctionExpression({ } fp, { } fr),
                       IFunctionExpression({ } tp, { } tr),
