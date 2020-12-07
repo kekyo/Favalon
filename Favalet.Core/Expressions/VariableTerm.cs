@@ -118,7 +118,7 @@ namespace Favalet.Expressions
                         this.Range)!;
                
                     context.Unify(symbolHigherOrder, expressionHigherOrder, true);
-                    context.Unify(expressionHigherOrder, higherOrder, true);
+                    context.Unify(expressionHigherOrder, higherOrder, false);
                 }
                 
                 var bounds = 
@@ -143,10 +143,10 @@ namespace Favalet.Expressions
         {
             var higherOrder = context.FixupHigherOrder(this.HigherOrder);
 
-            if (this.bounds is IExpression[] &&
-                this.bounds.Length >= 1)
+            if (this.bounds is { } bounds &&
+                bounds.Length >= 1)
             {
-                var targets = this.bounds.
+                var targets = bounds.
                     Select(context.Fixup).
                     Memoize();
 
@@ -193,8 +193,8 @@ namespace Favalet.Expressions
 
         protected override IExpression Reduce(IReduceContext context)
         {
-            if (this.bounds is IExpression[] bounds &&
-                this.bounds.Length == 1)
+            if (this.bounds is { } bounds &&
+                bounds.Length == 1)
             {
                 var target = bounds[0];
                 if (target is IBoundVariableTerm bound)

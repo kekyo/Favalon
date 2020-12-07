@@ -48,17 +48,17 @@ namespace Favalet.Contexts.Unifiers
             UnifyDirections direction,
             bool raiseCouldNotUnify)
         {
-            if (context.TryResolve(placeholder, out var resolved))
+            if (context.TryLookup(placeholder, out var unification))
             {
-                Debug.WriteLine($"Substitute: {placeholder.GetPrettyString(PrettyStringTypes.Minimum)} [{resolved.GetPrettyString(PrettyStringTypes.Minimum)}] --> {expression.GetPrettyString(PrettyStringTypes.Minimum)}");
-                context.Set(placeholder, expression);
+                Debug.WriteLine($"Substitute: {placeholder.GetPrettyString(PrettyStringTypes.Minimum)} [{unification}] --> {expression.GetPrettyString(PrettyStringTypes.Minimum)}");
+                context.Set(placeholder, expression, direction);
                 return this.InternalUnify(
-                    context, resolved, expression, direction, raiseCouldNotUnify);
+                    context, unification.Expression, expression, direction, raiseCouldNotUnify);
             }
             else
             {
                 Debug.WriteLine($"Substitute: {placeholder.GetPrettyString(PrettyStringTypes.Minimum)} --> {expression.GetPrettyString(PrettyStringTypes.Minimum)}");
-                context.Set(placeholder, expression);
+                context.Set(placeholder, expression, direction);
                 return true;
             }
         }
@@ -70,33 +70,33 @@ namespace Favalet.Contexts.Unifiers
             UnifyDirections direction,
             bool raiseCouldNotUnify)
         {
-            var r1 = context.TryResolve(placeholder1, out var resolved1);
-            var r2 = context.TryResolve(placeholder2, out var resolved2);
+            var r1 = context.TryLookup(placeholder1, out var unification1);
+            var r2 = context.TryLookup(placeholder2, out var unification2);
 
             switch (r1, r2)
             {
                 case (true, true):
-                    Debug.WriteLine($"Substitute2: {placeholder1.GetPrettyString(PrettyStringTypes.Minimum)} [{resolved1.GetPrettyString(PrettyStringTypes.Minimum)}] --> {placeholder2.GetPrettyString(PrettyStringTypes.Minimum)} [{resolved2.GetPrettyString(PrettyStringTypes.Minimum)}]");
-                    if (resolved1.Equals(resolved2))
+                    Debug.WriteLine($"Substitute2: {placeholder1.GetPrettyString(PrettyStringTypes.Minimum)} [{unification1}] --> {placeholder2.GetPrettyString(PrettyStringTypes.Minimum)} [{unification2}]");
+                    if (unification1.Equals(unification2))
                     {
                         return true;
                     }
                     else
                     {
                         return this.InternalUnify(
-                            context, resolved1, resolved2, direction, raiseCouldNotUnify);
+                            context, unification1.Expression, unification2.Expression, direction, raiseCouldNotUnify);
                     }
                 case (true, false):
-                    Debug.WriteLine($"Substitute2: {placeholder1.GetPrettyString(PrettyStringTypes.Minimum)} [{resolved1.GetPrettyString(PrettyStringTypes.Minimum)}] --> {placeholder2.GetPrettyString(PrettyStringTypes.Minimum)}");
+                    Debug.WriteLine($"Substitute2: {placeholder1.GetPrettyString(PrettyStringTypes.Minimum)} [{unification1}] --> {placeholder2.GetPrettyString(PrettyStringTypes.Minimum)}");
                     return this.InternalUnify(
-                        context, resolved1, placeholder2, direction, raiseCouldNotUnify);
+                        context, unification1.Expression, placeholder2, direction, raiseCouldNotUnify);
                 case (false, true):
-                    Debug.WriteLine($"Substitute2: {placeholder1.GetPrettyString(PrettyStringTypes.Minimum)} --> {placeholder2.GetPrettyString(PrettyStringTypes.Minimum)} [{resolved2.GetPrettyString(PrettyStringTypes.Minimum)}]");
+                    Debug.WriteLine($"Substitute2: {placeholder1.GetPrettyString(PrettyStringTypes.Minimum)} --> {placeholder2.GetPrettyString(PrettyStringTypes.Minimum)} [{unification2}]");
                     return this.InternalUnify(
-                        context, placeholder1, resolved2, direction, raiseCouldNotUnify);
+                        context, placeholder1, unification2.Expression, direction, raiseCouldNotUnify);
                 default:
                     Debug.WriteLine($"Substitute2: {placeholder1.GetPrettyString(PrettyStringTypes.Minimum)} --> {placeholder2.GetPrettyString(PrettyStringTypes.Minimum)}");
-                    context.Set(placeholder1, placeholder2);
+                    context.Set(placeholder1, placeholder2, direction);
                     return true;
             }
         }
