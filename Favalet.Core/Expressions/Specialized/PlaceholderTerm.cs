@@ -17,10 +17,10 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-using Favalet.Contexts;
 using System.Collections;
 using System.Diagnostics;
 using System.Xml.Linq;
+using Favalet.Contexts;
 using Favalet.Ranges;
 
 namespace Favalet.Expressions.Specialized
@@ -98,9 +98,10 @@ namespace Favalet.Expressions.Specialized
 
         protected override IExpression Fixup(IFixupContext context)
         {
-            if (context.Resolve(this) is IExpression resolved &&
-                !this.Equals(resolved))
+            if (context.Resolve(this) is { } resolved &&
+                !resolved.Equals(this))
             {
+                //Debug.WriteLine(resolved.GetPrettyString(PrettyStringTypes.Readable));
                 return context.Fixup(resolved);
             }
             else

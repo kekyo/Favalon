@@ -17,10 +17,10 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-using System.Diagnostics;
 using System.Collections.Generic;
+using System.Diagnostics;
 
-namespace System.Collections.Generic
+namespace Favalet.Internal
 {
     [DebuggerStepThrough]
     internal static class KeyValuePairExtension
@@ -33,5 +33,12 @@ namespace System.Collections.Generic
             key = pair.Key;
             value = pair.Value;
         }
+    }
+
+    [DebuggerStepThrough]
+    internal static class KeyValuePair
+    {
+        public static KeyValuePair<TKey, TValue> Create<TKey, TValue>(TKey key, TValue value) =>
+            new KeyValuePair<TKey, TValue>(key, value);
     }
 }

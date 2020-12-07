@@ -38,6 +38,7 @@ namespace Favalet
 
             public override ChoiceResults ChoiceForAnd(
                 ILogicalCalculator calculator,
+                IExpressionChoicer self,
                 IExpression left, IExpression right)
             {
                 // Narrowing
@@ -58,11 +59,12 @@ namespace Favalet
                     }
                 }
 
-                return base.ChoiceForAnd(calculator, left, right);
+                return base.ChoiceForAnd(calculator, self, left, right);
             }
 
             public override ChoiceResults ChoiceForOr(
                 ILogicalCalculator calculator,
+                IExpressionChoicer self,
                 IExpression left, IExpression right)
             {
                 // Widening
@@ -83,14 +85,14 @@ namespace Favalet
                     }
                 }
 
-                return base.ChoiceForOr(calculator, left, right);
+                return base.ChoiceForOr(calculator, self, left, right);
             }
          
             public new static readonly CLRTypeCalculatorChoicer Instance =
                 new CLRTypeCalculatorChoicer();
         }
         
-        public override IChoicer DefaultChoicer =>
+        public override IExpressionChoicer DefaultChoicer =>
             CLRTypeCalculatorChoicer.Instance;
 
         protected override IComparer<IExpression>? Sorter =>

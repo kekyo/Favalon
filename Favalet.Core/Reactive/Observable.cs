@@ -102,7 +102,7 @@ namespace Favalet.Reactive.Linq
             var coll = new System.Collections.Concurrent.BlockingCollection<(T, System.Runtime.ExceptionServices.ExceptionDispatchInfo?)>();
             observable.Subscribe(Observer.Create<T>(
                 value => coll.Add((value, null)),
-                ex => coll.Add((default, System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ex))),
+                ex => coll.Add((default!, System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ex))),
                 () => coll.CompleteAdding()));
             return coll.GetConsumingEnumerable().Select(entry =>
             {

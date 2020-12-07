@@ -85,7 +85,7 @@ namespace Favalet.Internal
             }
         }
 
-        public override int Compare(IExpression x, IExpression y)
+        public override int Compare(IExpression? x, IExpression? y)
         {
             if (object.ReferenceEquals(x, y))
             {

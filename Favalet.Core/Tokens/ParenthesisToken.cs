@@ -55,7 +55,7 @@ namespace Favalet.Tokens
         public bool Equals(ParenthesisToken? other) =>
             other?.Pair.Equals(this.Pair) ?? false;
 
-        public override bool Equals(object obj) =>
+        public override bool Equals(object? obj) =>
             this.Equals(obj as ParenthesisToken);
 
         public void Deconstruct(out ParenthesisPair parenthesis) =>

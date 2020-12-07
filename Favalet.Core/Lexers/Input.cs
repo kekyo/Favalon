@@ -56,7 +56,7 @@ namespace Favalet.Lexers
             (this.type == InputTypes.UnicodeCharacter) && (inch == this.inch);
         public bool Equals(Input input) =>
             (this.inch == input.inch) && (this.type == input.type);
-        public override bool Equals(object obj) =>
+        public override bool Equals(object? obj) =>
             obj is Input input && this.Equals(input);
 
         public override string ToString() =>

@@ -29,7 +29,7 @@ namespace Favalet.Internal
         protected OrderedExpressionComparer()
         { }
 
-        public virtual int Compare(IExpression x, IExpression y)
+        public virtual int Compare(IExpression? x, IExpression? y)
         {
             if (object.ReferenceEquals(x, y))
             {
@@ -51,7 +51,7 @@ namespace Favalet.Internal
                     }
 
                 default:
-                    return x.GetHashCode().CompareTo(y.GetHashCode());
+                    return x!.GetHashCode().CompareTo(y!.GetHashCode());
             }
         }
 

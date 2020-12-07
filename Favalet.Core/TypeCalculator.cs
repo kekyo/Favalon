@@ -29,7 +29,7 @@ namespace Favalet
     public interface ITypeCalculator :
         ILogicalCalculator
     {
-        IChoicer DefaultChoicer { get; }
+        IExpressionChoicer DefaultChoicer { get; }
         
         IEnumerable<IExpression> SortExpressions(
             Func<IExpression, IExpression> selector,
@@ -48,14 +48,15 @@ namespace Favalet
 
             public override ChoiceResults ChoiceForAnd(
                 ILogicalCalculator calculator,
+                IExpressionChoicer self,
                 IExpression left, IExpression right)
             {
                 // Function variance:
                 if (left is IFunctionExpression(IExpression lp, IExpression lr) &&
                     right is IFunctionExpression(IExpression rp, IExpression rr))
                 {
-                    var parameter = this.ChoiceForAnd(calculator, lp, rp);
-                    var result = this.ChoiceForAnd(calculator, lr, rr);
+                    var parameter = self.ChoiceForAnd(calculator, self, lp, rp);
+                    var result = self.ChoiceForAnd(calculator, self, lr, rr);
 
                     // Contravariance.
                     switch (parameter, result)
@@ -75,19 +76,20 @@ namespace Favalet
                     }
                 }
 
-                return base.ChoiceForAnd(calculator, left, right);
+                return base.ChoiceForAnd(calculator, self, left, right);
             }
 
             public override ChoiceResults ChoiceForOr(
                 ILogicalCalculator calculator,
+                IExpressionChoicer self,
                 IExpression left, IExpression right)
             {
                 // Function variance:
                 if (left is IFunctionExpression(IExpression lp, IExpression lr) &&
                     right is IFunctionExpression(IExpression rp, IExpression rr))
                 {
-                    var parameter = this.ChoiceForOr(calculator, lp, rp);
-                    var result = this.ChoiceForOr(calculator, lr, rr);
+                    var parameter = self.ChoiceForOr(calculator, self, lp, rp);
+                    var result = self.ChoiceForOr(calculator, self, lr, rr);
                 
                     // Covariance.
                     switch (parameter, result)
@@ -107,14 +109,14 @@ namespace Favalet
                     }
                 }
 
-                return base.ChoiceForOr(calculator, left, right);
+                return base.ChoiceForOr(calculator, self, left, right);
             }
          
             public new static readonly TypeCalculatorChoicer Instance =
                 new TypeCalculatorChoicer();
         }
 
-        public override IChoicer DefaultChoicer =>
+        public override IExpressionChoicer DefaultChoicer =>
             TypeCalculatorChoicer.Instance;
 
         protected override IComparer<IExpression>? Sorter =>

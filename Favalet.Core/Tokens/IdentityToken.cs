@@ -39,7 +39,7 @@ namespace Favalet.Tokens
         public bool Equals(IdentityToken? other) =>
             other?.Identity.Equals(this.Identity) ?? false;
 
-        public override bool Equals(object obj) =>
+        public override bool Equals(object? obj) =>
             this.Equals(obj as IdentityToken);
 
         public override string ToString() =>
