@@ -114,26 +114,6 @@ namespace Favalet.Contexts.Unifiers
 
             switch (expression1, expression2, direction)
             {
-                // Binary expression unification.
-                case (IBinaryExpression fb, _, _):
-                    using (context.BeginScope())
-                    {
-                        var rfl = this.InternalUnify(
-                            context, fb.Left, expression2, direction, false);
-                        var rfr = this.InternalUnify(
-                            context, fb.Right, expression2, direction, raiseCouldNotUnify);
-                        return context.Commit(rfl && rfr, raiseCouldNotUnify);
-                    }
-                case (_, IBinaryExpression tb, _):
-                    using (context.BeginScope())
-                    {
-                        var rtl = this.InternalUnify(
-                            context, expression1, tb.Left, direction, false);
-                        var rtr = this.InternalUnify(
-                            context, expression1, tb.Right, direction, raiseCouldNotUnify);
-                        return context.Commit(rtl && rtr, raiseCouldNotUnify);
-                    }
-
                 // Applied function unification.
                 case (IFunctionExpression({ } fp, { } fr),
                       IAppliedFunctionExpression({ } tp, { } tr),
@@ -217,6 +197,44 @@ namespace Favalet.Contexts.Unifiers
                     return this.AddUnification(
                         context, tph, expression1, UnifyDirections.Forward, raiseCouldNotUnify);
                 
+                // Binary expression unification.
+                case (IAndExpression fa, _, _):
+                    using (context.BeginScope())
+                    {
+                        var rfl = this.InternalUnify(
+                            context, fa.Left, expression2, direction, raiseCouldNotUnify);
+                        var rfr = this.InternalUnify(
+                            context, fa.Right, expression2, direction, raiseCouldNotUnify);
+                        return context.Commit(rfl && rfr, raiseCouldNotUnify);
+                    }
+                case (_, IAndExpression ta, _):
+                    using (context.BeginScope())
+                    {
+                        var rtl = this.InternalUnify(
+                            context, expression1, ta.Left, direction, raiseCouldNotUnify);
+                        var rtr = this.InternalUnify(
+                            context, expression1, ta.Right, direction, raiseCouldNotUnify);
+                        return context.Commit(rtl && rtr, raiseCouldNotUnify);
+                    }
+                case (IOrExpression fo, _, _):
+                    using (context.BeginScope())
+                    {
+                        var rfl = this.InternalUnify(
+                            context, fo.Left, expression2, direction, false);
+                        var rfr = this.InternalUnify(
+                            context, fo.Right, expression2, direction, false);
+                        return context.Commit(rfl || rfr, raiseCouldNotUnify);
+                    }
+                case (_, IOrExpression to, _):
+                    using (context.BeginScope())
+                    {
+                        var rtl = this.InternalUnify(
+                            context, expression1, to.Left, direction, false);
+                        var rtr = this.InternalUnify(
+                            context, expression1, to.Right, direction, false);
+                        return context.Commit(rtl || rtr, raiseCouldNotUnify);
+                    }
+
                 // Validate polarity.
                 case (_, _, UnifyDirections.Forward):
                     // from <: to
