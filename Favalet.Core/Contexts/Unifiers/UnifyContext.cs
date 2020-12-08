@@ -32,10 +32,11 @@ namespace Favalet.Contexts.Unifiers
     {
         string View { get; }
         string Dot { get; }
+        string GetDot(string headerLabel);
     }
 
     [DebuggerStepThrough]
-    internal struct Unification
+    internal readonly struct Unification
     {
         public readonly IExpression Expression;
         public readonly UnifyDirections Direction;
@@ -53,12 +54,15 @@ namespace Favalet.Contexts.Unifiers
             new Unification(expression, direction);
     }
 
-    [DebuggerDisplay("{View}")]
+    [DebuggerDisplay("{" + nameof(View) + "}")]
     internal sealed class UnifyContext :
         ITopology
     {
+#if DEBUG
         private IExpression targetRoot;
-
+#else
+        private string targetRootString;
+#endif
         private readonly Stack<Dictionary<IPlaceholderTerm, Unification>> scopes =
             new Stack<Dictionary<IPlaceholderTerm, Unification>>();
         private Dictionary<IPlaceholderTerm, Unification> topology =
@@ -186,12 +190,12 @@ namespace Favalet.Contexts.Unifiers
         }
 
         [DebuggerStepThrough]
-        public string GetDot(IExpression header)
+        public string GetDot(string headerLabel)
         {
             var sb = new StringBuilder();
             sb.AppendLine("digraph topology");
             sb.AppendLine("{");
-            sb.AppendLine($"    graph [label=\"{header.GetPrettyString(PrettyStringTypes.ReadableAll)}\"];");
+            sb.AppendLine($"    graph [label=\"{headerLabel}\"];");
             sb.AppendLine();
 
             /////////////////////////////////////////////////////////////////
@@ -247,8 +251,13 @@ namespace Favalet.Contexts.Unifiers
 
         public string Dot
         {
+#if DEBUG
             [DebuggerStepThrough]
-            get => this.GetDot(this.targetRoot);
+            get => this.GetDot(this.targetRoot.GetPrettyString(PrettyStringTypes.ReadableAll));
+#else
+            [DebuggerStepThrough]
+            get => this.GetDot(this.targetRootString);
+#endif
         }
 
         [DebuggerStepThrough]
