@@ -21,7 +21,6 @@ using Favalet.Contexts;
 using Favalet.Expressions;
 using NUnit.Framework;
 using System;
-using System.Reflection;
 
 using static Favalet.CLRGenerator;
 using static Favalet.Generator;

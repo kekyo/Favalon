@@ -39,8 +39,7 @@ namespace Favalet.Internal
             switch (x, y)
             {
                 case (IPairExpression px, IPairExpression py):
-                    if (this.Compare(px.Left, py.Left) is int rl &&
-                        rl != 0)
+                    if (this.Compare(px.Left, py.Left) is { } rl && rl != 0)
                     {
                         return rl;
                     }
