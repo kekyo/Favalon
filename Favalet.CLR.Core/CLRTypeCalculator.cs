@@ -17,64 +17,86 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-using System;
-using System.Reflection;
-using Favalet.Contexts;
 using Favalet.Expressions;
+using Favalet.Expressions.Algebraic;
 using Favalet.Internal;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Favalet
 {
     public sealed class CLRTypeCalculator :
         TypeCalculator
     {
-        protected override ChoiceResults ChoiceForAnd(
-            IExpression left, IExpression right)
+        [DebuggerStepThrough]
+        public sealed class CLRTypeCalculatorChoicer :
+            TypeCalculatorChoicer
         {
-            // Narrowing
-            if (left is ITypeTerm(Type lt) &&
-                right is ITypeTerm(Type rt))
-            {
-                var rtl = lt.IsAssignableFrom(rt);
-                var ltr = rt.IsAssignableFrom(lt);
+            private CLRTypeCalculatorChoicer()
+            { }
 
-                switch (rtl, ltr)
+            public override ChoiceResults ChoiceForAnd(
+                ILogicalCalculator calculator,
+                IExpressionChoicer self,
+                IExpression left, IExpression right)
+            {
+                // Narrowing
+                if (left is ITypeTerm(Type lt) &&
+                    right is ITypeTerm(Type rt))
                 {
-                    case (true, true):
-                        return ChoiceResults.Equal;
-                    case (true, false):
-                        return ChoiceResults.AcceptRight;
-                    case (false, true):
-                        return ChoiceResults.AcceptLeft;
+                    var rtl = lt.IsAssignableFrom(rt);
+                    var ltr = rt.IsAssignableFrom(lt);
+
+                    switch (rtl, ltr)
+                    {
+                        case (true, true):
+                            return ChoiceResults.Equal;
+                        case (true, false):
+                            return ChoiceResults.AcceptRight;
+                        case (false, true):
+                            return ChoiceResults.AcceptLeft;
+                    }
                 }
+
+                return base.ChoiceForAnd(calculator, self, left, right);
             }
 
-            return base.ChoiceForAnd(left, right);
-        }
-
-        protected override ChoiceResults ChoiceForOr(
-            IExpression left, IExpression right)
-        {
-            // Widening
-            if (left is ITypeTerm(Type lt) &&
-                right is ITypeTerm(Type rt))
+            public override ChoiceResults ChoiceForOr(
+                ILogicalCalculator calculator,
+                IExpressionChoicer self,
+                IExpression left, IExpression right)
             {
-                var rtl = lt.IsAssignableFrom(rt);
-                var ltr = rt.IsAssignableFrom(lt);
-
-                switch (rtl, ltr)
+                // Widening
+                if (left is ITypeTerm(Type lt) &&
+                    right is ITypeTerm(Type rt))
                 {
-                    case (true, true):
-                        return ChoiceResults.Equal;
-                    case (true, false):
-                        return ChoiceResults.AcceptLeft;
-                    case (false, true):
-                        return ChoiceResults.AcceptRight;
-                }
-            }
+                    var rtl = lt.IsAssignableFrom(rt);
+                    var ltr = rt.IsAssignableFrom(lt);
 
-            return base.ChoiceForOr(left, right);
+                    switch (rtl, ltr)
+                    {
+                        case (true, true):
+                            return ChoiceResults.Equal;
+                        case (true, false):
+                            return ChoiceResults.AcceptLeft;
+                        case (false, true):
+                            return ChoiceResults.AcceptRight;
+                    }
+                }
+
+                return base.ChoiceForOr(calculator, self, left, right);
+            }
+         
+            public new static readonly CLRTypeCalculatorChoicer Instance =
+                new CLRTypeCalculatorChoicer();
         }
+        
+        public override IExpressionChoicer DefaultChoicer =>
+            CLRTypeCalculatorChoicer.Instance;
+
+        protected override IComparer<IExpression>? Sorter =>
+            OrderedTypeTermComparer.Instance;
 
         public new static readonly CLRTypeCalculator Instance =
             new CLRTypeCalculator();

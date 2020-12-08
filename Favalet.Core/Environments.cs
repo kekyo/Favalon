@@ -40,7 +40,7 @@ namespace Favalet
     public class Environments :
         ScopeContext, IEnvironments, IPlaceholderProvider
     {
-        private ReduceContext? lastContext;
+        private UnifyContext? lastContext;
         private int placeholderIndex = -1;
         private bool saveLastTopology;
 
@@ -84,6 +84,7 @@ namespace Favalet
             this.CreatePlaceholder(orderHint);
 
         private IExpression InternalInfer(
+            UnifyContext unifyContext,
             ReduceContext context,
             IExpression expression)
         {
@@ -91,41 +92,36 @@ namespace Favalet
             Debug.WriteLine(expression.GetXml());
   
             var rewritable = context.MakeRewritable(expression);
-            context.SetTargetRoot(rewritable);
+            unifyContext.SetTargetRoot(rewritable);
 
-#if DEBUG
             Debug.WriteLine($"Infer[{context.GetHashCode()}:rewritable] :");
-#endif            
+            Debug.WriteLine(rewritable.GetXml());
 
             var inferred = context.Infer(rewritable);
-            context.SetTargetRoot(inferred);
+            unifyContext.SetTargetRoot(inferred);
             
-#if DEBUG
             Debug.WriteLine($"Infer[{context.GetHashCode()}:inferred] :");
-#endif
-
-            context.NormalizeAliases();
+            Debug.WriteLine(inferred.GetXml());
 
             var fixedup = context.Fixup(inferred);
-            context.SetTargetRoot(fixedup);
+            //unifyContext.SetTargetRoot(fixedup);
 
-#if DEBUG
             Debug.WriteLine($"Infer[{context.GetHashCode()}:fixedup] :");
-#endif
+            Debug.WriteLine(fixedup.GetXml());
 
             return fixedup;
         }
 
         public IExpression Infer(IExpression expression)
         {
-            var unifier = Unifier.Create(this.TypeCalculator, expression);
-            var context = new ReduceContext(this, this, unifier);
+            var unifyContext = UnifyContext.Create(this.TypeCalculator, expression);
+            var context = ReduceContext.Create(this, this, unifyContext);
 
-            var inferred = this.InternalInfer(context, expression);
+            var inferred = this.InternalInfer(unifyContext, context, expression);
 
             if (this.saveLastTopology)
             {
-                this.lastContext = context;
+                this.lastContext = unifyContext;
             }
 
             return inferred;
@@ -133,18 +129,18 @@ namespace Favalet
 
         public IExpression Reduce(IExpression expression)
         {
-            var unifier = Unifier.Create(this.TypeCalculator, expression);
-            var context = new ReduceContext(this, this, unifier);
+            var unifyContext = UnifyContext.Create(this.TypeCalculator, expression);
+            var context = ReduceContext.Create(this, this, unifyContext);
 
-            var inferred = this.InternalInfer(context, expression);
+            var inferred = this.InternalInfer(unifyContext, context, expression);
             var reduced = context.Reduce(inferred);
             
-#if DEBUG
             Debug.WriteLine($"Reduce[{context.GetHashCode()}:reduced] :");
-#endif
+            Debug.WriteLine(reduced.GetXml());
+
             if (this.saveLastTopology)
             {
-                this.lastContext = context;
+                this.lastContext = unifyContext;
             }
 
             return reduced;

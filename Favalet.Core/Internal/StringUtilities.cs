@@ -23,12 +23,12 @@ using System.Runtime.CompilerServices;
 
 namespace Favalet.Internal
 {
+    [DebuggerStepThrough]
     internal static class StringUtilities
     {
 #if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        [DebuggerStepThrough]
         public static string Join(string separator, IEnumerable<string> values) =>
             string.Join(separator, values);
     }

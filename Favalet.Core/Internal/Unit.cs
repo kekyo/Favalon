@@ -17,8 +17,11 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+using System.Diagnostics;
+
 namespace Favalet.Internal
 {
+    [DebuggerStepThrough]
     internal struct Unit
     {
     }

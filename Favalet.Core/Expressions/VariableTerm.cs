@@ -19,13 +19,13 @@
 
 using Favalet.Contexts;
 using Favalet.Expressions.Specialized;
+using Favalet.Expressions.Algebraic;
+using Favalet.Internal;
+using Favalet.Ranges;
 using System.Collections;
 using System.Diagnostics;
 using System.Linq;
 using System.Xml.Linq;
-using Favalet.Expressions.Algebraic;
-using Favalet.Internal;
-using Favalet.Ranges;
 
 namespace Favalet.Expressions
 {
@@ -106,21 +106,25 @@ namespace Favalet.Expressions
                 if (targets.Length >= 1)
                 {
                     var symbolHigherOrder = LogicalCalculator.ConstructNested(
-                            targets.Select(v => v.symbolHigherOrder).Memoize(),
-                            OrExpression.Create,
-                            this.Range)!;
+                        targets.Select(v => v.symbolHigherOrder).Memoize(),
+                        UnspecifiedTerm.Instance,
+                        OrExpression.Create,
+                        this.Range)!;
 
                     var expressionHigherOrder = LogicalCalculator.ConstructNested(
-                            targets.Select(v => v.expression.HigherOrder).Memoize(),
-                            OrExpression.Create,
-                            this.Range)!;
+                        targets.Select(v => v.expression.HigherOrder).Memoize(),
+                        UnspecifiedTerm.Instance,
+                        OrExpression.Create,
+                        this.Range)!;
                
                     context.Unify(symbolHigherOrder, expressionHigherOrder, true);
                     context.Unify(expressionHigherOrder, higherOrder, true);
                 }
                 
-                var bounds = targets.
-                    Select(entry => entry.expression).
+                var bounds = 
+                    context.TypeCalculator.SortExpressions(
+                        expression => expression.HigherOrder,
+                        targets.Select(entry => entry.expression)).
                     Memoize();
                 return new VariableTerm(this.Symbol, higherOrder, bounds, this.Range);
             }
@@ -139,41 +143,40 @@ namespace Favalet.Expressions
         {
             var higherOrder = context.FixupHigherOrder(this.HigherOrder);
 
-            if (this.bounds is IExpression[])
+            if (this.bounds is { } bounds &&
+                bounds.Length >= 1)
             {
-                if (this.bounds.Length >= 1)
+                var targets = bounds.
+                    Select(context.Fixup).
+                    Memoize();
+
+                if (targets.Length >= 1)
                 {
-                    var targets = this.bounds.
-                        Select(context.Fixup).
+                    var targetsHigherOrder = LogicalCalculator.ConstructNested(
+                        targets.
+                            Select(target => target.HigherOrder).
+                            Memoize(),
+                        UnspecifiedTerm.Instance,
+                        OrExpression.Create,
+                        this.Range)!;
+
+                    var calculated = context.TypeCalculator.Calculate(
+                        AndExpression.Create(
+                            higherOrder, targetsHigherOrder,
+                            this.Range));
+
+                    var filteredTargets = targets.
+                        Select(target =>
+                            (target,
+                             calculated: context.TypeCalculator.Calculate(
+                                 AndExpression.Create(target.HigherOrder, calculated, this.Range)))).
+                        Where(entry => entry.calculated.Equals(calculated)).
+                        Select(entry => entry.target).
                         Memoize();
 
-                    if (targets.Length >= 1)
+                    if (filteredTargets.Length >= 1)
                     {
-                        var targetsHigherOrder = LogicalCalculator.ConstructNested(
-                            targets.
-                                Select(target => target.HigherOrder).
-                                Memoize(),
-                            OrExpression.Create,
-                            this.Range)!;
-
-                        var calculated = context.TypeCalculator.Compute(
-                            AndExpression.Create(
-                                higherOrder, targetsHigherOrder,
-                                this.Range));
-
-                        var filteredTargets = targets.
-                            Select(target =>
-                                (target,
-                                 calculated: context.TypeCalculator.Compute(
-                                    OrExpression.Create(target.HigherOrder, calculated, this.Range)))).
-                            Where(entry => entry.calculated.Equals(calculated)).
-                            Select(entry => entry.target).
-                            Memoize();
-
-                        if (filteredTargets.Length >= 1)
-                        {
-                            return new VariableTerm(this.Symbol, higherOrder, filteredTargets, this.Range);
-                        }
+                        return new VariableTerm(this.Symbol, higherOrder, filteredTargets, this.Range);
                     }
                 }
             }
@@ -190,26 +193,31 @@ namespace Favalet.Expressions
 
         protected override IExpression Reduce(IReduceContext context)
         {
-            if (this.bounds is IExpression[] bounds)
+            if (this.bounds is { } bounds &&
+                bounds.Length == 1)
             {
-                if (this.bounds.Length >= 1)
+                var target = bounds[0];
+                if (target is IBoundVariableTerm bound)
                 {
-                    var target = bounds[0];
-                    if (target is IBoundVariableTerm bound)
+                    var variables =
+                        context.TypeCalculator.SortExpressions(
+                            expression => expression.HigherOrder,
+                            context.LookupVariables(bound.Symbol).
+                            Where(variable => context.TypeCalculator.Equals(variable.SymbolHigherOrder, bound.HigherOrder)).
+                            Select(variable => variable.Expression)).
+                        Memoize();
+                    if (variables.Length == 1)
                     {
-                        var variables = context.
-                            LookupVariables(bound.Symbol).
-                            Memoize();
-                        if (variables.Length >= 1)
-                        {
-                            // Nearly overloaded variable.
-                            return context.Reduce(variables[0].Expression);
-                        }
+                        return context.Reduce(variables[0]);
                     }
-                    else
+                    else if (variables.Length >= 2)
                     {
-                        return context.Reduce(target);
+                        return new VariableTerm(this.Symbol, this.HigherOrder, variables, this.Range);
                     }
+                }
+                else
+                {
+                    return context.Reduce(target);
                 }
             }
 

@@ -40,7 +40,7 @@ namespace Favalet
             Favalet.CLREnvironments.Create(saveLastTopology);
 
         public static TextRange TextRange(Assembly assembly) =>
-            Favalet.Ranges.TextRange.Create(new Uri(assembly.GetName().Name, UriKind.RelativeOrAbsolute), TextPosition.Zero);
+            Favalet.Ranges.TextRange.Create(new Uri(assembly.GetName().Name!, UriKind.RelativeOrAbsolute), TextPosition.Zero);
         public static TextRange TextRange(MemberInfo member) =>
             TextRange(member.Module.Assembly);
 #if NETSTANDARD1_1

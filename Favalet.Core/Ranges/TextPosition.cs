@@ -49,18 +49,18 @@ namespace Favalet.Ranges
         public bool Equals(TextPosition other) =>
             (this.Line == other.Line) && (this.Column == other.Column);
 
-        public override bool Equals(object obj) =>
+        public override bool Equals(object? obj) =>
             obj is TextPosition position && this.Equals(position);
 
         public int CompareTo(TextPosition position) =>
             this.Line.CompareTo(position.Line) switch
             {
                 0 => this.Column.CompareTo(position.Column),
-                int result => result
+                _ => position.Line
             };
 
-        int IComparable.CompareTo(object obj) =>
-            this.CompareTo((TextPosition)obj);
+        int IComparable.CompareTo(object? obj) =>
+            this.CompareTo((TextPosition)obj!);
 
         public override string ToString() =>
             $"{this.Line},{this.Column}";

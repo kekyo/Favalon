@@ -17,34 +17,28 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Favalet.Internal
 {
     [DebuggerStepThrough]
-    internal static class SharpSymbols
+    internal static class KeyValuePairExtension
     {
-        public static readonly Dictionary<Type, string> ReadableTypeNames =
-            new Dictionary<Type, string>
-            {
-                { typeof(void), "void" },
-                { typeof(bool), "bool" },
-                { typeof(byte), "byte" },
-                { typeof(sbyte), "sbyte" },
-                { typeof(short), "short" },
-                { typeof(ushort), "ushort" },
-                { typeof(int), "int" },
-                { typeof(uint), "uint" },
-                { typeof(long), "long" },
-                { typeof(ulong), "ulong" },
-                { typeof(float), "float" },
-                { typeof(double), "double" },
-                { typeof(decimal), "decimal" },
-                { typeof(char), "char" },
-                { typeof(string), "string" },
-                { typeof(object), "object" },
-            };
+        public static void Deconstruct<TKey, TValue>(
+            this KeyValuePair<TKey, TValue> pair,
+            out TKey key,
+            out TValue value)
+        {
+            key = pair.Key;
+            value = pair.Value;
+        }
+    }
+
+    [DebuggerStepThrough]
+    internal static class KeyValuePair
+    {
+        public static KeyValuePair<TKey, TValue> Create<TKey, TValue>(TKey key, TValue value) =>
+            new KeyValuePair<TKey, TValue>(key, value);
     }
 }

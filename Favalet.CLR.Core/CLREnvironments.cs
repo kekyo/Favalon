@@ -159,7 +159,7 @@ namespace Favalet
                     property.GetGetMethod() is MethodInfo method &&
                     method.IsStatic &&
                     property.GetIndexParameters().Length == 0).
-                ToDictionary(property => property.GetGetMethod());
+                ToDictionary(property => property.GetGetMethod()!);
 
             foreach (var property in properties.Values)
             {

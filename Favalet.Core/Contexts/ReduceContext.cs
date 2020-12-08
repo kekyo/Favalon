@@ -63,41 +63,31 @@ namespace Favalet.Contexts
         IReduceContext Bind(IBoundVariableTerm parameter, IExpression expression);
     }
 
-    internal abstract class FixupContext
-    {
-        [DebuggerStepThrough]
-        protected FixupContext(ITypeCalculator typeCalculator) =>
-            this.TypeCalculator = typeCalculator;
-
-        public ITypeCalculator TypeCalculator { get; }
-
-        public abstract IExpression? Resolve(IPlaceholderTerm placeholder);
-    }
-
     internal sealed class ReduceContext :
-        FixupContext, IInferContext, IFixupContext, IReduceContext, ITopology
+        IInferContext, IFixupContext, IReduceContext
     {
         private readonly Environments rootScope;
         private readonly IScopeContext parentScope;
-        private readonly Unifier unifier;
+        private readonly UnifyContext unifyContext;
         private VariableInformationRegistry? registry;
         private PlaceholderOrderHints orderHint = PlaceholderOrderHints.VariableOrAbove;
 
         [DebuggerStepThrough]
-        public ReduceContext(
+        private ReduceContext(
             Environments rootScope,
             IScopeContext parentScope,
-            Unifier unifier) :
-            base(rootScope.TypeCalculator)
+            UnifyContext unifyContext)
         {
             this.rootScope = rootScope;
             this.parentScope = parentScope;
-            this.unifier = unifier;
+            this.unifyContext = unifyContext;
         }
 
-        [DebuggerStepThrough]
-        public void SetTargetRoot(IExpression targetRoot) =>
-            this.unifier.SetTargetRoot(targetRoot);
+        public ITypeCalculator TypeCalculator
+        {
+            [DebuggerStepThrough]
+            get => this.rootScope.TypeCalculator;
+        }
 
         public IExpression MakeRewritable(IExpression expression)
         {
@@ -141,10 +131,6 @@ namespace Favalet.Contexts
         }
 
         [DebuggerStepThrough]
-        public void NormalizeAliases() =>
-            this.unifier.NormalizeAliases();
-
-        [DebuggerStepThrough]
         public IExpression Infer(IExpression expression) =>
             expression is Expression expr ? expr.InternalInfer(this) : expression;
 
@@ -156,13 +142,14 @@ namespace Favalet.Contexts
         public IExpression Reduce(IExpression expression) =>
             expression is Expression expr ? expr.InternalReduce(this) : expression;
 
+        [DebuggerStepThrough]
         private ReduceContext Bind(
             IBoundVariableTerm symbol, IExpression expression)
         {
             var newContext = new ReduceContext(
                 this.rootScope,
                 this,
-                this.unifier);
+                this.unifyContext);
 
             newContext.registry = new VariableInformationRegistry();
             newContext.registry.Register(symbol, expression, true);
@@ -179,6 +166,7 @@ namespace Favalet.Contexts
             IBoundVariableTerm symbol, IExpression expression) =>
             this.Bind(symbol, expression);
 
+        [DebuggerStepThrough]
         public IEnumerable<VariableInformation> LookupVariables(string symbol)
         {
             var overrideVariables =
@@ -195,7 +183,7 @@ namespace Favalet.Contexts
             IExpression fromHigherOrder,
             IExpression toHigherOrder,
             bool bidirectional = false) =>
-            this.unifier.Unify(fromHigherOrder, toHigherOrder, bidirectional);
+            Unifier.Instance.Unify(this.unifyContext, fromHigherOrder, toHigherOrder, bidirectional);
         
         [DebuggerStepThrough]
         public IExpression FixupHigherOrder(IExpression higherOrder)
@@ -203,30 +191,26 @@ namespace Favalet.Contexts
             var fixedup = higherOrder is Expression expr ?
                 expr.InternalFixup(this) :
                 higherOrder;
-            var calculated = this.TypeCalculator.Compute(fixedup);
             
             // Reduce higher order.
-            return this.Reduce(calculated);
+            //var calculated = this.TypeCalculator.Compute(fixedup);
+            //return this.Reduce(calculated);
+            return this.Reduce(fixedup);
         }
 
         [DebuggerStepThrough]
-        public override IExpression? Resolve(IPlaceholderTerm placeholder) =>
-            this.unifier.Resolve(placeholder);
-
-        public string View
-        {
-            [DebuggerStepThrough]
-            get => this.unifier.View;
-        }
-
-        public string Dot
-        {
-            [DebuggerStepThrough]
-            get => this.unifier.Dot;
-        }
+        public IExpression? Resolve(IPlaceholderTerm placeholder) =>
+            this.unifyContext.Resolve(placeholder);
 
         [DebuggerStepThrough]
         public override string ToString() =>
-            "ReduceContext: " + this.View;
+            "ReduceContext: " + this.unifyContext;
+
+        [DebuggerStepThrough]
+        public static ReduceContext Create(
+            Environments rootScope,
+            IScopeContext parentScope,
+            UnifyContext unifyContext) =>
+            new ReduceContext(rootScope, parentScope, unifyContext);
     }
 }

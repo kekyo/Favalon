@@ -59,6 +59,21 @@ namespace Favalet.Internal
         public static bool IsGenericType(this Type type) =>
             type.GetTypeInfo().IsGenericType;
 
+        public static bool IsPrimitive(this Type type) =>
+            type.GetTypeInfo().IsPrimitive;
+
+        public static bool IsEnum(this Type type) =>
+            type.GetTypeInfo().IsEnum;
+
+        public static bool IsClass(this Type type) =>
+            type.GetTypeInfo().IsClass;
+
+        public static bool IsValueType(this Type type) =>
+            type.GetTypeInfo().IsValueType;
+
+        public static bool IsInterface(this Type type) =>
+            type.GetTypeInfo().IsInterface;
+
         public static IEnumerable<Type> GetGenericArguments(this Type type) =>
             type.GenericTypeArguments;
         
@@ -88,6 +103,21 @@ namespace Favalet.Internal
 
         public static bool IsGenericType(this Type type) =>
             type.IsGenericType;
+
+        public static bool IsPrimitive(this Type type) =>
+            type.IsPrimitive;
+
+        public static bool IsEnum(this Type type) =>
+            type.IsEnum;
+
+        public static bool IsClass(this Type type) =>
+            type.IsClass;
+
+        public static bool IsValueType(this Type type) =>
+            type.IsValueType;
+
+        public static bool IsInterface(this Type type) =>
+            type.IsInterface;
 #endif
 
         public static string GetFullName(this Type type)

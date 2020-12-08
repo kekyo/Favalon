@@ -17,10 +17,9 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-using Favalet.Contexts;
 using Favalet.Expressions.Specialized;
-using System.Diagnostics;
 using Favalet.Ranges;
+using System.Diagnostics;
 
 namespace Favalet.Expressions.Algebraic
 {
@@ -38,21 +37,13 @@ namespace Favalet.Expressions.Algebraic
             base(left, right, higherOrder, range)
         { }
 
-        [DebuggerStepThrough]
         internal override IExpression OnCreate(
             IExpression left, IExpression right, IExpression higherOrder, TextRange range) =>
             new OrExpression(left, right, higherOrder, range);
 
-        protected override string GetPrettyString(IPrettyStringContext context) =>
-            context.FinalizePrettyString(
-                this,
-                $"{context.GetPrettyString(this.Left)} || {context.GetPrettyString(this.Right)}");
-
-        [DebuggerStepThrough]
         public static OrExpression Create(
             IExpression left, IExpression right, IExpression higherOrder, TextRange range) =>
             new OrExpression(left, right, higherOrder, range);
-        [DebuggerStepThrough]
         public static OrExpression Create(
             IExpression left, IExpression right, TextRange range) =>
             new OrExpression(left, right, UnspecifiedTerm.Instance, range);

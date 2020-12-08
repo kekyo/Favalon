@@ -29,12 +29,12 @@ using Favalet.Ranges;
 
 namespace Favalet.Expressions.Algebraic
 {
+    [DebuggerStepThrough]
     internal abstract class FlattenedExpression :
         Expression
     {
         public readonly IExpression[] Operands;
 
-        [DebuggerStepThrough]
         protected FlattenedExpression(IExpression[] operands, TextRange range) :
             base(range) =>
             this.Operands = operands;
@@ -57,7 +57,6 @@ namespace Favalet.Expressions.Algebraic
         protected sealed override IEnumerable GetXmlValues(IXmlRenderContext context) =>
             this.Operands.Select(context.GetXml);
 
-        [DebuggerStepThrough]
         public void Deconstruct(out IExpression[] operands) =>
             operands = this.Operands;
 
@@ -76,57 +75,64 @@ namespace Favalet.Expressions.Algebraic
             return lf.Concat(rf);
         }
 
-        public static IExpression Flatten(IExpression expression) =>
+        public static IExpression Flatten(
+            IExpression expression,
+            Func<IEnumerable<IExpression>, IEnumerable<IExpression>> sorter) =>
             expression switch
             {
                 IAndExpression and => new AndFlattenedExpression(
-                    Flatten<IAndExpression>(and.Left, and.Right).Memoize(),
+                    sorter(Flatten<IAndExpression>(and.Left, and.Right)).Memoize(),
+                    and.HigherOrder,
                     TextRange.Unknown),  // TODO: range
                 IOrExpression or => new OrFlattenedExpression(
-                    Flatten<IOrExpression>(or.Left, or.Right).Memoize(),
+                    sorter(Flatten<IOrExpression>(or.Left, or.Right)).Memoize(),
+                    or.HigherOrder,
                     TextRange.Unknown),  // TODO: range
                 _ => expression
             };
 
         public static IEnumerable<IExpression> FlattenAll<TBinaryExpression>(
-            IExpression left, IExpression right)
+            IExpression left, IExpression right,
+            Func<IEnumerable<IExpression>, IEnumerable<IExpression>> sorter)
             where TBinaryExpression : IBinaryExpression
         {
             var lf = left is TBinaryExpression lb ?
-                FlattenAll<TBinaryExpression>(lb.Left, lb.Right) :
-                new[] { FlattenAll(left) };
+                FlattenAll<TBinaryExpression>(lb.Left, lb.Right, sorter) :
+                new[] { FlattenAll(left, sorter) };
 
             var rf = right is TBinaryExpression rb ?
-                FlattenAll<TBinaryExpression>(rb.Left, rb.Right) :
-                new[] { FlattenAll(right) };
+                FlattenAll<TBinaryExpression>(rb.Left, rb.Right, sorter) :
+                new[] { FlattenAll(right, sorter) };
 
             return lf.Concat(rf);
         }
 
-        public static IExpression FlattenAll(IExpression expression) =>
+        public static IExpression FlattenAll(
+            IExpression expression,
+            Func<IEnumerable<IExpression>, IEnumerable<IExpression>> sorter) =>
             expression switch
             {
                 IAndExpression and => new AndFlattenedExpression(
-                    FlattenAll<IAndExpression>(and.Left, and.Right).Memoize(),
+                    sorter(FlattenAll<IAndExpression>(and.Left, and.Right, sorter)).Memoize(),
+                    and.HigherOrder,
                     TextRange.Unknown),  // TODO: range
                 IOrExpression or => new OrFlattenedExpression(
-                    FlattenAll<IOrExpression>(or.Left, or.Right).Memoize(),
+                    sorter(FlattenAll<IOrExpression>(or.Left, or.Right, sorter)).Memoize(),
+                    or.HigherOrder,
                     TextRange.Unknown),  // TODO: range
                 _ => expression
             };
     }
 
+    [DebuggerStepThrough]
     internal sealed class AndFlattenedExpression : FlattenedExpression
     {
-        [DebuggerStepThrough]
-        public AndFlattenedExpression(IExpression[] operands, TextRange range) :
-            base(operands, range)
-        { }
+        public AndFlattenedExpression(
+            IExpression[] operands, IExpression higherOrder, TextRange range) :
+            base(operands, range) =>
+            this.HigherOrder = higherOrder;
 
-        public override IExpression HigherOrder =>
-            new AndFlattenedExpression(
-                this.Operands.Select(operand => operand.HigherOrder).Memoize(),
-                TextRange.Unknown);   // TODO: range
+        public override IExpression HigherOrder { get; }
 
         public override bool Equals(IExpression? other) =>
             other is AndFlattenedExpression rhs &&
@@ -140,17 +146,15 @@ namespace Favalet.Expressions.Algebraic
                     this.Operands.Select(context.GetPrettyString)));
     }
 
+    [DebuggerStepThrough]
     internal sealed class OrFlattenedExpression : FlattenedExpression
     {
-        [DebuggerStepThrough]
-        public OrFlattenedExpression(IExpression[] operands, TextRange range) :
-            base(operands, range)
-        { }
+        public OrFlattenedExpression(
+            IExpression[] operands, IExpression higherOrder, TextRange range) :
+            base(operands, range) =>
+            this.HigherOrder = higherOrder;
 
-        public override IExpression HigherOrder =>
-            new OrFlattenedExpression(
-                this.Operands.Select(operand => operand.HigherOrder).Memoize(),
-                TextRange.Unknown);  // TODO: range
+        public override IExpression HigherOrder { get; }
 
         public override bool Equals(IExpression? other) =>
             other is OrFlattenedExpression rhs &&
