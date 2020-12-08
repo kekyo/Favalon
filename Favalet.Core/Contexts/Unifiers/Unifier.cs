@@ -209,10 +209,10 @@ namespace Favalet.Contexts.Unifiers
 
                 // Validate polarity.
                 case (_, _, UnifyDirections.Forward):
-                    // from <: to
-                    var fpf = context.TypeCalculator.Calculate(
+                    // expression1 <: expression2
+                    var vpr1 = context.TypeCalculator.Calculate(
                         OrExpression.Create(expression1, expression2, TextRange.Unknown));
-                    if (!context.TypeCalculator.Equals(fpf, expression2))
+                    if (!context.TypeCalculator.Equals(vpr1, expression2))
                     {
                         if (raiseCouldNotUnify)
                         {
@@ -226,10 +226,10 @@ namespace Favalet.Contexts.Unifiers
                     }
                     break;
                 case (_, _, UnifyDirections.Backward):
-                    // from :> to
-                    var fpr = context.TypeCalculator.Calculate(
+                    // expression1 :> expression2
+                    var vpr2 = context.TypeCalculator.Calculate(
                         OrExpression.Create(expression1, expression2, TextRange.Unknown));
-                    if (!context.TypeCalculator.Equals(fpr, expression1))
+                    if (!context.TypeCalculator.Equals(expression1, vpr2))
                     {
                         if (raiseCouldNotUnify)
                         {
@@ -243,13 +243,16 @@ namespace Favalet.Contexts.Unifiers
                     }
                     break;
                 case (_, _, UnifyDirections.BiDirectional):
-                    // from == to
-                    if (!context.TypeCalculator.Equals(expression1, expression2))
+                    // expression1 <:> expression2
+                    var vpr3 = context.TypeCalculator.Calculate(
+                        OrExpression.Create(expression1, expression2, TextRange.Unknown));
+                    if (!(context.TypeCalculator.Equals(vpr3, expression2) ||
+                          context.TypeCalculator.Equals(expression1, vpr3)))
                     {
                         if (raiseCouldNotUnify)
                         {
                             throw new ArgumentException(
-                                $"Couldn't unify: {expression1.GetPrettyString(PrettyStringTypes.Minimum)} == {expression2.GetPrettyString(PrettyStringTypes.Minimum)}");
+                                $"Couldn't unify: {expression1.GetPrettyString(PrettyStringTypes.Minimum)} <:> {expression2.GetPrettyString(PrettyStringTypes.Minimum)}");
                         }
                         else
                         {

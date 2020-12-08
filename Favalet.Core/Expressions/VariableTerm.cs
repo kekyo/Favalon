@@ -118,7 +118,7 @@ namespace Favalet.Expressions
                         this.Range)!;
                
                     context.Unify(symbolHigherOrder, expressionHigherOrder, true);
-                    context.Unify(expressionHigherOrder, higherOrder, false);
+                    context.Unify(expressionHigherOrder, higherOrder, true);
                 }
                 
                 var bounds = 
