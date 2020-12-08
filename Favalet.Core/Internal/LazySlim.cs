@@ -55,7 +55,7 @@ namespace Favalet.Internal
         public LazySlim(Func<T> generator)
         {
             this.generator = generator;
-            this.value = default;
+            this.value = default!;
         }
 
 #if !NET40

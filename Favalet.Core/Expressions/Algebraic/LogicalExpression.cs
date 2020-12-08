@@ -104,7 +104,7 @@ namespace Favalet.Expressions.Algebraic
         }
 
         protected override IExpression Reduce(IReduceContext context) =>
-            LogicalCalculator.Instance.Compute(context.Reduce(this.Operand));
+            LogicalCalculator.Instance.Calculate(context.Reduce(this.Operand));
 
         protected override IEnumerable GetXmlValues(IXmlRenderContext context) =>
             new[] { context.GetXml(this.Operand) };

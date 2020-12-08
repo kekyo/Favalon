@@ -53,7 +53,7 @@ namespace Favalet.Tokens
         public bool Equals(NumericalSignToken? other) =>
             other?.Sign.Equals(this.Sign) ?? false;
 
-        public override bool Equals(object obj) =>
+        public override bool Equals(object? obj) =>
             this.Equals(obj as NumericalSignToken);
 
         public void Deconstruct(out NumericalSignes sign) =>

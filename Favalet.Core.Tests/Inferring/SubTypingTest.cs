@@ -57,7 +57,7 @@ namespace Favalet.Inferring
                     Type<bool>(),
                     Type<IConvertible>());
 
-            var actual = environment.TypeCalculator.Compute(expression);
+            var actual = environment.TypeCalculator.Calculate(expression);
 
             // IConvertible
             var expected =
@@ -79,7 +79,7 @@ namespace Favalet.Inferring
                         Type<IConvertible>(),
                         Type<int>()));
 
-            var actual = environment.TypeCalculator.Compute(expression);
+            var actual = environment.TypeCalculator.Calculate(expression);
 
             // IConvertible
             var expected =
@@ -101,7 +101,7 @@ namespace Favalet.Inferring
                         Type<bool>(),
                         Type<int>()));
 
-            var actual = environment.TypeCalculator.Compute(expression);
+            var actual = environment.TypeCalculator.Calculate(expression);
 
             // IConvertible
             var expected =
@@ -123,7 +123,7 @@ namespace Favalet.Inferring
                         Type<IConvertible>()),
                     Type<int>());
 
-            var actual = environment.TypeCalculator.Compute(expression);
+            var actual = environment.TypeCalculator.Calculate(expression);
 
             // IConvertible
             var expected =
@@ -145,7 +145,7 @@ namespace Favalet.Inferring
                         Type<int>()),
                     Type<IConvertible>());
 
-            var actual = environment.TypeCalculator.Compute(expression);
+            var actual = environment.TypeCalculator.Calculate(expression);
 
             // IConvertible
             var expected =
@@ -167,7 +167,7 @@ namespace Favalet.Inferring
                     Type<bool>(),
                     Type<IConvertible>());
 
-            var actual = environment.TypeCalculator.Compute(expression);
+            var actual = environment.TypeCalculator.Calculate(expression);
 
             // bool
             var expected =
@@ -189,7 +189,7 @@ namespace Favalet.Inferring
                         Type<IConvertible>(),
                         Type<int>()));
 
-            var actual = environment.TypeCalculator.Compute(expression);
+            var actual = environment.TypeCalculator.Calculate(expression);
 
             // bool && int
             var expected =
@@ -213,7 +213,7 @@ namespace Favalet.Inferring
                         Type<bool>(),
                         Type<int>()));
 
-            var actual = environment.TypeCalculator.Compute(expression);
+            var actual = environment.TypeCalculator.Calculate(expression);
 
             // bool && int
             var expected =
@@ -237,7 +237,7 @@ namespace Favalet.Inferring
                         Type<IConvertible>()),
                     Type<int>());
 
-            var actual = environment.TypeCalculator.Compute(expression);
+            var actual = environment.TypeCalculator.Calculate(expression);
 
             // bool && int
             var expected =
@@ -261,7 +261,7 @@ namespace Favalet.Inferring
                         Type<int>()),
                     Type<IConvertible>());
 
-            var actual = environment.TypeCalculator.Compute(expression);
+            var actual = environment.TypeCalculator.Calculate(expression);
 
             // bool && int
             var expected =
@@ -294,7 +294,9 @@ namespace Favalet.Inferring
             var expected =
                 Lambda(
                     BoundVariable("a", Type<int>()),
-                    Variable("a", Type<int>()),
+                    // TODO: Rigid bound variable type to free variable type.
+                    Variable("a", Type<object>()),
+                    //Variable("a", Type<int>()),
                     Function(
                         Type<int>(),
                         Type<object>()));
@@ -322,7 +324,9 @@ namespace Favalet.Inferring
             var expected =
                 Lambda(
                     BoundVariable("a", Type<int>()),
-                    Variable("a", Type<int>()),
+                    // TODO: Rigid bound variable type to free variable type.
+                    Variable("a", Type<object>()),
+                    //Variable("a", Type<int>()),
                     Function(
                         Type<int>(),
                         Type<object>()));

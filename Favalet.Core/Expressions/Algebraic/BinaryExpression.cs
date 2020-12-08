@@ -46,12 +46,12 @@ namespace Favalet.Expressions.Algebraic
             IExpression left, IExpression right, IExpression higherOrder, TextRange range) :
             base(range)
         {
-            this.HigherOrder = higherOrder;
             this.Left = left;
             this.Right = right;
+            this.HigherOrder = higherOrder;
         }
 
-        public override IExpression HigherOrder { get; }
+        public sealed override IExpression HigherOrder { get; }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         IExpression IBinaryExpression.Left
@@ -89,8 +89,9 @@ namespace Favalet.Expressions.Algebraic
         }
 
         [DebuggerStepThrough]
-        IExpression IPairExpression.Create(IExpression left, IExpression right, TextRange range) =>
-            this.OnCreate(left, right, UnspecifiedTerm.Instance, range);
+        IExpression IPairExpression.Create(
+            IExpression left, IExpression right, IExpression higherOrder, TextRange range) =>
+            this.OnCreate(left, right, higherOrder, range);
         
         internal abstract IExpression OnCreate(
             IExpression left, IExpression right, IExpression higherOrder, TextRange range);

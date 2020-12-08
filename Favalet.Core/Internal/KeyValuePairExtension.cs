@@ -17,33 +17,28 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-using System;
+using System.Collections.Generic;
 using System.Diagnostics;
-using Favalet.Ranges;
 
-namespace Favalet.Tokens
+namespace Favalet.Internal
 {
     [DebuggerStepThrough]
-    public sealed class DelimiterHintToken :
-        Token, IEquatable<DelimiterHintToken?>
+    internal static class KeyValuePairExtension
     {
-        private DelimiterHintToken() :
-            base(Ranges.TextRange.Unknown)
-        { }
+        public static void Deconstruct<TKey, TValue>(
+            this KeyValuePair<TKey, TValue> pair,
+            out TKey key,
+            out TValue value)
+        {
+            key = pair.Key;
+            value = pair.Value;
+        }
+    }
 
-        public override int GetHashCode() =>
-            0;
-
-        public bool Equals(DelimiterHintToken? other) =>
-            other != null;
-
-        public override bool Equals(object? obj) =>
-            this.Equals(obj as DelimiterHintToken);
-
-        public override string ToString() =>
-            "#DH";
-
-        public static readonly DelimiterHintToken Instance =
-            new DelimiterHintToken();
+    [DebuggerStepThrough]
+    internal static class KeyValuePair
+    {
+        public static KeyValuePair<TKey, TValue> Create<TKey, TValue>(TKey key, TValue value) =>
+            new KeyValuePair<TKey, TValue>(key, value);
     }
 }

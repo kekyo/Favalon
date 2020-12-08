@@ -361,5 +361,36 @@ namespace Favalet.Reducing
 
             AssertLogicalEqual(expression, expected, actual);
         }
+
+        public static class OverloadTest
+        {
+            public static string Overload(int value) =>
+                value.ToString();
+            public static string Overload(double value) =>
+                value.ToString();
+        }
+
+        [TestCase(123, "123")]
+        [TestCase(123.456, "123.456")]
+        public void ApplyOverloadedMethod(object argument, object result)
+        {
+            var environments = CLREnvironments();
+            var typeTerm = environments.MutableBindMembers(typeof(OverloadTest));
+            
+            // Convert.ToString(123)
+            var expression =
+                Apply(
+                    //Variable("System.Convert.ToString"),
+                    Variable("Favalet.Reducing.OverloadTest.Overload"),
+                    Constant(argument));
+
+            var actual = environments.Reduce(expression);
+
+            // "123"
+            var expected =
+                Constant(result);
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
     }
 }

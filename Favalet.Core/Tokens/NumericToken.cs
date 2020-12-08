@@ -39,7 +39,7 @@ namespace Favalet.Tokens
         public bool Equals(NumericToken? other) =>
             other?.Value.Equals(this.Value) ?? false;
 
-        public override bool Equals(object obj) =>
+        public override bool Equals(object? obj) =>
             this.Equals(obj as NumericToken);
 
         public override string ToString() =>

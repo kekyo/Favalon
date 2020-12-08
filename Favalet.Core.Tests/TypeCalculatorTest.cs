@@ -25,7 +25,7 @@ using System;
 using static Favalet.CLRGenerator;
 using static Favalet.Generator;
 
-namespace Favalet.Reducing
+namespace Favalet
 {
     internal interface ITest1
     { }
@@ -41,7 +41,7 @@ namespace Favalet.Reducing
     public sealed class TypeCalculatorTest
     {
         private static readonly CLRTypeCalculator calculator =
-            new CLRTypeCalculator();
+            CLRTypeCalculator.Instance;
 
         private static void AssertLogicalEqual(
             IExpression expression,
@@ -68,7 +68,7 @@ namespace Favalet.Reducing
                     Type<int>(),
                     Type<string>());
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // int && string
             var expected =
@@ -88,7 +88,7 @@ namespace Favalet.Reducing
                     Type<string>(),
                     Type<int>());
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // int && string
             var expected =
@@ -108,7 +108,7 @@ namespace Favalet.Reducing
                     Type<object>(),
                     Type<int>());
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // int
             var expected =
@@ -126,7 +126,7 @@ namespace Favalet.Reducing
                     Type<int>(),
                     Type<object>());
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // int
             var expected =
@@ -144,7 +144,7 @@ namespace Favalet.Reducing
                     Type<object>(),
                     Type<string>());
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // string
             var expected =
@@ -162,7 +162,7 @@ namespace Favalet.Reducing
                     Type<string>(),
                     Type<object>());
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // string
             var expected =
@@ -180,7 +180,7 @@ namespace Favalet.Reducing
                     Type<IFormattable>(),
                     Type<int>());
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // int
             var expected =
@@ -198,7 +198,7 @@ namespace Favalet.Reducing
                     Type<int>(),
                     Type<IFormattable>());
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // int
             var expected =
@@ -218,7 +218,7 @@ namespace Favalet.Reducing
                         Type<IFormattable>(),
                         Type<int>()));
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // double && int
             var expected =
@@ -240,7 +240,7 @@ namespace Favalet.Reducing
                         Type<int>(),
                         Type<IFormattable>()));
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // double && int
             var expected =
@@ -262,7 +262,7 @@ namespace Favalet.Reducing
                         Type<int>(),
                         Type<double>()));
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // double && int
             var expected =
@@ -284,7 +284,7 @@ namespace Favalet.Reducing
                         Type<ITest1>(),
                         Type<ITest2>()));
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // TestClass
             var expected =
@@ -304,7 +304,7 @@ namespace Favalet.Reducing
                         Type<TestClass>(),
                         Type<ITest2>()));
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // TestClass
             var expected =
@@ -324,7 +324,7 @@ namespace Favalet.Reducing
                         Type<ITest1>(),
                         Type<TestClass>()));
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // TestClass
             var expected =
@@ -344,7 +344,7 @@ namespace Favalet.Reducing
                     Type<int>(),
                     Type<string>());
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // int || string
             var expected =
@@ -364,7 +364,7 @@ namespace Favalet.Reducing
                     Type<string>(),
                     Type<int>());
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // int || string
             var expected =
@@ -384,7 +384,7 @@ namespace Favalet.Reducing
                     Type<object>(),
                     Type<int>());
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // object
             var expected =
@@ -402,7 +402,7 @@ namespace Favalet.Reducing
                     Type<int>(),
                     Type<object>());
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // object
             var expected =
@@ -420,7 +420,7 @@ namespace Favalet.Reducing
                     Type<object>(),
                     Type<string>());
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // object
             var expected =
@@ -438,7 +438,7 @@ namespace Favalet.Reducing
                     Type<string>(),
                     Type<object>());
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // object
             var expected =
@@ -456,7 +456,7 @@ namespace Favalet.Reducing
                     Type<IFormattable>(),
                     Type<int>());
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // IFormattable
             var expected =
@@ -474,7 +474,7 @@ namespace Favalet.Reducing
                     Type<int>(),
                     Type<IFormattable>());
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // IFormattable
             var expected =
@@ -494,7 +494,7 @@ namespace Favalet.Reducing
                         Type<IFormattable>(),
                         Type<int>()));
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // IFormattable
             var expected =
@@ -514,7 +514,7 @@ namespace Favalet.Reducing
                         Type<int>(),
                         Type<IFormattable>()));
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // IFormattable
             var expected =
@@ -534,7 +534,7 @@ namespace Favalet.Reducing
                         Type<int>(),
                         Type<double>()));
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // IFormattable
             var expected =
@@ -554,7 +554,7 @@ namespace Favalet.Reducing
                         Type<ITest1>(),
                         Type<ITest2>()));
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // ITest1 || ITest2
             var expected =
@@ -576,7 +576,7 @@ namespace Favalet.Reducing
                         Type<TestClass>(),
                         Type<ITest2>()));
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // ITest1 || ITest2
             var expected =
@@ -598,7 +598,7 @@ namespace Favalet.Reducing
                         Type<ITest1>(),
                         Type<TestClass>()));
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // ITest1 || ITest2
             var expected =
@@ -622,7 +622,7 @@ namespace Favalet.Reducing
                         Type<int>(),
                         Type<string>()));
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // double && (int || string)
             var expected =
@@ -646,7 +646,7 @@ namespace Favalet.Reducing
                         Type<int>(),
                         Type<string>()));
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // double || (int && string)
             var expected =
@@ -670,7 +670,7 @@ namespace Favalet.Reducing
                         Type<int>(),
                         Type<string>()));
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // Int32
             var expected =
@@ -690,7 +690,7 @@ namespace Favalet.Reducing
                         Type<int>(),
                         Type<string>()));
 
-            var actual = calculator.Compute(expression);
+            var actual = calculator.Calculate(expression);
 
             // IFormattable
             var expected =

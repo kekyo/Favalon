@@ -49,14 +49,14 @@ namespace Favalet.Expressions
         private IdentityTermComparer()
         { }
 
-        public bool Equals(IIdentityTerm x, IIdentityTerm y) =>
-            x.Identity.Equals(y.Identity);
+        public bool Equals(IIdentityTerm? x, IIdentityTerm? y) =>
+            x!.Identity.Equals(y!.Identity);
 
-        public int GetHashCode(IIdentityTerm obj) =>
-            obj.Identity.GetHashCode();
+        public int GetHashCode(IIdentityTerm? obj) =>
+            obj!.Identity.GetHashCode();
 
-        public int Compare(IIdentityTerm x, IIdentityTerm y) =>
-            (x.Identity, y.Identity) switch
+        public int Compare(IIdentityTerm? x, IIdentityTerm? y) =>
+            (x!.Identity, y!.Identity) switch
             {
                 (int x_, int y_) => x_.CompareTo(y_),
                 (string x_, string y_) => string.Compare(x_, y_, StringComparison.Ordinal),

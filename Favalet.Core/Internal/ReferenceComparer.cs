@@ -29,13 +29,13 @@ namespace Favalet.Internal
         IEqualityComparer<IExpression>,
         IComparer<IExpression>
     {
-        public bool Equals(IExpression x, IExpression y) =>
+        public bool Equals(IExpression? x, IExpression? y) =>
             object.ReferenceEquals(x, y);
 
-        public int GetHashCode(IExpression obj) =>
+        public int GetHashCode(IExpression? obj) =>
             RuntimeHelpers.GetHashCode(obj);
 
-        public int Compare(IExpression x, IExpression y) =>
+        public int Compare(IExpression? x, IExpression? y) =>
             RuntimeHelpers.GetHashCode(x).CompareTo(RuntimeHelpers.GetHashCode(y));
 
         public static readonly ReferenceComparer Instance =

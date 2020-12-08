@@ -90,10 +90,14 @@ namespace Favalet.Expressions
         }
 
         [DebuggerStepThrough]
-        IExpression IPairExpression.Create(IExpression left, IExpression right, TextRange range) =>
-            left is IBoundVariableTerm bound ?
+        IExpression IPairExpression.Create(IExpression left, IExpression right, IExpression higherOrder, TextRange range)
+        {
+            Debug.Assert(higherOrder is UnspecifiedTerm);
+
+            return left is IBoundVariableTerm bound ?
                 Create(bound, right, range) :
                 throw new InvalidOperationException();
+        }
         
         public override int GetHashCode() =>
             this.Parameter.GetHashCode() ^ this.Body.GetHashCode();
@@ -123,7 +127,7 @@ namespace Favalet.Expressions
             var lambdaHigherOrder = FunctionExpression.Create(
                 parameter.HigherOrder, body.HigherOrder, this.Range);
             
-            context.Unify(lambdaHigherOrder, higherOrder, true);
+            context.Unify(lambdaHigherOrder, higherOrder, false);
 
             if (object.ReferenceEquals(this.Parameter, parameter) &&
                 object.ReferenceEquals(this.Body, body) &&

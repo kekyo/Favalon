@@ -74,16 +74,24 @@ namespace Favalet
         public static AndExpression And(IExpression lhs, IExpression rhs, IExpression higherOrder) =>
             AndExpression.Create(lhs, rhs, higherOrder, TextRange.Unknown);
 
-        public static IExpression? AndExpressions(params IExpression[] expressions) =>
-            LogicalCalculator.ConstructNested(expressions, AndExpression.Create, TextRange.Unknown);
+        public static IExpression? AndByExpressions(params IExpression[] expressions) =>
+            LogicalCalculator.ConstructNested(
+                expressions, UnspecifiedTerm.Instance, AndExpression.Create, TextRange.Unknown);
+        public static IExpression? AndByExpressions(IExpression higherOrder, params IExpression[] expressions) =>
+            LogicalCalculator.ConstructNested(
+                expressions, higherOrder, AndExpression.Create, TextRange.Unknown);
 
         public static OrExpression Or(IExpression lhs, IExpression rhs) =>
             OrExpression.Create(lhs, rhs, TextRange.Unknown);
         public static OrExpression Or(IExpression lhs, IExpression rhs, IExpression higherOrder) =>
             OrExpression.Create(lhs, rhs, higherOrder, TextRange.Unknown);
 
-        public static IExpression? OrExpressions(params IExpression[] expressions) =>
-            LogicalCalculator.ConstructNested(expressions, OrExpression.Create, TextRange.Unknown);
+        public static IExpression? OrByExpressions(params IExpression[] expressions) =>
+            LogicalCalculator.ConstructNested(
+                expressions, UnspecifiedTerm.Instance, OrExpression.Create, TextRange.Unknown);
+        public static IExpression? OrByExpressions(IExpression higherOrder, params IExpression[] expressions) =>
+            LogicalCalculator.ConstructNested(
+                expressions, higherOrder, OrExpression.Create, TextRange.Unknown);
 
         public static LambdaExpression Lambda(
             IBoundVariableTerm parameter, IExpression body) =>
@@ -96,7 +104,11 @@ namespace Favalet
             LambdaExpression.Create(parameter, body, higherOrder, TextRange.Unknown);
         public static LambdaExpression Lambda(
             string parameter, IExpression body, IFunctionExpression higherOrder) =>
-            LambdaExpression.Create(BoundVariableTerm.Create(parameter, TextRange.Unknown), body, higherOrder, TextRange.Unknown);
+            LambdaExpression.Create(
+                BoundVariableTerm.Create(parameter, TextRange.Unknown),
+                body,
+                higherOrder,
+                TextRange.Unknown);
 
         public static ApplyExpression Apply(
             IExpression function, IExpression argument) =>

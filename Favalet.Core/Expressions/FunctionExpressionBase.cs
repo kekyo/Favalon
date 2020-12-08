@@ -89,7 +89,7 @@ namespace Favalet.Expressions
                     () => higherOrder,
                     range);
 
-            private IExpression CreateRecursivity(
+            private IExpression CreateRecursive(
                 IExpression parameter, IExpression result, TextRange range) =>
                 this.Create(
                     parameter,
@@ -99,17 +99,17 @@ namespace Favalet.Expressions
                         (UnspecifiedTerm _, UnspecifiedTerm _) =>
                             DeadEndTerm.Instance,
                         (UnspecifiedTerm _, _) =>
-                            this.CreateRecursivity(UnspecifiedTerm.Instance, result.HigherOrder, TextRange.Unknown),
+                            this.CreateRecursive(UnspecifiedTerm.Instance, result.HigherOrder, TextRange.Unknown),
                         (_, UnspecifiedTerm _) =>
-                            this.CreateRecursivity(parameter.HigherOrder, UnspecifiedTerm.Instance, TextRange.Unknown),
+                            this.CreateRecursive(parameter.HigherOrder, UnspecifiedTerm.Instance, TextRange.Unknown),
                         _ =>
-                            this.CreateRecursivity(parameter.HigherOrder, result.HigherOrder, TextRange.Unknown)
+                            this.CreateRecursive(parameter.HigherOrder, result.HigherOrder, TextRange.Unknown)
                     },
                     range);
 
             public IFunctionExpression Create(
                 IExpression parameter, IExpression result, TextRange range) =>
-                (IFunctionExpression)this.CreateRecursivity(parameter, result, range);
+                (IFunctionExpression)this.CreateRecursive(parameter, result, range);
         }
         #endregion
         
@@ -166,8 +166,13 @@ namespace Favalet.Expressions
         }
 
         [DebuggerStepThrough]
-        IExpression IPairExpression.Create(IExpression left, IExpression right, TextRange range) =>
-            this.Factory.Create(left, right, range);
+        IExpression IPairExpression.Create(
+            IExpression left, IExpression right, IExpression higherOrder, TextRange range)
+        {
+            Debug.Assert(higherOrder is UnspecifiedTerm);
+
+            return this.Factory.Create(left, right, range);
+        }
 
         public override int GetHashCode() =>
             this.Parameter.GetHashCode() ^ this.Result.GetHashCode();

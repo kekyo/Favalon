@@ -98,8 +98,9 @@ namespace Favalet.Expressions
         }
 
         [DebuggerStepThrough]
-        IExpression IPairExpression.Create(IExpression left, IExpression right, TextRange range) =>
-            Create(left, right, range);
+        IExpression IPairExpression.Create(
+            IExpression left, IExpression right, IExpression higherOrder, TextRange range) =>
+            Create(left, right, higherOrder, range);
 
         public override int GetHashCode() =>
             this.Function.GetHashCode() ^ this.Argument.GetHashCode();
@@ -124,7 +125,7 @@ namespace Favalet.Expressions
             var function = context.Infer(this.Function);
             var higherOrder = context.Infer(this.HigherOrder);
 
-            var functionHigherOrder = AppliedFunctionExpression.Create(
+            var functionHigherOrder = FunctionExpression.Create(
                 argument.HigherOrder, higherOrder, this.Range);  // TODO: range
 
             context.Unify(function.HigherOrder, functionHigherOrder, false);

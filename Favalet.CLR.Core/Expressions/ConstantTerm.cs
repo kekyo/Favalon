@@ -89,7 +89,7 @@ namespace Favalet.Expressions
             get => this.Value switch
             {
                 string value => $"\"{value}\"",
-                _ => this.Value.ToString()
+                _ => this.Value.ToString()!
             };
         }
 
@@ -102,9 +102,9 @@ namespace Favalet.Expressions
                 this.StringValue);
 
         [DebuggerStepThrough]
-        public static ConstantTerm From(object value, TextRange range) =>
-            new ConstantTerm(value, LazySlim.Create(() =>
-                (IExpression)TypeTerm.From(value.GetType(), TextRange.Unknown)),
+        public static ConstantTerm From(object? value, TextRange range) =>
+            new ConstantTerm(value!, LazySlim.Create(() =>
+                (IExpression)TypeTerm.From(value!.GetType(), TextRange.Unknown)),
                 range);
     }
 }
