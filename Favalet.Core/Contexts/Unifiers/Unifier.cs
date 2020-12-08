@@ -209,10 +209,8 @@ namespace Favalet.Contexts.Unifiers
 
                 // Validate polarity.
                 case (_, _, UnifyDirections.Forward):
-                    // expression1 <: expression2
-                    var vpr1 = context.TypeCalculator.Calculate(
-                        OrExpression.Create(expression1, expression2, TextRange.Unknown));
-                    if (!context.TypeCalculator.Equals(vpr1, expression2))
+                    // check(expression1 <: expression2)
+                    if (!context.IsAssignableFrom(expression1, expression2))
                     {
                         if (raiseCouldNotUnify)
                         {
@@ -226,10 +224,8 @@ namespace Favalet.Contexts.Unifiers
                     }
                     break;
                 case (_, _, UnifyDirections.Backward):
-                    // expression1 :> expression2
-                    var vpr2 = context.TypeCalculator.Calculate(
-                        OrExpression.Create(expression1, expression2, TextRange.Unknown));
-                    if (!context.TypeCalculator.Equals(expression1, vpr2))
+                    // check(expression1 :> expression2)
+                    if (!context.IsAssignableFrom(expression2, expression1))
                     {
                         if (raiseCouldNotUnify)
                         {
@@ -243,11 +239,8 @@ namespace Favalet.Contexts.Unifiers
                     }
                     break;
                 case (_, _, UnifyDirections.BiDirectional):
-                    // expression1 <:> expression2
-                    var vpr3 = context.TypeCalculator.Calculate(
-                        OrExpression.Create(expression1, expression2, TextRange.Unknown));
-                    if (!(context.TypeCalculator.Equals(vpr3, expression2) ||
-                          context.TypeCalculator.Equals(expression1, vpr3)))
+                    // check(expression1 <:> expression2)
+                    if (!context.IsAssignable(expression1, expression2))
                     {
                         if (raiseCouldNotUnify)
                         {

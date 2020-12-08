@@ -25,6 +25,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using Favalet.Expressions.Algebraic;
+using Favalet.Ranges;
 
 namespace Favalet.Contexts.Unifiers
 {
@@ -54,6 +56,7 @@ namespace Favalet.Contexts.Unifiers
             new Unification(expression, direction);
     }
 
+    [DebuggerStepThrough]
     [DebuggerDisplay("{" + nameof(View) + "}")]
     internal sealed class UnifyContext :
         ITopology
@@ -70,7 +73,6 @@ namespace Favalet.Contexts.Unifiers
 
         public readonly ITypeCalculator TypeCalculator;
 
-        [DebuggerStepThrough]
         private UnifyContext(ITypeCalculator typeCalculator, IExpression targetRoot)
         {
             this.TypeCalculator = typeCalculator;
@@ -82,7 +84,6 @@ namespace Favalet.Contexts.Unifiers
 #endif
         }
         
-        [DebuggerStepThrough]
         public void SetTargetRoot(IExpression targetRoot) =>
 #if DEBUG
             this.targetRoot = targetRoot;
@@ -90,12 +91,27 @@ namespace Favalet.Contexts.Unifiers
             this.targetRootString =
                 targetRoot.GetPrettyString(PrettyStringTypes.ReadableAll);
 #endif
+        
+        public bool IsAssignable(IExpression expression1, IExpression expression2)
+        {
+            // expression1 <:> expression2
+            var or = this.TypeCalculator.Calculate(
+                OrExpression.Create(expression1, expression2, TextRange.Unknown));
+            return this.TypeCalculator.Equals(expression1, or) ||
+                   this.TypeCalculator.Equals(or, expression2);
+        }
+        
+        public bool IsAssignableFrom(IExpression to, IExpression from)
+        {
+            // to <: from
+            var or = this.TypeCalculator.Calculate(
+                OrExpression.Create(to, from, TextRange.Unknown));
+            return this.TypeCalculator.Equals(or, from);
+        }
 
-        [DebuggerStepThrough]
         public bool TryLookup(IPlaceholderTerm placeholder, out Unification unification) =>
             this.topology.TryGetValue(placeholder, out unification);
 
-        [DebuggerStepThrough]
         public IExpression? Resolve(IPlaceholderTerm placeholder)
         {
             var ph = placeholder;
@@ -120,7 +136,6 @@ namespace Favalet.Contexts.Unifiers
             }
         }
 
-        [DebuggerStepThrough]
         public void Set(IPlaceholderTerm placeholder, IExpression expression, UnifyDirections direction)
         {
             Debug.Assert(!placeholder.Equals(expression));
@@ -152,14 +167,12 @@ namespace Favalet.Contexts.Unifiers
             }
         }
 
-        [DebuggerStepThrough]
         public IDisposable BeginScope()
         {
             this.scopes.Push(this.topology);
             return new Disposer(this);
         }
 
-        [DebuggerStepThrough]
         public bool Commit(bool commit, bool raiseCouldNotUnify)
         {
             if (commit)
@@ -174,22 +187,17 @@ namespace Favalet.Contexts.Unifiers
             return commit;
         }
 
-        [DebuggerStepThrough]
         private void EndScope() =>
             this.topology = this.scopes.Pop();
         
-        public string View
-        {
-            [DebuggerStepThrough]
-            get => StringUtilities.Join(
+        public string View =>
+            StringUtilities.Join(
                 System.Environment.NewLine,
                 (this.topology ?? this.scopes.Peek()).
                     OrderBy(entry => entry.Key, IdentityTermComparer.Instance).
                     Select(entry =>
                         $"{entry.Key.Symbol} {entry.Value}"));
-        }
 
-        [DebuggerStepThrough]
         public string GetDot(string headerLabel)
         {
             var sb = new StringBuilder();
@@ -249,18 +257,13 @@ namespace Favalet.Contexts.Unifiers
             return sb.ToString();
         }
 
-        public string Dot
-        {
+        public string Dot =>
 #if DEBUG
-            [DebuggerStepThrough]
-            get => this.GetDot(this.targetRoot.GetPrettyString(PrettyStringTypes.ReadableAll));
+            this.GetDot(this.targetRoot.GetPrettyString(PrettyStringTypes.ReadableAll));
 #else
-            [DebuggerStepThrough]
-            get => this.GetDot(this.targetRootString);
+            this.GetDot(this.targetRootString);
 #endif
-        }
 
-        [DebuggerStepThrough]
         public static UnifyContext Create(ITypeCalculator typeCalculator, IExpression targetRoot) =>
             new UnifyContext(typeCalculator, targetRoot);
     }
