@@ -127,7 +127,7 @@ namespace Favalet.Expressions
             var lambdaHigherOrder = FunctionExpression.Create(
                 parameter.HigherOrder, body.HigherOrder, this.Range);
             
-            context.Unify(lambdaHigherOrder, higherOrder, true);
+            context.Unify(lambdaHigherOrder, higherOrder, false);
 
             if (object.ReferenceEquals(this.Parameter, parameter) &&
                 object.ReferenceEquals(this.Body, body) &&

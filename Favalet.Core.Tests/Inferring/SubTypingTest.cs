@@ -294,7 +294,9 @@ namespace Favalet.Inferring
             var expected =
                 Lambda(
                     BoundVariable("a", Type<int>()),
-                    Variable("a", Type<int>()),
+                    // TODO: Rigid bound variable type to free variable type.
+                    Variable("a", Type<object>()),
+                    //Variable("a", Type<int>()),
                     Function(
                         Type<int>(),
                         Type<object>()));
@@ -322,7 +324,9 @@ namespace Favalet.Inferring
             var expected =
                 Lambda(
                     BoundVariable("a", Type<int>()),
-                    Variable("a", Type<int>()),
+                    // TODO: Rigid bound variable type to free variable type.
+                    Variable("a", Type<object>()),
+                    //Variable("a", Type<int>()),
                     Function(
                         Type<int>(),
                         Type<object>()));

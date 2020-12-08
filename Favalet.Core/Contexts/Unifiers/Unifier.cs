@@ -48,18 +48,32 @@ namespace Favalet.Contexts.Unifiers
             UnifyDirections direction,
             bool raiseCouldNotUnify)
         {
-            if (context.TryLookup(placeholder, out var unification))
-            {
-                Debug.WriteLine($"Substitute: {placeholder.GetPrettyString(PrettyStringTypes.Minimum)} [{unification}] --> {expression.GetPrettyString(PrettyStringTypes.Minimum)}");
-                context.Set(placeholder, expression, direction);
-                return this.InternalUnify(
-                    context, unification.Expression, expression, direction, raiseCouldNotUnify);
-            }
-            else
+            if (!context.TryLookup(placeholder, out var unification))
             {
                 Debug.WriteLine($"Substitute: {placeholder.GetPrettyString(PrettyStringTypes.Minimum)} --> {expression.GetPrettyString(PrettyStringTypes.Minimum)}");
                 context.Set(placeholder, expression, direction);
                 return true;
+            }
+
+            Debug.WriteLine($"Substitute: {placeholder.GetPrettyString(PrettyStringTypes.Minimum)} [{unification}] --> {expression.GetPrettyString(PrettyStringTypes.Minimum)}");
+            switch (unification.Direction, direction)
+            {
+                // TODO: Rigid bound variable type to free variable type.
+                //   CovarianceInLambdaBody1, CovarianceInLambdaBody2
+                //   Better : (a -> a):(int -> object) ==> (a:int -> a:int):(int -> object)
+                //   Current: (a -> a):(int -> object) ==> (a:int -> a:object):(int -> object)
+                // case (UnifyDirections.BiDirectional, UnifyDirections.Forward):
+                //     // Check and will not update.
+                //     return this.InternalUnify(
+                //         context, unification.Expression, expression, direction, raiseCouldNotUnify);
+                // case (UnifyDirections.Backward, UnifyDirections.Forward):
+                //     // Check and will not update.
+                //     return this.InternalUnify(
+                //         context, unification.Expression, expression, direction, raiseCouldNotUnify);
+                default:
+                    context.Set(placeholder, expression, direction);
+                    return this.InternalUnify(
+                        context, unification.Expression, expression, direction, raiseCouldNotUnify);
             }
         }
 
