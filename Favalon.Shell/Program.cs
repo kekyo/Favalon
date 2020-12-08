@@ -83,7 +83,7 @@ namespace Favalon
     {
         public static int Main(string[] args)
         {
-            var console = InteractiveConsoleHost.Create();
+            var console = InteractiveConsoleHost.Create("fash> ");
 
             var lexer = Lexer.Create();
             var uri = new Uri("console", UriKind.RelativeOrAbsolute);
@@ -109,13 +109,12 @@ namespace Favalon
                         case IVariableTerm("exit"):
                             d?.Dispose();
                             break;
-                        case IConstantTerm constant
-                            when (constant.Value.GetType().IsPrimitive || constant.Value is string):
-                            Console.WriteLine(constant.Value);
+                        case IConstantTerm({ } value)
+                            when value.GetType().IsPrimitive || value is string:
+                            Console.WriteLine(value);
                             break;
-                        case IConstantTerm constant
-                            when (constant.Value is IEnumerable<string>):
-                            foreach (var line in (IEnumerable<string>)constant.Value)
+                        case IConstantTerm(IEnumerable<string> lines):
+                            foreach (var line in lines)
                             {
                                 Console.WriteLine(line);
                             }

@@ -165,13 +165,16 @@ namespace Favalet.Expressions
                             higherOrder, targetsHigherOrder,
                             this.Range));
 
-                    var filteredTargets = targets.
-                        Select(target =>
-                            (target,
-                             calculated: context.TypeCalculator.Calculate(
-                                 AndExpression.Create(target.HigherOrder, calculated, this.Range)))).
-                        Where(entry => entry.calculated.Equals(calculated)).
-                        Select(entry => entry.target).
+                    var filteredTargets =
+                        context.TypeCalculator.SortExpressions(
+                            expression => expression.HigherOrder,
+                            targets.
+                                Select(target =>
+                                    (target,
+                                        calculated: context.TypeCalculator.Calculate(
+                                            AndExpression.Create(target.HigherOrder, calculated, this.Range)))).
+                                Where(entry => entry.calculated.Equals(calculated)).
+                                Select(entry => entry.target)).
                         Memoize();
 
                     if (filteredTargets.Length >= 1)
@@ -194,15 +197,14 @@ namespace Favalet.Expressions
         protected override IExpression Reduce(IReduceContext context)
         {
             if (this.bounds is { } bounds &&
-                bounds.Length == 1)
+                bounds.Length >= 1)
             {
                 var target = bounds[0];
                 if (target is IBoundVariableTerm bound)
                 {
-                    var variables =
-                        context.TypeCalculator.SortExpressions(
-                            expression => expression.HigherOrder,
-                            context.LookupVariables(bound.Symbol).
+                    var variables = context.TypeCalculator.SortExpressions(
+                        expression => expression.HigherOrder,
+                        context.LookupVariables(bound.Symbol).
                             Where(variable => context.TypeCalculator.Equals(variable.SymbolHigherOrder, bound.HigherOrder)).
                             Select(variable => variable.Expression)).
                         Memoize();

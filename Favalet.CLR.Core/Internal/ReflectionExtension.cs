@@ -50,6 +50,9 @@ namespace Favalet.Internal
         public static MethodInfo? GetGetMethod(this PropertyInfo property) =>
             property.GetMethod;
 
+        public static MethodInfo? GetSetMethod(this PropertyInfo property) =>
+            property.SetMethod;
+
         public static bool IsPublic(this Type type) =>
             type.GetTypeInfo().IsPublic;
 
@@ -143,8 +146,8 @@ namespace Favalet.Internal
 #if !NETSTANDARD1_1
                 Type type => GetFullName(type),
 #endif
-                ConstructorInfo constructor => GetFullName(member.DeclaringType!),
-                _ => member.DeclaringType is Type declaringType ?
+                ConstructorInfo _ => GetFullName(member.DeclaringType!),
+                _ => member.DeclaringType is { } declaringType ?
                     $"{GetFullName(declaringType)}.{member.Name}" :
                     member.Name
             };
@@ -189,7 +192,7 @@ namespace Favalet.Internal
 #if !NETSTANDARD1_1
                 Type type => GetReadableName(type),
 #endif
-                ConstructorInfo constructor => GetReadableName(member.DeclaringType!),
+                ConstructorInfo _ => GetReadableName(member.DeclaringType!),
                 _ => member.DeclaringType is Type declaringType ?
                     (GetAliasName(member) is string aliasName ?
                         aliasName :

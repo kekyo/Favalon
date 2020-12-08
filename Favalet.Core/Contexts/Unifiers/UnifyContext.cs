@@ -18,15 +18,15 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using Favalet.Expressions;
+using Favalet.Expressions.Algebraic;
 using Favalet.Expressions.Specialized;
 using Favalet.Internal;
+using Favalet.Ranges;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using Favalet.Expressions.Algebraic;
-using Favalet.Ranges;
 
 namespace Favalet.Contexts.Unifiers
 {

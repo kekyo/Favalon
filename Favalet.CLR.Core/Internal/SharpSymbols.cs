@@ -45,6 +45,44 @@ namespace Favalet.Internal
                 { typeof(char), "char" },
                 { typeof(string), "string" },
                 { typeof(object), "object" },
+                { typeof(IntPtr), "nint" },
+                { typeof(UIntPtr), "nuint" },
+                { typeof(IEnumerable<>), "seq" },
             };
+        
+        public static readonly Dictionary<string, string> OperatorSymbols =
+            new Dictionary<string, string>
+        {
+            { "op_Addition", "+" },
+            { "op_Subtraction", "-" },
+            { "op_Multiply", "*" },
+            { "op_Division", "/" },
+            { "op_Append", "+" },
+            { "op_Concatenate", "+" },
+            { "op_Modulus", "%" },
+            { "op_BitwiseAnd", "&" },
+            { "op_BitwiseOr", "|" },
+            { "op_ExclusiveOr", "^" },
+            { "op_LeftShift", "<<" },
+            { "op_LogicalNot", "!" },
+            { "op_RightShift", ">>" },
+            { "op_UnaryPlus", "+" },
+            { "op_UnaryNegation", "-" },
+            { "op_Equality", "==" },
+            { "op_Inequality", "!=" },
+            { "op_LessThanOrEqual", "<=" },
+            { "op_GreaterThanOrEqual", ">=" },
+            { "op_LessThan", "<" },
+            { "op_GreaterThan", ">" },
+            { "op_PipeRight", "|>" },
+            { "op_PipeLeft", "<|" },
+            { "op_Dereference", "!" },
+            { "op_ComposeRight", ">>" },
+            { "op_ComposeLeft", "<<" },
+            { "op_AdditionAssignment", "+=" },
+            { "op_SubtractionAssignment", "-=" },
+            { "op_MultiplyAssignment", "*=" },
+            { "op_DivisionAssignment", "/=" },
+        };
     }
 }

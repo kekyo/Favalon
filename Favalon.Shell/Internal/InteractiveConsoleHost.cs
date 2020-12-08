@@ -33,15 +33,16 @@ namespace Favalon.Internal
         ObservableBase<Input>
     {
         private readonly List<string> history = new List<string>();
-        
+
+        private string prompt = "fash> ";
         private readonly CancellationTokenSource cts = new CancellationTokenSource();
         private readonly StringBuilder line = new StringBuilder();
         private int currentColumn = 0;
         private int historyIndex = 0;
         private IObserver<Input>? observer;
 
-        private InteractiveConsoleHost()
-        { }
+        private InteractiveConsoleHost(string prompt) =>
+            this.prompt = prompt;
 
         public override IDisposable Subscribe(IObserver<Input> subscribe)
         {
@@ -55,6 +56,8 @@ namespace Favalon.Internal
             Console.Clear();
             this.line.Clear();
             this.currentColumn = 0;
+            
+            Console.Write(this.prompt);
         }
 
         public void InputEnter()
@@ -73,6 +76,8 @@ namespace Favalon.Internal
             this.currentColumn = 0;
             this.observer?.OnNext(InputTypes.NextLine);
             this.observer?.OnNext(InputTypes.DelimiterHint);
+            
+            Console.Write(this.prompt);
         }
 
         public bool InputChar(char inch)
@@ -180,9 +185,9 @@ namespace Favalon.Internal
         {
             if (this.historyIndex < this.history.Count)
             {
-                Console.SetCursorPosition(0, Console.CursorTop);
+                Console.SetCursorPosition(this.prompt.Length, Console.CursorTop);
                 Console.Write(new string(' ', this.line.Length));
-                Console.SetCursorPosition(0, Console.CursorTop);
+                Console.SetCursorPosition(this.prompt.Length, Console.CursorTop);
 
                 this.historyIndex++;
 
@@ -205,9 +210,9 @@ namespace Favalon.Internal
         {
             if (this.historyIndex >= 2)
             {
-                Console.SetCursorPosition(0, Console.CursorTop);
+                Console.SetCursorPosition(this.prompt.Length, Console.CursorTop);
                 Console.Write(new string(' ', this.line.Length));
-                Console.SetCursorPosition(0, Console.CursorTop);
+                Console.SetCursorPosition(this.prompt.Length, Console.CursorTop);
 
                 this.historyIndex--;
 
@@ -222,9 +227,9 @@ namespace Favalon.Internal
             }
             else if (this.historyIndex == 1)
             {
-                Console.SetCursorPosition(0, Console.CursorTop);
+                Console.SetCursorPosition(this.prompt.Length, Console.CursorTop);
                 Console.Write(new string(' ', this.line.Length));
-                Console.SetCursorPosition(0, Console.CursorTop);
+                Console.SetCursorPosition(this.prompt.Length, Console.CursorTop);
 
                 this.historyIndex--;
 
@@ -242,6 +247,8 @@ namespace Favalon.Internal
         public void Run()
         {
             var readKeyController = new UnsafeReadKeyController(this.cts.Token);
+            
+            Console.Write(prompt);
             
             while (true)
             {
@@ -282,7 +289,7 @@ namespace Favalon.Internal
             }
         }
 
-        public static InteractiveConsoleHost Create() =>
-            new InteractiveConsoleHost();
+        public static InteractiveConsoleHost Create(string prompt) =>
+            new InteractiveConsoleHost(prompt);
     }
 }

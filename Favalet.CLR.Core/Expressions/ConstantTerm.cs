@@ -107,4 +107,11 @@ namespace Favalet.Expressions
                 (IExpression)TypeTerm.From(value!.GetType(), TextRange.Unknown)),
                 range);
     }
+
+    [DebuggerStepThrough]
+    public static class ConstantTermExtension
+    {
+        public static void Deconstruct(this IConstantTerm constant, out object value) =>
+            value = constant.Value;
+    }
 }
