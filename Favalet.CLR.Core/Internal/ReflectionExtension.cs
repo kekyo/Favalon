@@ -62,6 +62,12 @@ namespace Favalet.Internal
         public static bool IsGenericType(this Type type) =>
             type.GetTypeInfo().IsGenericType;
 
+        public static bool IsGenericTypeDefinition(this Type type) =>
+            type.GetTypeInfo().IsGenericTypeDefinition;
+
+        public static bool IsGenericParameter(this Type type) =>
+            type.IsGenericParameter;
+
         public static bool IsPrimitive(this Type type) =>
             type.GetTypeInfo().IsPrimitive;
 
@@ -106,6 +112,12 @@ namespace Favalet.Internal
 
         public static bool IsGenericType(this Type type) =>
             type.IsGenericType;
+        
+        public static bool IsGenericTypeDefinition(this Type type) =>
+            type.IsGenericTypeDefinition;
+
+        public static bool IsGenericParameter(this Type type) =>
+            type.IsGenericParameter;
 
         public static bool IsPrimitive(this Type type) =>
             type.IsPrimitive;
@@ -123,13 +135,26 @@ namespace Favalet.Internal
             type.IsInterface;
 #endif
 
-        public static string GetFullName(this Type type)
+        public static string GetFullName(this Type type, bool includeGenericArguments = false)
         {
+            if (type.IsGenericParameter())
+            {
+                return type.Name;
+            }
+            
             if (type.IsGenericType())
             {
-                var ga = string.Join(".", type.GetGenericArguments().Select(GetFullName));
                 var name = type.Name.Substring(0, type.Name.IndexOf('`'));
-                return $"{type.Namespace}.{name}<{ga}>";
+                if (includeGenericArguments)
+                {
+                    var ga = string.Join(
+                        ".", type.GetGenericArguments().Select(gt => GetFullName(gt, includeGenericArguments)));
+                    return $"{type.Namespace}.{name}<{ga}>";
+                }
+                else
+                {
+                    return $"{type.Namespace}.{name}";
+                }
             }
             else
             {
@@ -137,20 +162,47 @@ namespace Favalet.Internal
             }
         }
 
-        public static string GetFullName(this MemberInfo member) =>
-            member switch
+        public static string GetFullName(this MemberInfo member, bool includeGenericArguments = false)
+        {
+            switch (member)
             {
 #if !NET40
-                TypeInfo typeInfo => GetFullName(typeInfo.AsType()),
+                case TypeInfo typeInfo:
+                    return GetFullName(typeInfo.AsType(), includeGenericArguments);
 #endif
 #if !NETSTANDARD1_1
-                Type type => GetFullName(type),
+                case Type type:
+                    return GetFullName(type, includeGenericArguments);
 #endif
-                ConstructorInfo _ => GetFullName(member.DeclaringType!),
-                _ => member.DeclaringType is { } declaringType ?
-                    $"{GetFullName(declaringType)}.{member.Name}" :
-                    member.Name
-            };
+                case ConstructorInfo _:
+                    return GetFullName(member.DeclaringType!, includeGenericArguments);
+                default:
+                    if (member is MethodInfo method && method.IsGenericMethod)
+                    {
+                        var name = method.Name.Substring(0, method.Name.IndexOf('`'));
+                        if (includeGenericArguments)
+                        {
+                            var ga = string.Join(
+                                ".", method.GetGenericArguments().Select(gt => GetFullName(gt, includeGenericArguments)));
+                            return method.DeclaringType is { } declaringType ?
+                                $"{GetFullName(declaringType, includeGenericArguments)}.{name}<{ga}>" :
+                                name;
+                        }
+                        else
+                        {
+                            return method.DeclaringType is { } declaringType ?
+                                $"{GetFullName(declaringType, includeGenericArguments)}.{name}" :
+                                name;
+                        }
+                    }
+                    else
+                    {
+                        return member.DeclaringType is { } declaringType ?
+                            $"{GetFullName(declaringType, includeGenericArguments)}.{member.Name}" :
+                            member.Name;
+                    }
+            }
+        }
 
         private static string? GetAliasName(Type type) =>
             type.GetCustomAttributes(typeof(AliasNameAttribute), true) is IEnumerable<AliasNameAttribute> names ?
@@ -166,15 +218,20 @@ namespace Favalet.Internal
                 return readableName;
             }
 
-            if (GetAliasName(type) is string aliasName)
+            if (GetAliasName(type) is { } aliasName)
             {
                 return aliasName;
             }
 
+            if (type.IsGenericParameter())
+            {
+                return type.Name;
+            }
+            
             if (type.IsGenericType())
             {
-                var ga = string.Join(".", type.GetGenericArguments().Select(GetReadableName));
                 var name = type.Name.Substring(0, type.Name.IndexOf('`'));
+                var ga = string.Join(".", type.GetGenericArguments().Select(GetReadableName));
                 return $"{type.Namespace}.{name}<{ga}>";
             }
             else
@@ -183,21 +240,41 @@ namespace Favalet.Internal
             }
         }
 
-        public static string GetReadableName(this MemberInfo member) =>
-            member switch
+        public static string GetReadableName(this MemberInfo member)
+        {
+            switch (member)
             {
 #if !NET40
-                TypeInfo typeInfo => GetReadableName(typeInfo.AsType()),
+                case TypeInfo typeInfo:
+                    return GetReadableName(typeInfo.AsType());
 #endif
 #if !NETSTANDARD1_1
-                Type type => GetReadableName(type),
+                case Type type:
+                    return GetReadableName(type);
 #endif
-                ConstructorInfo _ => GetReadableName(member.DeclaringType!),
-                _ => member.DeclaringType is Type declaringType ?
-                    (GetAliasName(member) is string aliasName ?
-                        aliasName :
-                        $"{GetReadableName(declaringType)}.{member.Name}") :
-                    member.Name
-            };
+                case ConstructorInfo _:
+                    return GetReadableName(member.DeclaringType!);
+                default:
+                    if (member is MethodInfo method && method.IsGenericMethod)
+                    {
+                        var name = member.Name.Substring(0, member.Name.IndexOf('`'));
+                        var ga = string.Join(
+                            ".", method.GetGenericArguments().Select(GetReadableName));
+                        return member.DeclaringType is { } declaringType ?
+                            (GetAliasName(member) is { } aliasName ?
+                                aliasName :
+                                $"{GetReadableName(declaringType)}.{name}<{ga}>") :
+                            name;
+                    }
+                    else
+                    {
+                        return member.DeclaringType is { } declaringType ?
+                            (GetAliasName(member) is { } aliasName ?
+                                aliasName :
+                                $"{GetReadableName(declaringType)}.{member.Name}") :
+                            member.Name;
+                    }
+            }
+        }
     }
 }

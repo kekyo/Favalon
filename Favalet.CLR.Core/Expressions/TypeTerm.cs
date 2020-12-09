@@ -18,13 +18,12 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using Favalet.Contexts;
-using Favalet.Expressions.Specialized;
 using Favalet.Internal;
+using Favalet.Ranges;
 using System;
 using System.Collections;
 using System.Diagnostics;
 using System.Xml.Linq;
-using Favalet.Ranges;
 
 namespace Favalet.Expressions
 {
@@ -34,7 +33,7 @@ namespace Favalet.Expressions
         Type RuntimeType { get; }
     }
 
-    public sealed class TypeTerm :
+    public abstract class TypeTerm :
         Expression, ITypeTerm
     {
         private static readonly Type runtimeType = typeof(object).GetType();
@@ -42,15 +41,9 @@ namespace Favalet.Expressions
         public readonly Type RuntimeType;
 
         [DebuggerStepThrough]
-        private TypeTerm(Type runtimeType, TextRange range) :
+        private protected TypeTerm(Type runtimeType, TextRange range) :
             base(range) =>
             this.RuntimeType = runtimeType;
-
-        public override IExpression HigherOrder
-        {
-            [DebuggerStepThrough]
-            get => Generator.Kind();
-        }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         Type ITypeTerm.RuntimeType
@@ -95,9 +88,65 @@ namespace Favalet.Expressions
             {
                 return Generator.Kind();
             }
+            else if (type.IsGenericType() && type.IsGenericTypeDefinition())
+            {
+                return new TypeConstructorTerm(type, range);
+            }
             else
             {
-                return new TypeTerm(type, range);
+                return new RuntimeTypeTerm(type, range);
+            }
+        }
+    }
+
+    internal sealed class RuntimeTypeTerm :
+        TypeTerm
+    {
+        internal RuntimeTypeTerm(Type runtimeType, TextRange range) :
+            base(runtimeType, range)
+        { }
+
+        public override IExpression HigherOrder
+        {
+            [DebuggerStepThrough]
+            get => Generator.kind;
+        }
+    }
+
+    public interface ITypeConstructorTerm :
+        ITypeTerm, ICallableExpression
+    {
+    }
+
+    internal sealed class TypeConstructorTerm :
+        TypeTerm, ITypeConstructorTerm
+    {
+        private static readonly ILambdaExpression higherOrder =
+            LambdaExpression.Create(Generator.kind, Generator.kind, TextRange.Internal);
+        
+        internal TypeConstructorTerm(Type runtimeType, TextRange range) :
+            base(runtimeType, range)
+        { }
+
+        public override IExpression HigherOrder
+        {
+            [DebuggerStepThrough]
+            get => higherOrder;
+        }
+
+        public IExpression Call(IReduceContext context, IExpression argument)
+        {
+            if (argument is ITypeTerm typeArgument)
+            {
+                return TypeTerm.From(
+                    this.RuntimeType.MakeGenericType(typeArgument.RuntimeType),
+                    this.Range);
+            }
+            // TODO: Constant(Type) ?
+            else
+            {
+                throw new ArgumentException(
+                    argument.GetPrettyString(PrettyStringTypes.Readable));
             }
         }
     }

@@ -361,6 +361,38 @@ namespace Favalet.Reducing
             AssertLogicalEqual(expression, expected, actual);
         }
 
+        public sealed class TypeConstructorTest<T>
+        {
+            private readonly T value;
+
+            public TypeConstructorTest(T value) =>
+                this.value = value;
+            
+            public string Foo(T value2) =>
+                $"{this.value}_{value2}";
+        }
+
+        [Test]
+        public void ApplyTypeConstructor1()
+        {
+            var environments = CLREnvironments();
+            var typeTerm = environments.MutableBindMembers(typeof(TypeConstructorTest<>));
+
+            // TypeConstructorTest int
+            var expression =
+                Apply(
+                    Variable("Favalet.Reducing.TypeConstructorTest"),
+                    Type<int>());
+
+            var actual = environments.Reduce(expression);
+
+            // TypeConstructorTest<int>
+            var expected =
+                Type<TypeConstructorTest<int>>();
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
+
         public static class OverloadTest
         {
             public static string Overload(int value) =>
@@ -376,10 +408,9 @@ namespace Favalet.Reducing
             var environments = CLREnvironments();
             var typeTerm = environments.MutableBindMembers(typeof(OverloadTest));
             
-            // Convert.ToString(123)
+            // OverloadTest.Overload(123)
             var expression =
                 Apply(
-                    //Variable("System.Convert.ToString"),
                     Variable("Favalet.Reducing.OverloadTest.Overload"),
                     Constant(argument));
 
