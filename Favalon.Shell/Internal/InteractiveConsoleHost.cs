@@ -29,12 +29,19 @@ using Favalet.Reactive.Disposables;
 
 namespace Favalon.Internal
 {
+    public enum InputModifiers
+    {
+        Char,
+        Word,
+        Line
+    }
+    
     public sealed class InteractiveConsoleHost :
         ObservableBase<Input>
     {
         private readonly List<string> history = new List<string>();
 
-        private string prompt = "fash> ";
+        private string prompt;
         private readonly CancellationTokenSource cts = new CancellationTokenSource();
         private readonly StringBuilder line = new StringBuilder();
         private int currentColumn = 0;
@@ -56,8 +63,6 @@ namespace Favalon.Internal
             Console.Clear();
             this.line.Clear();
             this.currentColumn = 0;
-            
-            Console.Write(this.prompt);
         }
 
         public void InputEnter()
@@ -66,11 +71,15 @@ namespace Favalon.Internal
 
             var line = this.line.ToString();
             this.line.Clear();
-            this.history.Add(line);
 
-            foreach (var inch in line)
+            if (!string.IsNullOrWhiteSpace(line))
             {
-                this.observer?.OnNext(inch);
+                this.history.Add(line);
+
+                foreach (var inch in line)
+                {
+                    this.observer?.OnNext(inch);
+                }
             }
             
             this.currentColumn = 0;
@@ -109,41 +118,62 @@ namespace Favalon.Internal
             }
         }
 
-        public bool InputForward()
+        public bool InputForward(InputModifiers modifier = InputModifiers.Char)
         {
             if (this.currentColumn < this.line.Length)
             {
-                this.currentColumn++;
-                var left = Console.CursorLeft + 1;
-                Console.SetCursorPosition(left, Console.CursorTop);
+                if (modifier == InputModifiers.Line)
+                {
+                    var differ = this.line.Length - this.currentColumn;
+                    this.currentColumn += differ;
+                    var left = Console.CursorLeft + differ;
+                    Console.SetCursorPosition(left, Console.CursorTop);
+                }
+                else
+                {
+                    this.currentColumn++;
+                    var left = Console.CursorLeft + 1;
+                    Console.SetCursorPosition(left, Console.CursorTop);
+                }
                 return true;
             }
             else
             {
+                Console.Beep();
                 return false;
             }
         }
   
-        public bool InputBackward()
+        public bool InputBackward(InputModifiers modifier = InputModifiers.Char)
         {
             if (this.currentColumn >= 1)
             {
-                this.currentColumn--;
-                var left = Console.CursorLeft;
-                if (left >= 1)
+                if (modifier == InputModifiers.Line)
                 {
-                    left--;
+                    var left = Console.CursorLeft - this.currentColumn;
+                    this.currentColumn = 0;
+                    Console.SetCursorPosition(left, Console.CursorTop);
                 }
-                Console.SetCursorPosition(left, Console.CursorTop);
+                else
+                {
+                    this.currentColumn--;
+                    var left = Console.CursorLeft;
+                    if (left >= 1)
+                    {
+                        left--;
+                    }
+                    Console.SetCursorPosition(left, Console.CursorTop);
+                }
                 return true;
             }
             else
             {
+                Console.Beep();
                 return false;
             }
         }
 
-        public bool InputBackspace()
+        public bool InputBackspace(InputModifiers modifier = InputModifiers.Char)
         {
             if (this.currentColumn >= 1)
             {
@@ -161,11 +191,12 @@ namespace Favalon.Internal
             }
             else
             {
+                Console.Beep();
                 return false;
             }
         }
 
-        public bool InputDelete()
+        public bool InputDelete(InputModifiers modifier = InputModifiers.Char)
         {
             if (this.currentColumn < line.Length)
             {
@@ -177,6 +208,7 @@ namespace Favalon.Internal
             }
             else
             {
+                Console.Beep();
                 return false;
             }
         }
@@ -202,6 +234,7 @@ namespace Favalon.Internal
             }
             else
             {
+                Console.Beep();
                 return false;
             }
         }
@@ -240,9 +273,18 @@ namespace Favalon.Internal
             }
             else
             {
+                Console.Beep();
                 return false;
             }
         }
+
+        private static InputModifiers GetInputModifier(ConsoleModifiers modifier) =>
+            modifier switch
+            {
+                ConsoleModifiers.Shift => InputModifiers.Word,
+                ConsoleModifiers.Control => InputModifiers.Line,
+                _ => InputModifiers.Char
+            };
 
         public void Run()
         {
@@ -252,7 +294,7 @@ namespace Favalon.Internal
             
             while (true)
             {
-                if (!(readKeyController.ReadKey() is ConsoleKeyInfo key))
+                if (!(readKeyController.ReadKey() is { } key))
                 {
                     this.observer?.OnCompleted();
                     break;
@@ -261,16 +303,16 @@ namespace Favalon.Internal
                 switch (key.Key)
                 {
                     case ConsoleKey.Delete:
-                        this.InputDelete();
+                        this.InputDelete(GetInputModifier(key.Modifiers));
                         break;
                     case ConsoleKey.Backspace:
-                        this.InputBackspace();
+                        this.InputBackspace(GetInputModifier(key.Modifiers));
                         break;
                     case ConsoleKey.RightArrow:
-                        this.InputForward();
+                        this.InputForward(GetInputModifier(key.Modifiers));
                         break;
                     case ConsoleKey.LeftArrow:
-                        this.InputBackward();
+                        this.InputBackward(GetInputModifier(key.Modifiers));
                         break;
                     case ConsoleKey.UpArrow:
                         this.InputOlder();

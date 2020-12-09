@@ -24,10 +24,14 @@ using Favalet.Reactive;
 using Favalon.Internal;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 
 namespace Favalon
 {
+#if true
     public static class Test
     {
         [AliasName("echo")]
@@ -64,20 +68,19 @@ namespace Favalon
         [AliasName("cat")]
         public static IEnumerable<string> Cat(string fileName)
         {
-            using (var tr = File.OpenText(fileName))
+            using var tr = File.OpenText(fileName);
+            while (!tr.EndOfStream)
             {
-                while (!tr.EndOfStream)
+                var line = tr.ReadLine();
+                if (line == null)
                 {
-                    var line = tr.ReadLine();
-                    if (line == null)
-                    {
-                        break;
-                    }
-                    yield return line;
+                    break;
                 }
+                yield return line;
             }
         }
     }
+#endif
     
     public static class Program
     {
@@ -100,28 +103,59 @@ namespace Favalon
             d = parsed.Subscribe(Observer.Create<IExpression>(
                 expression =>
                 {
-                    var reduced = environments.Reduce(expression);
-                    switch (reduced)
+                    try
                     {
-                        case IVariableTerm("clear"):
-                            console.Clear();
-                            break;
-                        case IVariableTerm("exit"):
-                            d?.Dispose();
-                            break;
-                        case IConstantTerm({ } value)
-                            when value.GetType().IsPrimitive || value is string:
-                            Console.WriteLine(value);
-                            break;
-                        case IConstantTerm(IEnumerable<string> lines):
-                            foreach (var line in lines)
+                        var reduced = environments.Reduce(expression);
+                        switch (reduced)
+                        {
+                            case IVariableTerm("clear"):
+                                console.Clear();
+                                break;
+                            case IVariableTerm("exit"):
+                                d?.Dispose();
+                                break;
+                            case IConstantTerm({ } value)
+                                when value.GetType().IsPrimitive || value is string:
+                                Console.WriteLine(value);
+                                break;
+                            case IConstantTerm(IEnumerable<string> lines):
+                                foreach (var line in lines)
+                                {
+                                    Console.WriteLine(line);
+                                }
+                                break;
+                            default:
+                                Console.WriteLine(reduced.GetPrettyString(PrettyStringTypes.Readable));
+                                break;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        IEnumerable<string> Format(Exception ex) =>
+                            ex switch
                             {
-                                Console.WriteLine(line);
+                                TargetInvocationException te when te.InnerException is { } ie => Format(ie),
+                                AggregateException ae => ae.InnerExceptions.SelectMany(Format),
+                                _ => new[] {$"{ex.GetType().Name}: {ex.Message}"}
+                            };
+
+                        var fgc = Console.ForegroundColor;
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        try
+                        {
+                            foreach (var message in Format(ex))
+                            {
+                                Console.WriteLine(message);
                             }
-                            break;
-                        default:
-                            Console.WriteLine(reduced.GetPrettyString(PrettyStringTypes.Readable));
-                            break;
+                        }
+                        catch (Exception ex2)
+                        {
+                            Trace.WriteLine(ex2);
+                        }
+                        finally
+                        {
+                            Console.ForegroundColor = fgc;
+                        }
                     }
                 },
                 ex => { },
