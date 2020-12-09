@@ -284,7 +284,7 @@ namespace Favalet.Inferring
                 Lambda(
                     BoundVariable("a"),
                     Variable("a"),
-                    Function(
+                    Lambda(
                         Type<int>(),
                         Type<object>()));
 
@@ -297,7 +297,7 @@ namespace Favalet.Inferring
                     // TODO: Rigid bound variable type to free variable type.
                     Variable("a", Type<object>()),
                     //Variable("a", Type<int>()),
-                    Function(
+                    Lambda(
                         Type<int>(),
                         Type<object>()));
 
@@ -314,7 +314,7 @@ namespace Favalet.Inferring
                 Lambda(
                     BoundVariable("a", Type<int>()),
                     Variable("a"),
-                    Function(
+                    Lambda(
                         Unspecified(),
                         Type<object>()));
 
@@ -327,7 +327,7 @@ namespace Favalet.Inferring
                     // TODO: Rigid bound variable type to free variable type.
                     Variable("a", Type<object>()),
                     //Variable("a", Type<int>()),
-                    Function(
+                    Lambda(
                         Type<int>(),
                         Type<object>()));
 
@@ -344,7 +344,7 @@ namespace Favalet.Inferring
                 Lambda(
                     BoundVariable("a"),
                     Variable("a", Type<int>()),
-                    Function(
+                    Lambda(
                         Unspecified(),
                         Type<object>()));
 
@@ -355,7 +355,7 @@ namespace Favalet.Inferring
                 Lambda(
                     BoundVariable("a", Type<int>()),
                     Variable("a", Type<int>()),
-                    Function(
+                    Lambda(
                         Type<int>(),
                         Type<object>()));
 
@@ -374,7 +374,7 @@ namespace Favalet.Inferring
                 Lambda(
                     BoundVariable("a", Type<object>()),
                     Variable("a"),
-                    Function(
+                    Lambda(
                         Type<int>(),
                         Type<object>()));
 
@@ -385,7 +385,7 @@ namespace Favalet.Inferring
                 Lambda(
                     BoundVariable("a", Type<object>()),
                     Variable("a", Type<object>()),
-                    Function(
+                    Lambda(
                         Type<int>(),
                         Type<object>()));
 
@@ -402,7 +402,7 @@ namespace Favalet.Inferring
                 Lambda(
                     BoundVariable("a"),
                     Variable("a", Type<object>()),
-                    Function(
+                    Lambda(
                         Type<int>(),
                         Type<object>()));
 
@@ -413,7 +413,7 @@ namespace Favalet.Inferring
                 Lambda(
                     BoundVariable("a", Type<int>()),
                     Variable("a", Type<object>()),
-                    Function(
+                    Lambda(
                         Type<int>(),
                         Type<object>()));
 
@@ -430,7 +430,7 @@ namespace Favalet.Inferring
                 Lambda(
                     BoundVariable("a", Type<object>()),
                     Variable("a"),
-                    Function(
+                    Lambda(
                         Type<int>(),
                         Unspecified()));
 
@@ -441,7 +441,7 @@ namespace Favalet.Inferring
                 Lambda(
                     BoundVariable("a", Type<object>()),
                     Variable("a", Type<object>()),
-                    Function(
+                    Lambda(
                         Type<int>(),
                         Type<object>()));
 
@@ -458,7 +458,7 @@ namespace Favalet.Inferring
                 Lambda(
                     BoundVariable("a"),
                     Variable("a", Type<object>()),
-                    Function(
+                    Lambda(
                         Type<int>(),
                         Unspecified()));
 
@@ -469,7 +469,7 @@ namespace Favalet.Inferring
                 Lambda(
                     BoundVariable("a", Type<int>()),
                     Variable("a", Type<object>()),
-                    Function(
+                    Lambda(
                         Type<int>(),
                         Type<object>()));
 

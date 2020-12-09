@@ -64,7 +64,7 @@ namespace Favalet.Inferring
             var ph1 = provider.CreatePlaceholder();
             var expected =
                 Apply(
-                    Variable("a", Function(ph0, ph1)),
+                    Variable("a", Lambda(ph0, ph1)),
                     Variable("b", ph0),
                     ph1);
 
@@ -90,7 +90,7 @@ namespace Favalet.Inferring
             var ph1 = provider.CreatePlaceholder();
             var expected =
                 Apply(
-                    Variable("a", Function(ph0, ph1)),
+                    Variable("a", Lambda(ph0, ph1)),
                     Variable("a", ph0),
                     ph1);
 
@@ -124,13 +124,13 @@ namespace Favalet.Inferring
                 Apply(
                     Variable(
                         "a",
-                        Function(
-                            Function(ph0, ph0),
-                            Function(ph0, ph0))),
+                        Lambda(
+                            Lambda(ph0, ph0),
+                            Lambda(ph0, ph0))),
                     Variable(
                         "a",
-                        Function(ph0, ph0)),
-                    Function(
+                        Lambda(ph0, ph0)),
+                    Lambda(
                         ph0,
                         ph0));
 
@@ -146,7 +146,7 @@ namespace Favalet.Inferring
             var expression =
                 Apply(
                     Variable("a",
-                        Function(
+                        Lambda(
                             Variable("bool"),
                             Unspecified())),
                     Variable("b"));
@@ -159,7 +159,7 @@ namespace Favalet.Inferring
             var expected =
                 Apply(
                     Variable("a",
-                        Function(Variable("bool"), ph0)),
+                        Lambda(Variable("bool"), ph0)),
                     Variable("b", Variable("bool")),
                     ph0);
 
@@ -175,7 +175,7 @@ namespace Favalet.Inferring
             var expression =
                 Apply(
                     Variable("a",
-                        Function(
+                        Lambda(
                             Unspecified(),
                             Variable("bool"))),
                     Variable("b"));
@@ -188,7 +188,7 @@ namespace Favalet.Inferring
             var expected =
                 Apply(
                     Variable("a",
-                        Function(ph0, Variable("bool"))),
+                        Lambda(ph0, Variable("bool"))),
                     Variable("b", ph0),
                     Variable("bool"));
 
@@ -204,7 +204,7 @@ namespace Favalet.Inferring
             var expression =
                 Apply(
                     Variable("a",
-                        Function(
+                        Lambda(
                             Variable("int"),
                             Variable("bool"))),
                     Variable("b"));
@@ -215,7 +215,7 @@ namespace Favalet.Inferring
             var expected =
                 Apply(
                     Variable("a",
-                        Function(
+                        Lambda(
                             Variable("int"),
                             Variable("bool"))),
                     Variable("b", Variable("int")),
@@ -241,7 +241,7 @@ namespace Favalet.Inferring
             var expected =
                 Apply(
                     Variable("a",
-                        Function(
+                        Lambda(
                             Variable("bool"),
                             Unspecified())),
                     Variable("b", Variable("bool")),
@@ -270,7 +270,7 @@ namespace Favalet.Inferring
             var expected =
                 Apply(
                     Variable("a",
-                        Function(
+                        Lambda(
                             ph0,
                             Variable("bool"))),
                     Variable("b", ph0),
@@ -297,7 +297,7 @@ namespace Favalet.Inferring
             var expected =
                 Apply(
                     Variable("a",
-                        Function(
+                        Lambda(
                             Variable("bool"),
                             Variable("int"))),
                     Variable("b", Variable("bool")),
@@ -315,7 +315,7 @@ namespace Favalet.Inferring
             var expression =
                 Apply(
                     Variable("a",
-                        Function(
+                        Lambda(
                             Unspecified(),
                             Variable("int"))),
                     Variable("b", Variable("bool")));
@@ -326,7 +326,7 @@ namespace Favalet.Inferring
             var expected =
                 Apply(
                     Variable("a",
-                        Function(
+                        Lambda(
                             Variable("bool"),
                             Unspecified())),
                     Variable("b", Variable("bool")),
@@ -344,7 +344,7 @@ namespace Favalet.Inferring
             var expression =
                 Apply(
                     Variable("a",
-                        Function(
+                        Lambda(
                             Unspecified(),
                             Variable("int"))),
                     Variable("b", Variable("bool")));
@@ -355,7 +355,7 @@ namespace Favalet.Inferring
             var expected =
                 Apply(
                     Variable("a",
-                        Function(
+                        Lambda(
                             Variable("bool"),
                             Unspecified())),
                     Variable("b", Variable("bool")),
@@ -373,7 +373,7 @@ namespace Favalet.Inferring
             var expression =
                 Apply(
                     Variable("a",
-                        Function(
+                        Lambda(
                             Variable("bool"),
                             Unspecified())),
                     Variable("b"),
@@ -385,7 +385,7 @@ namespace Favalet.Inferring
             var expected =
                 Apply(
                     Variable("a",
-                        Function(
+                        Lambda(
                             Variable("bool"),
                             Variable("int"))),
                     Variable("b", Variable("bool")),
@@ -403,7 +403,7 @@ namespace Favalet.Inferring
             var expression =
                 Apply(
                     Variable("a",
-                        Function(
+                        Lambda(
                             Variable("bool"),
                             Variable("int"))),
                     Variable("b", Variable("bool")),
@@ -415,7 +415,7 @@ namespace Favalet.Inferring
             var expected =
                 Apply(
                     Variable("a",
-                        Function(
+                        Lambda(
                             Variable("bool"),
                             Variable("int"))),
                     Variable("b", Variable("bool")),
@@ -448,9 +448,9 @@ namespace Favalet.Inferring
                 Apply(
                     Apply(
                         Variable("a",
-                            Function(
+                            Lambda(
                                 ph0,
-                                Function(ph1, ph2))),
+                                Lambda(ph1, ph2))),
                         Variable("b", ph0)),
                     Variable("c", ph1),
                     ph2);
@@ -481,9 +481,9 @@ namespace Favalet.Inferring
                 Apply(
                     Apply(
                         Variable("a",
-                            Function(
+                            Lambda(
                                 ph0,
-                                Function(Variable("bool"), ph1))),
+                                Lambda(Variable("bool"), ph1))),
                         Variable("b", ph0)),
                     Variable("c", Variable("bool")),
                     ph1);
@@ -514,9 +514,9 @@ namespace Favalet.Inferring
                 Apply(
                     Apply(
                         Variable("a",
-                            Function(
+                            Lambda(
                                 Variable("bool"),
-                                Function(ph0, ph1))),
+                                Lambda(ph0, ph1))),
                         Variable("b", Variable("bool"))),
                     Variable("c", ph0),
                     ph1);
@@ -534,7 +534,7 @@ namespace Favalet.Inferring
                 Apply(
                     Apply(
                         Variable("a",
-                            Function(Variable("bool"), Unspecified())),
+                            Lambda(Variable("bool"), Unspecified())),
                         Variable("b")),
                     Variable("c"));
 
@@ -548,9 +548,9 @@ namespace Favalet.Inferring
                 Apply(
                     Apply(
                         Variable("a",
-                            Function(
+                            Lambda(
                                 Variable("bool"),
-                                Function(ph0, ph1))),
+                                Lambda(ph0, ph1))),
                         Variable("b", Variable("bool"))),
                     Variable("c", ph0),
                     ph1);

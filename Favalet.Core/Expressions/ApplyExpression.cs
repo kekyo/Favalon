@@ -125,7 +125,7 @@ namespace Favalet.Expressions
             var function = context.Infer(this.Function);
             var higherOrder = context.Infer(this.HigherOrder);
 
-            var functionHigherOrder = FunctionExpression.Create(
+            var functionHigherOrder = LambdaExpression.Create(
                 argument.HigherOrder, higherOrder, this.Range);  // TODO: range
 
             context.Unify(function.HigherOrder, functionHigherOrder, false);

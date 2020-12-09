@@ -129,8 +129,8 @@ namespace Favalet.Contexts.Unifiers
             switch (expression1, expression2, direction)
             {
                 // Function unification.
-                case (IFunctionExpression({ } fp, { } fr),
-                      IFunctionExpression({ } tp, { } tr),
+                case (ILambdaExpression({ } fp, { } fr),
+                      ILambdaExpression({ } tp, { } tr),
                       _):
                     using (context.BeginScope())
                     {
