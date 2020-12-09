@@ -62,6 +62,9 @@ namespace Favalet.Internal
         public static bool IsGenericType(this Type type) =>
             type.GetTypeInfo().IsGenericType;
 
+        public static bool IsGenericTypeDefinition(this Type type) =>
+            type.GetTypeInfo().IsGenericTypeDefinition;
+
         public static bool IsGenericParameter(this Type type) =>
             type.IsGenericParameter;
 
@@ -109,6 +112,9 @@ namespace Favalet.Internal
 
         public static bool IsGenericType(this Type type) =>
             type.IsGenericType;
+        
+        public static bool IsGenericTypeDefinition(this Type type) =>
+            type.IsGenericTypeDefinition;
 
         public static bool IsGenericParameter(this Type type) =>
             type.IsGenericParameter;
