@@ -90,8 +90,24 @@ namespace Favalet.Expressions
                 this.RuntimeProperty.GetReadableName());
 
         [DebuggerStepThrough]
-        public static PropertyTerm From(PropertyInfo runtimeProperty, TextRange range) =>
-            new PropertyTerm(runtimeProperty, TypeTerm.From(runtimeProperty.PropertyType, range), range);  // TODO: range
+        public static ITerm From(PropertyInfo runtimeProperty, TextRange range)
+        {
+            var isStatic =
+                (runtimeProperty.GetGetMethod() ?? runtimeProperty.GetSetMethod())?.IsStatic ?? true;
+
+            if (isStatic)
+            {
+                return new PropertyTerm(
+                    runtimeProperty,
+                    TypeTerm.From(runtimeProperty.PropertyType, range),
+                    range);  // TODO: range
+            }
+            else
+            {
+                // TODO: setter
+                return MethodTerm.From(runtimeProperty.GetGetMethod()!, range);
+            }
+        }
     }
 
     public static class PropertyTermExtension

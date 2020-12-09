@@ -53,10 +53,10 @@ namespace Favalet
         public static ITerm Type(Type runtimeType) =>
             TypeTerm.From(runtimeType, TextRange(runtimeType));
 
-        public static MethodTerm Method(MethodBase runtimeMethod) =>
+        public static ITerm Method(MethodBase runtimeMethod) =>
             MethodTerm.From(runtimeMethod, TextRange(runtimeMethod));
 
-        public static PropertyTerm Property(PropertyInfo runtimeProperty) =>
+        public static ITerm Property(PropertyInfo runtimeProperty) =>
             PropertyTerm.From(runtimeProperty, TextRange(runtimeProperty));
 
         public static ConstantTerm Constant(object value) =>

@@ -17,14 +17,14 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-using System;
-using System.Diagnostics;
-using System.Linq;
-using System.Reflection;
 using Favalet.Expressions;
 using Favalet.Expressions.Specialized;
 using Favalet.Internal;
 using Favalet.Ranges;
+using System;
+using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
 
 namespace Favalet
 {
@@ -82,14 +82,16 @@ namespace Favalet
             }
         }
         
-        private static PropertyTerm MutableBindMember(IEnvironments environments, PropertyInfo property, TextRange range)
+        private static ITerm MutableBindMember(
+            IEnvironments environments, PropertyInfo property, TextRange range)
         {
             var propertyTerm = PropertyTerm.From(property, range);
             
-            var name =
-                ((property.GetGetMethod() ?? property.GetSetMethod())?.IsStatic ?? true) ?
-                    property.GetFullName() :
-                    property.Name;
+            var isStatic =
+                (property.GetGetMethod() ?? property.GetSetMethod())?.IsStatic ?? true;
+            var name = isStatic ?
+                property.GetFullName() :
+                property.Name;
             
             environments.MutableBind(
                 BoundVariableTerm.Create(
@@ -103,10 +105,12 @@ namespace Favalet
             return propertyTerm;
         }
         
-        public static PropertyTerm MutableBindMember(this IEnvironments environments, PropertyInfo property) =>
+        public static ITerm MutableBindMember(
+            this IEnvironments environments, PropertyInfo property) =>
             MutableBindMember(environments, property, CLRGenerator.TextRange(property));
 
-        private static MethodTerm MutableBindMember(IEnvironments environments, MethodBase method, TextRange range)
+        private static ITerm MutableBindMember(
+            IEnvironments environments, MethodBase method, TextRange range)
         {
             var methodTerm = MethodTerm.From(method, range);
 
@@ -134,10 +138,12 @@ namespace Favalet
             return methodTerm;
         }
         
-        public static MethodTerm MutableBindMember(this IEnvironments environments, MethodBase method) =>
+        public static ITerm MutableBindMember(
+            this IEnvironments environments, MethodBase method) =>
             MutableBindMember(environments, method, CLRGenerator.TextRange(method));
 
-        private static ITerm MutableBindMember(IEnvironments environments, Type type, TextRange range)
+        private static ITerm MutableBindMember(
+            IEnvironments environments, Type type, TextRange range)
         {
             var typeTerm = TypeTerm.From(type, range);
             environments.MutableBind(
@@ -154,10 +160,12 @@ namespace Favalet
             return typeTerm;
         }
 
-        public static ITerm MutableBindMember(this IEnvironments environments, Type type) =>
+        public static ITerm MutableBindMember(
+            this IEnvironments environments, Type type) =>
             MutableBindMember(environments, type, CLRGenerator.TextRange(type));
 
-        private static ITerm MutableBindMembers(IEnvironments environments, Type type, TextRange range)
+        private static ITerm MutableBindMembers(
+            IEnvironments environments, Type type, TextRange range)
         {
             var typeTerm = MutableBindMember(environments, type, range);
                 
@@ -171,9 +179,8 @@ namespace Favalet
 
             var properties = type.GetDeclaredProperties().
                 Where(property =>
-                    property.CanRead &&
+                    property.CanRead &&   // TODO: readonly
                     property.GetGetMethod() is { } method &&
-                    method.IsStatic &&
                     property.GetIndexParameters().Length == 0).
                 ToDictionary(property => property.GetGetMethod()!);
 
@@ -184,9 +191,9 @@ namespace Favalet
                 
             foreach (var method in type.GetDeclaredMethods().
                 Where(method =>
-                    method.IsPublic && method.IsStatic && !method.IsGenericMethod &&
+                    method.IsPublic && !method.IsGenericMethod &&
                     (method.ReturnType != typeof(void)) &&    // TODO: void
-                    (method.GetParameters().Length == 1) &&   // TODO: 1parameter
+                    (method.GetParameters().Length == (method.IsStatic ? 1 : 0)) &&   // TODO: 1parameter
                     !properties.ContainsKey(method)))
             {
                 MutableBindMember(environments, method, range);
@@ -195,10 +202,12 @@ namespace Favalet
             return typeTerm;
         }
 
-        public static ITerm MutableBindMembers(this IEnvironments environments, Type type) =>
+        public static ITerm MutableBindMembers(
+            this IEnvironments environments, Type type) =>
             MutableBindMembers(environments, type, CLRGenerator.TextRange(type));
 
-        public static void MutableBindMembers(this IEnvironments environments, Assembly assembly)
+        public static void MutableBindMembers(
+            this IEnvironments environments, Assembly assembly)
         {
             var range = CLRGenerator.TextRange(assembly);
             foreach (var type in assembly.GetTypes().
