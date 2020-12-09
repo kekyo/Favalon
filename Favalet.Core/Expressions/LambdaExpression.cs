@@ -17,34 +17,109 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-using System;
 using Favalet.Contexts;
 using Favalet.Expressions.Specialized;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using Favalet.Ranges;
+using System;
+using System.Collections;
+using System.Diagnostics;
 
 namespace Favalet.Expressions
 {
     public interface ILambdaExpression :
         ICallableExpression
     {
-        IBoundVariableTerm Parameter { get; }
-
+        IExpression Parameter { get; }
         IExpression Body { get; }
     }
 
     public sealed class LambdaExpression :
         Expression, ILambdaExpression, IPairExpression
     {
-        public readonly IBoundVariableTerm Parameter;
+        #region Factory
+        [DebuggerStepThrough]
+        private sealed class LambdaExpressionFactory
+        {
+            private readonly ILambdaExpression fourth;
+
+            private LambdaExpressionFactory() =>
+                this.fourth = this.OnCreate(
+                    FourthTerm.Instance,
+                    FourthTerm.Instance,
+                    DeadEndTerm.Instance,
+                    TextRange.Unknown);
+
+            private ILambdaExpression OnCreate(
+                IExpression parameter, IExpression body, IExpression higherOrder, TextRange range) =>
+                new LambdaExpression(parameter, body, higherOrder, range);
+            
+            public IExpression Create(
+                IExpression parameter, IExpression body, Func<IExpression> higherOrder, TextRange range)
+            {
+                switch (parameter, body)
+                {
+                    case (DeadEndTerm _, _):
+                    case (_, DeadEndTerm _):
+                        return DeadEndTerm.Instance;
+                    case (FourthTerm _, FourthTerm _):
+                        return this.fourth;
+                    case (FourthTerm _, _):
+                    case (_, FourthTerm _):
+                        return this.OnCreate(
+                            parameter,
+                            body,
+                            DeadEndTerm.Instance,
+                            range);
+                    default:
+                        return this.OnCreate(
+                            parameter,
+                            body,
+                            higherOrder(),
+                            range);
+                };
+            }
+
+            public ILambdaExpression Create(
+                IExpression parameter, IExpression body, ILambdaExpression higherOrder, TextRange range) =>
+                (ILambdaExpression)this.Create(
+                    parameter,
+                    body,
+                    () => higherOrder,
+                    range);
+
+            private IExpression CreateRecursive(
+                IExpression parameter, IExpression body, TextRange range) =>
+                this.Create(
+                    parameter,
+                    body,
+                    () => (parameter, body) switch
+                    {
+                        (UnspecifiedTerm _, UnspecifiedTerm _) =>
+                            DeadEndTerm.Instance,
+                        (UnspecifiedTerm _, _) =>
+                            this.CreateRecursive(UnspecifiedTerm.Instance, body.HigherOrder, TextRange.Unknown),
+                        (_, UnspecifiedTerm _) =>
+                            this.CreateRecursive(parameter.HigherOrder, UnspecifiedTerm.Instance, TextRange.Unknown),
+                        _ =>
+                            this.CreateRecursive(parameter.HigherOrder, body.HigherOrder, TextRange.Unknown)
+                    },
+                    range);
+
+            public ILambdaExpression Create(
+                IExpression parameter, IExpression body, TextRange range) =>
+                (ILambdaExpression)this.CreateRecursive(parameter, body, range);
+
+            public static readonly LambdaExpressionFactory Instance =
+                new LambdaExpressionFactory();
+        }
+        #endregion
+        
+        public readonly IExpression Parameter;
         public readonly IExpression Body;
 
         [DebuggerStepThrough]
         private LambdaExpression(
-            IBoundVariableTerm parameter, IExpression body, IExpression higherOrder, TextRange range) :
+            IExpression parameter, IExpression body, IExpression higherOrder, TextRange range) :
             base(range)
         {
             this.Parameter = parameter;
@@ -55,7 +130,7 @@ namespace Favalet.Expressions
         public override IExpression HigherOrder { get; }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        IBoundVariableTerm ILambdaExpression.Parameter
+        IExpression ILambdaExpression.Parameter
         {
             [DebuggerStepThrough]
             get => this.Parameter;
@@ -90,15 +165,14 @@ namespace Favalet.Expressions
         }
 
         [DebuggerStepThrough]
-        IExpression IPairExpression.Create(IExpression left, IExpression right, IExpression higherOrder, TextRange range)
+        IExpression IPairExpression.Create(
+            IExpression left, IExpression right, IExpression higherOrder, TextRange range)
         {
             Debug.Assert(higherOrder is UnspecifiedTerm);
 
-            return left is IBoundVariableTerm bound ?
-                Create(bound, right, range) :
-                throw new InvalidOperationException();
+            return LambdaExpressionFactory.Instance.Create(left, right, range);
         }
-        
+
         public override int GetHashCode() =>
             this.Parameter.GetHashCode() ^ this.Body.GetHashCode();
 
@@ -110,44 +184,70 @@ namespace Favalet.Expressions
             other is ILambdaExpression rhs && this.Equals(rhs);
 
         protected override IExpression MakeRewritable(IMakeRewritableContext context) =>
-            new LambdaExpression(
-                (IBoundVariableTerm)context.MakeRewritable(this.Parameter),
+            LambdaExpressionFactory.Instance.Create(
+                context.MakeRewritable(this.Parameter),
                 context.MakeRewritable(this.Body),
-                context.MakeRewritableHigherOrder(this.HigherOrder), this.Range);
+                () => context.MakeRewritableHigherOrder(this.HigherOrder),
+                this.Range);
 
         protected override IExpression Infer(IInferContext context)
         {
-            var parameter = (IBoundVariableTerm)context.Infer(this.Parameter);
-            var higherOrder = context.Infer(this.HigherOrder);
+            var parameter = context.Infer(this.Parameter);
 
-            var newScope = context.Bind(parameter, parameter);
+            var scoped = parameter is IBoundVariableTerm bound ?
+                context.Bind(bound, bound) :
+                context;
 
-            var body = newScope.Infer(this.Body);
+            var body = scoped.Infer(this.Body);
 
-            var lambdaHigherOrder = FunctionExpression.Create(
-                parameter.HigherOrder, body.HigherOrder, this.Range);
-            
-            context.Unify(lambdaHigherOrder, higherOrder, false);
-
-            if (object.ReferenceEquals(this.Parameter, parameter) &&
-                object.ReferenceEquals(this.Body, body) &&
-                object.ReferenceEquals(this.HigherOrder, higherOrder))
+            // Recursive inferring exit rule.
+            if (parameter is FourthTerm || body is FourthTerm ||
+                parameter.HigherOrder is DeadEndTerm || body.HigherOrder is DeadEndTerm)
             {
-                return this;
+                if (object.ReferenceEquals(this.Parameter, parameter) &&
+                    object.ReferenceEquals(this.Body, body) &&
+                    this.HigherOrder is DeadEndTerm)
+                {
+                    return this;
+                }
+                else
+                {
+                    return LambdaExpressionFactory.Instance.Create(
+                        parameter,
+                        body,
+                        () => DeadEndTerm.Instance,
+                        this.Range);
+                }
             }
             else
             {
-                return new LambdaExpression(
-                    parameter,
-                    body,
-                    higherOrder,
-                    this.Range);
+                var higherOrder = context.Infer(this.HigherOrder);
+
+                var functionHigherOrder = LambdaExpressionFactory.Instance.Create(
+                    parameter.HigherOrder, body.HigherOrder, this.Range);
+
+                context.Unify(functionHigherOrder, higherOrder, false);
+
+                if (object.ReferenceEquals(this.Parameter, parameter) &&
+                    object.ReferenceEquals(this.Body, body) &&
+                    object.ReferenceEquals(this.HigherOrder, higherOrder))
+                {
+                    return this;
+                }
+                else
+                {
+                    return LambdaExpressionFactory.Instance.Create(
+                        parameter,
+                        body,
+                        () => higherOrder,
+                        this.Range);
+                }
             }
         }
 
         protected override IExpression Fixup(IFixupContext context)
         {
-            var parameter = (IBoundVariableTerm) context.Fixup(this.Parameter);
+            var parameter = context.Fixup(this.Parameter);
             var body = context.Fixup(this.Body);
             var higherOrder = context.FixupHigherOrder(this.HigherOrder);
 
@@ -157,21 +257,23 @@ namespace Favalet.Expressions
             {
                 return this;
             }
-            else if (higherOrder is IFunctionExpression functionHigherOrder)
+            else if (higherOrder is ILambdaExpression functionExpression)
             {
-                return Create(parameter, body, functionHigherOrder, this.Range);
+                return LambdaExpressionFactory.Instance.Create(
+                    parameter, body, functionExpression, this.Range);
             }
             else
             {
                 // TODO: Apply fixed up higher order.
-                //return new LambdaExpression(parameter, body, higherOrder);
-                return Create(parameter, body, this.Range);
+                //return InternalCreate(parameter, body, () => higherOrder);
+                return LambdaExpressionFactory.Instance.Create(
+                    parameter, body, this.Range);
             }
         }
 
         protected override IExpression Reduce(IReduceContext context)
         {
-            var parameter = (IBoundVariableTerm)context.Reduce(this.Parameter);
+            var parameter = context.Reduce(this.Parameter);
             var body = context.Reduce(this.Body);
 
             if (object.ReferenceEquals(this.Parameter, parameter) &&
@@ -181,18 +283,19 @@ namespace Favalet.Expressions
             }
             else
             {
-                return new LambdaExpression(
+                return LambdaExpressionFactory.Instance.Create(
                     parameter,
                     body,
-                    this.HigherOrder,
+                    () => this.HigherOrder,
                     this.Range);
             }
         }
 
         public IExpression Call(IReduceContext context, IExpression argument) =>
-            context.
-                Bind(this.Parameter, argument).
-                Reduce(this.Body);
+            (this.Parameter is IBoundVariableTerm bound ?
+                context.Bind(bound, argument) :
+                context).
+            Reduce(this.Body);
 
         protected override IEnumerable GetXmlValues(IXmlRenderContext context) =>
             new[] { context.GetXml(this.Parameter), context.GetXml(this.Body) };
@@ -201,31 +304,28 @@ namespace Favalet.Expressions
             context.FinalizePrettyString(
                 this,
                 $"{context.GetPrettyString(this.Parameter)} -> {context.GetPrettyString(this.Body)}");
+        
+        public static LambdaExpression Create(
+            IExpression parameter, IExpression body, ILambdaExpression higherOrder, TextRange range) =>
+            (LambdaExpression)LambdaExpressionFactory.Instance.Create(
+                parameter, body, higherOrder, range);
 
-        [DebuggerStepThrough]
         public static LambdaExpression Create(
-            IBoundVariableTerm parameter, IExpression body, IFunctionExpression higherOrder, TextRange range) =>
-            new LambdaExpression(parameter, body, higherOrder, range);
-        [DebuggerStepThrough]
-        public static LambdaExpression Create(
-            IBoundVariableTerm parameter, IExpression body, TextRange range) =>
-            new LambdaExpression(
-                parameter,
-                body,
-                FunctionExpression.Create(parameter.HigherOrder, body.HigherOrder, TextRange.Unknown),  // TODO: range
-                range);
+            IExpression parameter, IExpression body, TextRange range) =>
+            (LambdaExpression)LambdaExpressionFactory.Instance.Create(
+                parameter, body, range);
     }
 
     [DebuggerStepThrough]
     public static class LambdaExpressionExtension
     {
         public static void Deconstruct(
-            this ILambdaExpression lambda,
-            out IBoundVariableTerm parameter,
+            this ILambdaExpression function,
+            out IExpression parameter,
             out IExpression body)
         {
-            parameter = lambda.Parameter;
-            body = lambda.Body;
+            parameter = function.Parameter;
+            body = function.Body;
         }
     }
 }

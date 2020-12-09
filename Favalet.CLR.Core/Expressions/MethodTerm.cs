@@ -132,7 +132,7 @@ namespace Favalet.Expressions
                 _ =>  // ConstructorInfo
                     (method.GetParameters()[0].ParameterType, method.DeclaringType!)
             };
-            return FunctionExpression.Create(
+            return LambdaExpression.Create(
                 TypeTerm.From(parameterType0, CLRGenerator.TextRange(parameterType0)),
                 TypeTerm.From(returnType, CLRGenerator.TextRange(returnType)),
                 range);

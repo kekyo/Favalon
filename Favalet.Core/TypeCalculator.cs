@@ -52,8 +52,8 @@ namespace Favalet
                 IExpression left, IExpression right)
             {
                 // Function variance:
-                if (left is IFunctionExpression(IExpression lp, IExpression lr) &&
-                    right is IFunctionExpression(IExpression rp, IExpression rr))
+                if (left is ILambdaExpression(IExpression lp, IExpression lr) &&
+                    right is ILambdaExpression(IExpression rp, IExpression rr))
                 {
                     var parameter = self.ChoiceForAnd(calculator, self, lp, rp);
                     var result = self.ChoiceForAnd(calculator, self, lr, rr);
@@ -85,8 +85,8 @@ namespace Favalet
                 IExpression left, IExpression right)
             {
                 // Function variance:
-                if (left is IFunctionExpression(IExpression lp, IExpression lr) &&
-                    right is IFunctionExpression(IExpression rp, IExpression rr))
+                if (left is ILambdaExpression(IExpression lp, IExpression lr) &&
+                    right is ILambdaExpression(IExpression rp, IExpression rr))
                 {
                     var parameter = self.ChoiceForOr(calculator, self, lp, rp);
                     var result = self.ChoiceForOr(calculator, self, lr, rr);

@@ -191,7 +191,7 @@ namespace Favalet.Inferring
             // a:(_ -> _))
             var expression =
                 Variable("a",
-                    Function(
+                    Lambda(
                         Unspecified(),
                         Unspecified()));
 
@@ -202,7 +202,7 @@ namespace Favalet.Inferring
             var ph0 = provider.CreatePlaceholder();
             var expected =
                 Variable("a",
-                    Function(
+                    Lambda(
                         ph0,
                         ph0));
 
@@ -227,7 +227,7 @@ namespace Favalet.Inferring
             // a:(b -> b))
             var expression =
                 Variable("a",
-                    Function(
+                    Lambda(
                         Variable("b"),
                         Variable("b")));
 
@@ -238,7 +238,7 @@ namespace Favalet.Inferring
             var ph0 = provider.CreatePlaceholder();
             var expected =
                 Variable("a",
-                    Function(
+                    Lambda(
                         ph0,
                         ph0));
 

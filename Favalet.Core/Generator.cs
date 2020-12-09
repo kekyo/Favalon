@@ -94,16 +94,16 @@ namespace Favalet
                 expressions, higherOrder, OrExpression.Create, TextRange.Unknown);
 
         public static LambdaExpression Lambda(
-            IBoundVariableTerm parameter, IExpression body) =>
+            IExpression parameter, IExpression body) =>
             LambdaExpression.Create(parameter, body, TextRange.Unknown);
         public static LambdaExpression Lambda(
             string parameter, IExpression body) =>
             LambdaExpression.Create(BoundVariableTerm.Create(parameter, TextRange.Unknown), body, TextRange.Unknown);
         public static LambdaExpression Lambda(
-            IBoundVariableTerm parameter, IExpression body, IFunctionExpression higherOrder) =>
+            IExpression parameter, IExpression body, ILambdaExpression higherOrder) =>
             LambdaExpression.Create(parameter, body, higherOrder, TextRange.Unknown);
         public static LambdaExpression Lambda(
-            string parameter, IExpression body, IFunctionExpression higherOrder) =>
+            string parameter, IExpression body, ILambdaExpression higherOrder) =>
             LambdaExpression.Create(
                 BoundVariableTerm.Create(parameter, TextRange.Unknown),
                 body,
@@ -116,12 +116,5 @@ namespace Favalet
         public static ApplyExpression Apply(
             IExpression function, IExpression argument, IExpression higherOrder) =>
             ApplyExpression.Create(function, argument, higherOrder, TextRange.Unknown);
-
-        public static FunctionExpression Function(
-            IExpression parameter, IExpression result) =>
-            FunctionExpression.Create(parameter, result, TextRange.Unknown);
-        public static FunctionExpression Function(
-            IExpression parameter, IExpression result, IFunctionExpression higherOrder) =>
-            FunctionExpression.Create(parameter, result, higherOrder, TextRange.Unknown);
     }
 }

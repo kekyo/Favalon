@@ -110,7 +110,7 @@ namespace Favalet.Inferring
                 Lambda(
                     BoundVariable("a"),
                     Variable("a"),
-                    Function(
+                    Lambda(
                         Type<object>(),
                         Unspecified()));
 
@@ -121,7 +121,7 @@ namespace Favalet.Inferring
                 Lambda(
                     BoundVariable("a", Type<object>()),
                     Variable("a", Type<object>()),
-                    Function(
+                    Lambda(
                         Type<object>(),
                         Type<object>()));
 
@@ -146,7 +146,7 @@ namespace Favalet.Inferring
                 Lambda(
                     BoundVariable("a", Type<object>()),
                     Variable("a", Type<object>()),
-                    Function(
+                    Lambda(
                         Type<object>(),
                         Type<object>()));
 
@@ -209,7 +209,7 @@ namespace Favalet.Inferring
                 Lambda(
                     BoundVariable("a"),
                     Variable("a"),
-                    Function(
+                    Lambda(
                         Variable("bool"),
                         Unspecified()));
 
@@ -220,7 +220,7 @@ namespace Favalet.Inferring
                 Lambda(
                     BoundVariable("a", Type<bool>()),
                     Variable("a", Type<bool>()),
-                    Function(
+                    Lambda(
                         Type<bool>(),
                         Type<bool>()));
 
@@ -237,7 +237,7 @@ namespace Favalet.Inferring
                 Lambda(
                     BoundVariable("a"),
                     Variable("a"),
-                    Function(
+                    Lambda(
                         Unspecified(),
                         Variable("bool")));
 
@@ -248,7 +248,7 @@ namespace Favalet.Inferring
                 Lambda(
                     BoundVariable("a", Type<bool>()),
                     Variable("a", Type<bool>()),
-                    Function(
+                    Lambda(
                         Type<bool>(),
                         Type<bool>()));
 

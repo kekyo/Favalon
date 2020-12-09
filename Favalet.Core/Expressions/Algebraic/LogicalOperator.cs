@@ -36,7 +36,7 @@ namespace Favalet.Expressions.Algebraic
         Expression, ILogicalOperator
     {
         private static readonly IExpression higherOrder =
-            FunctionExpression.Create(UnspecifiedTerm.Instance, UnspecifiedTerm.Instance, TextRange.Unknown);
+            LambdaExpression.Create(UnspecifiedTerm.Instance, UnspecifiedTerm.Instance, TextRange.Unknown);
 
         private LogicalOperator(TextRange range) :
             base(range)
