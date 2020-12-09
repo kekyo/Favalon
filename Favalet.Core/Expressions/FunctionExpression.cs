@@ -27,11 +27,9 @@ using System.Diagnostics;
 namespace Favalet.Expressions
 {
     public interface IFunctionExpression :
-        IExpression
+        ILambdaExpression
     {
-        IExpression Parameter { get; }
-
-        IExpression Body { get; }
+        new IExpression Parameter { get; }
     }
 
     public sealed class FunctionExpression :
@@ -138,7 +136,14 @@ namespace Favalet.Expressions
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        IExpression IFunctionExpression.Body
+        IBoundVariableTerm ILambdaExpression.Parameter
+        {
+            [DebuggerStepThrough]
+            get => (IBoundVariableTerm)this.Parameter;
+        }
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        IExpression ILambdaExpression.Body
         {
             [DebuggerStepThrough]
             get => this.Body;
@@ -194,7 +199,12 @@ namespace Favalet.Expressions
         protected override IExpression Infer(IInferContext context)
         {
             var parameter = context.Infer(this.Parameter);
-            var body = context.Infer(this.Body);
+
+            var scoped = parameter is IBoundVariableTerm bound ?
+                context.Bind(bound, bound) :
+                context;
+
+            var body = scoped.Infer(this.Body);
 
             // Recursive inferring exit rule.
             if (parameter is FourthTerm || body is FourthTerm ||
@@ -222,7 +232,7 @@ namespace Favalet.Expressions
                 var functionHigherOrder = FunctionExpressionFactory.Instance.Create(
                     parameter.HigherOrder, body.HigherOrder, this.Range);
 
-                context.Unify(functionHigherOrder, higherOrder, true);
+                context.Unify(functionHigherOrder, higherOrder, false);
 
                 if (object.ReferenceEquals(this.Parameter, parameter) &&
                     object.ReferenceEquals(this.Body, body) &&
@@ -287,6 +297,12 @@ namespace Favalet.Expressions
             }
         }
 
+        public IExpression Call(IReduceContext context, IExpression argument) =>
+            (this.Parameter is IBoundVariableTerm bound ?
+                context.Bind(bound, argument) :
+                context).
+            Reduce(this.Body);
+
         protected override IEnumerable GetXmlValues(IXmlRenderContext context) =>
             new[] { context.GetXml(this.Parameter), context.GetXml(this.Body) };
 
@@ -318,51 +334,4 @@ namespace Favalet.Expressions
             body = function.Body;
         }
     }
-
-    
-    
-    
-    /*
-    [DebuggerStepThrough]
-    public sealed class FunctionExpression :
-        FunctionExpressionBase
-    {
-        #region Factory
-        [DebuggerStepThrough]
-        private sealed class FunctionExpressionFactory :
-            FunctionExpressionFactoryBase
-        {
-            private FunctionExpressionFactory()
-            {
-            }
-
-            protected override IFunctionExpression OnCreate(
-                IExpression parameter, IExpression result, IExpression higherOrder, TextRange range) =>
-                new FunctionExpression(parameter, result, higherOrder, range);
-
-            public static readonly FunctionExpressionFactory Instance =
-                new FunctionExpressionFactory();
-        }
-        #endregion
-
-        private protected override FunctionExpressionFactoryBase Factory =>
-            FunctionExpressionFactory.Instance;
-        
-        private FunctionExpression(
-            IExpression parameter, IExpression result, IExpression higherOrder, TextRange range) :
-            base(parameter, result, higherOrder, range)
-        {
-        }
-        
-        public static FunctionExpression Create(
-            IExpression parameter, IExpression result, IFunctionExpression higherOrder, TextRange range) =>
-            (FunctionExpression)FunctionExpressionFactory.Instance.Create(
-                parameter, result, higherOrder, range);
-
-        public static FunctionExpression Create(
-            IExpression parameter, IExpression result, TextRange range) =>
-            (FunctionExpression)FunctionExpressionFactory.Instance.Create(
-                parameter, result, range);
-    }
-*/
 }
