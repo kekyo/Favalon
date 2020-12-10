@@ -1,4 +1,4 @@
-/////////////////////////////////////////////////////////////////////////////////////////////////
+﻿/////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Favalon - An Interactive Shell Based on a Typed Lambda Calculus.
 // Copyright (c) 2018-2020 Kouji Matsui (@kozy_kekyo, @kekyo2)
@@ -18,20 +18,25 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using System;
-using System.Diagnostics;
-using System.Threading;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
-namespace Favalet.Reactive.Disposables
+namespace Favalon
 {
-    [DebuggerStepThrough]
-    public sealed class CancellationDisposable : IDisposable
+    public static class ExceptionExtension
     {
-        private readonly CancellationTokenSource source;
+        public static IEnumerable<string> GetReadableString(this Exception ex)
+        {
+            IEnumerable<string> Format(Exception ex) =>
+                ex switch
+                {
+                    TargetInvocationException te when te.InnerException is { } ie => Format(ie),
+                    AggregateException ae => ae.InnerExceptions.SelectMany(Format),
+                    _ => new[] {$"{ex.GetType().Name}: {ex.Message}"}
+                };
 
-        public CancellationDisposable(CancellationTokenSource source) =>
-            this.source = source;
-
-        public void Dispose() =>
-            this.source.Cancel();
+            return Format(ex);
+        }
     }
 }

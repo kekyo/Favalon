@@ -17,17 +17,13 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+using Favalet.Lexers;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Text;
 using System.Threading;
-using Favalet.Lexers;
-using Favalet.Reactive;
-using Favalet.Reactive.Disposables;
 
-namespace Favalon.Internal
+namespace Favalon.Console
 {
     public enum InputModifiers
     {
@@ -35,39 +31,56 @@ namespace Favalon.Internal
         Word,
         Line
     }
-    
-    public sealed class InteractiveConsoleHost :
-        ObservableBase<Input>
-    {
-        private readonly List<string> history = new List<string>();
 
-        private string prompt;
-        private readonly CancellationTokenSource cts = new CancellationTokenSource();
+    public interface IInteractiveConsole
+    {
+        void ClearScreen();
+        
+        void InputEnter();
+        bool InputChar(char inch);
+        bool InputForward(InputModifiers modifier = InputModifiers.Char);
+        bool InputBackward(InputModifiers modifier = InputModifiers.Char);
+        bool InputBackspace(InputModifiers modifier = InputModifiers.Char);
+        bool InputDelete(InputModifiers modifier = InputModifiers.Char);
+        bool InputOlder();
+        bool InputNewer();
+    }
+
+    public abstract class InteractiveConsole :
+        IInteractiveConsole
+    {
+        private readonly IConsole console;
+
+        private readonly List<string> history = new List<string>();
         private readonly StringBuilder line = new StringBuilder();
         private int currentColumn = 0;
         private int historyIndex = 0;
-        private IObserver<Input>? observer;
-
-        private InteractiveConsoleHost(string prompt) =>
-            this.prompt = prompt;
-
-        public override IDisposable Subscribe(IObserver<Input> subscribe)
+        private string prompt;
+        
+        protected InteractiveConsole(IConsole console, string prompt)
         {
-            Debug.Assert(this.observer == null);
-            this.observer = subscribe;
-            return new CancellationDisposable(this.cts);
+            this.console = console;
+            this.prompt = prompt;
         }
 
-        public void Clear()
+        protected abstract void OnArrivalInput(Input input);
+
+        protected ConsoleKeyInfo ReadKey(CancellationToken token) =>
+            this.console.ReadKey(token);
+
+        protected void WritePrompt() =>
+            this.console.Write(this.prompt);
+
+        public void ClearScreen()
         {
-            Console.Clear();
+            this.console.ClearScreen();
             this.line.Clear();
             this.currentColumn = 0;
         }
 
         public void InputEnter()
         {
-            Console.WriteLine();
+            this.console.WriteLine();
 
             var line = this.line.ToString();
             this.line.Clear();
@@ -78,15 +91,13 @@ namespace Favalon.Internal
 
                 foreach (var inch in line)
                 {
-                    this.observer?.OnNext(inch);
+                    this.OnArrivalInput(inch);
                 }
             }
             
             this.currentColumn = 0;
-            this.observer?.OnNext(InputTypes.NextLine);
-            this.observer?.OnNext(InputTypes.DelimiterHint);
-            
-            Console.Write(this.prompt);
+            this.OnArrivalInput(InputTypes.NextLine);
+            this.OnArrivalInput(InputTypes.DelimiterHint);
         }
 
         public bool InputChar(char inch)
@@ -101,13 +112,13 @@ namespace Favalon.Internal
                 this.line.Insert(this.currentColumn, inch);
                 if (this.currentColumn == this.line.Length)
                 {
-                    Console.Write(inch);
+                    this.console.Write(inch);
                 }
                 else
                 {
-                    var left = Console.CursorLeft + 1;
-                    Console.Write(this.line.ToString().Substring(this.currentColumn));
-                    Console.SetCursorPosition(left, Console.CursorTop);
+                    var left = this.console.ColumnPosition + 1;
+                    this.console.Write(this.line.ToString().Substring(this.currentColumn));
+                    this.console.SetColumnPosition(left);
                 }
                 this.currentColumn++;
                 return true;
@@ -126,20 +137,20 @@ namespace Favalon.Internal
                 {
                     var differ = this.line.Length - this.currentColumn;
                     this.currentColumn += differ;
-                    var left = Console.CursorLeft + differ;
-                    Console.SetCursorPosition(left, Console.CursorTop);
+                    var left = this.console.ColumnPosition + differ;
+                    this.console.SetColumnPosition(left);
                 }
                 else
                 {
                     this.currentColumn++;
-                    var left = Console.CursorLeft + 1;
-                    Console.SetCursorPosition(left, Console.CursorTop);
+                    var left = this.console.ColumnPosition + 1;
+                    this.console.SetColumnPosition(left);
                 }
                 return true;
             }
             else
             {
-                Console.Beep();
+                this.console.Alarm();
                 return false;
             }
         }
@@ -150,25 +161,25 @@ namespace Favalon.Internal
             {
                 if (modifier == InputModifiers.Line)
                 {
-                    var left = Console.CursorLeft - this.currentColumn;
+                    var left = this.console.ColumnPosition - this.currentColumn;
                     this.currentColumn = 0;
-                    Console.SetCursorPosition(left, Console.CursorTop);
+                    this.console.SetColumnPosition(left);
                 }
                 else
                 {
                     this.currentColumn--;
-                    var left = Console.CursorLeft;
+                    var left = this.console.ColumnPosition;
                     if (left >= 1)
                     {
                         left--;
                     }
-                    Console.SetCursorPosition(left, Console.CursorTop);
+                    this.console.SetColumnPosition(left);
                 }
                 return true;
             }
             else
             {
-                Console.Beep();
+                this.console.Alarm();
                 return false;
             }
         }
@@ -179,19 +190,19 @@ namespace Favalon.Internal
             {
                 line.Remove(this.currentColumn - 1, 1);
                 this.currentColumn--;
-                var left = Console.CursorLeft;
+                var left = this.console.ColumnPosition;
                 if (left >= 1)
                 {
                     left--;
                 }
-                Console.SetCursorPosition(left, Console.CursorTop);
-                Console.Write(line.ToString().Substring(this.currentColumn) + " ");
-                Console.SetCursorPosition(left, Console.CursorTop);
+                this.console.SetColumnPosition(left);
+                this.console.Write(line.ToString().Substring(this.currentColumn) + " ");
+                this.console.SetColumnPosition(left);
                 return true;
             }
             else
             {
-                Console.Beep();
+                this.console.Alarm();
                 return false;
             }
         }
@@ -201,14 +212,14 @@ namespace Favalon.Internal
             if (this.currentColumn < line.Length)
             {
                 line.Remove(this.currentColumn, 1);
-                var left = Console.CursorLeft;
-                Console.Write(line.ToString().Substring(this.currentColumn) + " ");
-                Console.SetCursorPosition(left, Console.CursorTop);
+                var left = this.console.ColumnPosition;
+                this.console.Write(line.ToString().Substring(this.currentColumn) + " ");
+                this.console.SetColumnPosition(left);
                 return true;
             }
             else
             {
-                Console.Beep();
+                this.console.Alarm();
                 return false;
             }
         }
@@ -217,9 +228,9 @@ namespace Favalon.Internal
         {
             if (this.historyIndex < this.history.Count)
             {
-                Console.SetCursorPosition(this.prompt.Length, Console.CursorTop);
-                Console.Write(new string(' ', this.line.Length));
-                Console.SetCursorPosition(this.prompt.Length, Console.CursorTop);
+                this.console.SetColumnPosition(this.prompt.Length);
+                this.console.Write(new string(' ', this.line.Length));
+                this.console.SetColumnPosition(this.prompt.Length);
 
                 this.historyIndex++;
 
@@ -227,14 +238,14 @@ namespace Favalon.Internal
                 this.line.Clear();
                 this.line.Append(line);
                 
-                Console.Write(line);
+                this.console.Write(line);
                 this.currentColumn = line.Length;
                 
                 return true;
             }
             else
             {
-                Console.Beep();
+                this.console.Alarm();
                 return false;
             }
         }
@@ -243,9 +254,9 @@ namespace Favalon.Internal
         {
             if (this.historyIndex >= 2)
             {
-                Console.SetCursorPosition(this.prompt.Length, Console.CursorTop);
-                Console.Write(new string(' ', this.line.Length));
-                Console.SetCursorPosition(this.prompt.Length, Console.CursorTop);
+                this.console.SetColumnPosition(this.prompt.Length);
+                this.console.Write(new string(' ', this.line.Length));
+                this.console.SetColumnPosition(this.prompt.Length);
 
                 this.historyIndex--;
 
@@ -253,16 +264,16 @@ namespace Favalon.Internal
                 this.line.Clear();
                 this.line.Append(line);
                 
-                Console.Write(line);
+                this.console.Write(line);
                 this.currentColumn = line.Length;
                 
                 return true;
             }
             else if (this.historyIndex == 1)
             {
-                Console.SetCursorPosition(this.prompt.Length, Console.CursorTop);
-                Console.Write(new string(' ', this.line.Length));
-                Console.SetCursorPosition(this.prompt.Length, Console.CursorTop);
+                this.console.SetColumnPosition(this.prompt.Length);
+                this.console.Write(new string(' ', this.line.Length));
+                this.console.SetColumnPosition(this.prompt.Length);
 
                 this.historyIndex--;
 
@@ -273,65 +284,17 @@ namespace Favalon.Internal
             }
             else
             {
-                Console.Beep();
+                this.console.Alarm();
                 return false;
             }
         }
 
-        private static InputModifiers GetInputModifier(ConsoleModifiers modifier) =>
+        protected static InputModifiers GetInputModifier(ConsoleModifiers modifier) =>
             modifier switch
             {
                 ConsoleModifiers.Shift => InputModifiers.Word,
                 ConsoleModifiers.Control => InputModifiers.Line,
                 _ => InputModifiers.Char
             };
-
-        public void Run()
-        {
-            var readKeyController = new UnsafeReadKeyController(this.cts.Token);
-            
-            Console.Write(prompt);
-            
-            while (true)
-            {
-                if (!(readKeyController.ReadKey() is { } key))
-                {
-                    this.observer?.OnCompleted();
-                    break;
-                }
-
-                switch (key.Key)
-                {
-                    case ConsoleKey.Delete:
-                        this.InputDelete(GetInputModifier(key.Modifiers));
-                        break;
-                    case ConsoleKey.Backspace:
-                        this.InputBackspace(GetInputModifier(key.Modifiers));
-                        break;
-                    case ConsoleKey.RightArrow:
-                        this.InputForward(GetInputModifier(key.Modifiers));
-                        break;
-                    case ConsoleKey.LeftArrow:
-                        this.InputBackward(GetInputModifier(key.Modifiers));
-                        break;
-                    case ConsoleKey.UpArrow:
-                        this.InputOlder();
-                        break;
-                    case ConsoleKey.DownArrow:
-                        this.InputNewer();
-                        break;
-                    case ConsoleKey.Enter:
-                        this.InputEnter();
-                        break;
-
-                    default:
-                        this.InputChar(key.KeyChar);
-                        break;
-                }
-            }
-        }
-
-        public static InteractiveConsoleHost Create(string prompt) =>
-            new InteractiveConsoleHost(prompt);
     }
 }
