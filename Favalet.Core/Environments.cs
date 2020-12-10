@@ -26,6 +26,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using Favalet.Expressions.Operators;
 
 namespace Favalet
 {
@@ -42,15 +43,12 @@ namespace Favalet
     {
         private UnifyContext? lastContext;
         private int placeholderIndex = -1;
-        private bool saveLastTopology;
+        private readonly bool saveLastTopology;
 
         [DebuggerStepThrough]
         protected Environments(ITypeCalculator typeCalculator, bool saveLastTopology) :
-            base(null, typeCalculator)
-        {
+            base(null, typeCalculator) => 
             this.saveLastTopology = saveLastTopology;
-            this.MutableBind(Generator.kind.Symbol, TextRange.Internal, Generator.kind);
-        }
         
         public ITopology? LastTopology =>
             this.lastContext;
@@ -160,12 +158,30 @@ namespace Favalet
 #else
             bool saveLastTopology = false
 #endif
-            ) =>
-            new Environments(Favalet.TypeCalculator.Instance, saveLastTopology);
+        )
+        {
+            var environments =
+                new Environments(Favalet.TypeCalculator.Instance, saveLastTopology);
+            environments.MutableBindDefaults();
+            return environments;
+        }
     }
 
     public static class EnvironmentsExtension
     {
+        [DebuggerStepThrough]
+        public static void MutableBindDefaults(
+            this IEnvironments environments)
+        {
+            // Type kind symbol.
+            environments.MutableBind(
+                Generator.kind.Symbol, TextRange.Internal, Generator.kind);
+            
+            // Lambda operator.
+            environments.MutableBind(
+                "->", TextRange.Internal, LambdaOperatorExpression.Instance);
+        }
+        
         [DebuggerStepThrough]
         public static void MutableBind(
             this IEnvironments environment,

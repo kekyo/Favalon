@@ -35,19 +35,6 @@ namespace Favalet
             base(CLRTypeCalculator.Instance, saveLastTopology)
         { }
 
-        private void MutableBindDefaults()
-        {
-            // Bind default assemblies.
-            foreach (var assembly in new[] {
-                    typeof(object), typeof(Uri), typeof(Enumerable)
-                }.
-                Select(type => type.GetAssembly()).
-                Distinct())
-            {
-                this.MutableBindMembers(assembly);
-            }
-        }
-
         [DebuggerStepThrough]
         public new static CLREnvironments Create(
 #if DEBUG
@@ -58,13 +45,29 @@ namespace Favalet
         )
         {
             var environments = new CLREnvironments(saveLastTopology);
-            environments.MutableBindDefaults();
+            environments.MutableBindCLRDefaults();
             return environments;
         }
     }
 
     public static class CLREnvironmentsExtension
     {
+        [DebuggerStepThrough]
+        public static void MutableBindCLRDefaults(
+            this IEnvironments environments)
+        {
+            // Bind default assemblies.
+            foreach (var assembly in new[] {
+                    typeof(object), typeof(Uri), typeof(Enumerable)
+                }.
+                Select(type => type.GetAssembly()).
+                Distinct())
+            {
+                environments.MutableBindMembers(assembly);
+            }
+        }
+        
+        [DebuggerStepThrough]
         private static void MutableBindMembersByAliasNames(
             IEnvironments environments,
             MemberInfo member,

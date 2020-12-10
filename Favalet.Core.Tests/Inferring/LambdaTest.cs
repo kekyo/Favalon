@@ -842,5 +842,32 @@ namespace Favalet.Inferring
 
             AssertLogicalEqual(expression, expected, actual);
         }
+ 
+        [Test]
+        public void LambdaOperator1()
+        {
+            var environments = Environments();
+
+            // -> a a
+            var expression =
+                Apply(
+                    Apply(
+                        Variable("->"),
+                        Variable("a")),
+                    Variable("a"));
+
+            var actual = environments.Infer(expression);
+
+            // (a:'0 -> a:'0):('0 -> '0)
+            var provider = PseudoPlaceholderProvider.Create();
+            var ph0 = provider.CreatePlaceholder();
+            var expected =
+                Lambda(
+                    BoundVariable("a", ph0),
+                    Variable("a", ph0),
+                    Lambda(ph0, ph0));
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
     }
 }
