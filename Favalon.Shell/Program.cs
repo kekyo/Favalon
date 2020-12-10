@@ -21,146 +21,95 @@ using Favalet;
 using Favalet.Expressions;
 using Favalet.Contexts;
 using Favalet.Reactive;
-using Favalon.Internal;
+using Favalon.Console;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Reflection;
 
 namespace Favalon
 {
-#if true
-    public static class Test
-    {
-        [AliasName("echo")]
-        public static IEnumerable<string> Echo(string str)
-        {
-            var split = str.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-            return split;
-        }
-        
-        [AliasName("wc")]
-        public static IEnumerable<string> WordCount(IEnumerable<string> stdin)
-        {
-            var bc = 0;
-            var wc = 0;
-            var lc = 0;
-
-            foreach (var line in stdin)
-            {
-                bc += line.Length;
-                wc += line.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Length;
-                lc++;
-            }
-
-            yield return $"{bc},{wc},{lc}";
-        }
-
-        [AliasName("dump")]
-        public static string Dump(IEnumerable<string> stdin)
-        {
-            var joined = string.Join(Environment.NewLine, stdin);
-            return joined;
-        }
-
-        [AliasName("cat")]
-        public static IEnumerable<string> Cat(string fileName)
-        {
-            using var tr = File.OpenText(fileName);
-            while (!tr.EndOfStream)
-            {
-                var line = tr.ReadLine();
-                if (line == null)
-                {
-                    break;
-                }
-                yield return line;
-            }
-        }
-    }
-#endif
-    
     public static class Program
     {
         public static int Main(string[] args)
         {
+            // Step 1: Building reactive console host.
+            var console = CLRConsole.Create();
             var consoleHost = InteractiveConsoleHost.Create(
-                CLRConsole.Create(), "fash> ");
+                console, "fash> ");
 
+            // Step 2: Building reactive lexer.
             var lexer = Lexer.Create();
             var uri = new Uri("console", UriKind.RelativeOrAbsolute);
             var tokens = lexer.Analyze(uri, consoleHost);
 
+            // Step 3: Building reactive parser.
             var parser = CLRParser.Create();
             var parsed = parser.Parse(tokens);
             
+            // Step 4: Create type environment.
             var environments = CLREnvironments.Create();
 
+            // TODO: test
             environments.MutableBindMembers(typeof(Test));
-            
-            parsed.Subscribe(Observer.Create<IExpression>(expression =>
-            {
-                try
-                {
-                    var reduced = environments.Reduce(expression);
-                    switch (reduced)
-                    {
-                        case IVariableTerm("clear"):
-                            consoleHost.ClearScreen();
-                            break;
-                        case IVariableTerm("exit"):
-                            consoleHost.ShutdownAsynchronously();
-                            break;
-                        case IConstantTerm({ } value)
-                            when value.GetType().IsPrimitive || value is string:
-                            Console.WriteLine(value);
-                            break;
-                        case IConstantTerm(IEnumerable<string> lines):
-                            foreach (var line in lines)
-                            {
-                                Console.WriteLine(line);
-                            }
-                            break;
-                        default:
-                            Console.WriteLine(reduced.GetPrettyString(PrettyStringTypes.Readable));
-                            break;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    IEnumerable<string> Format(Exception ex) =>
-                        ex switch
-                        {
-                            TargetInvocationException te when te.InnerException is { } ie => Format(ie),
-                            AggregateException ae => ae.InnerExceptions.SelectMany(Format),
-                            _ => new[] {$"{ex.GetType().Name}: {ex.Message}"}
-                        };
 
-                    var fgc = Console.ForegroundColor;
-                    Console.ForegroundColor = ConsoleColor.Red;
+            // Step 5: Building final receiver.
+            using (parsed.Subscribe(
+                // We will get something parsed expression.
+                Observer.Create<IExpression>(expression =>
+                {
                     try
                     {
-                        foreach (var message in Format(ex))
+                        // Step 6: Reduce the expression.
+                        var reduced = environments.Reduce(expression);
+                        
+                        // Step 7: Render result.
+                        switch (reduced)
                         {
-                            Console.WriteLine(message);
+                            case IVariableTerm("clear"):
+                                consoleHost.ClearScreen();
+                                break;
+                            case IVariableTerm("exit"):
+                                consoleHost.ShutdownAsynchronously();
+                                break;
+                            case IConstantTerm({ } value)
+                                when value.GetType().IsPrimitive || value is string:
+                                console.WriteLine(value.ToString()!);
+                                break;
+                            case IConstantTerm(IEnumerable<string> lines):
+                                foreach (var line in lines)
+                                {
+                                    console.WriteLine(line);
+                                }
+                                break;
+                            default:
+                                console.WriteLine(reduced.GetPrettyString(PrettyStringTypes.Readable));
+                                break;
                         }
                     }
-                    catch (Exception ex2)
+                    catch (Exception ex)
                     {
-                        Trace.WriteLine(ex2);
+                        using (console.PushColor(ConsoleColor.Red))
+                        {
+                            try
+                            {
+                                foreach (var message in ex.GetReadableString())
+                                {
+                                    console.WriteLine(message);
+                                }
+                            }
+                            catch (Exception ex2)
+                            {
+                                Trace.WriteLine(ex2);
+                            }
+                        }
                     }
-                    finally
-                    {
-                        Console.ForegroundColor = fgc;
-                    }
-                }
-            },
-            ex => { },
-            () => { }));
-
-            consoleHost.Run();
+                },
+                ex => { },
+                () => { })))
+            {
+                // Step 8: Run reactive pipelines.
+                consoleHost.Run();
+            }
 
             return 0;
         }

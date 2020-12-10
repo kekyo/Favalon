@@ -12,10 +12,10 @@
   <ItemGroup>
     <ProjectReference Include="..\Favalet.Core\Favalet.Core.csproj" />
     <ProjectReference Include="..\Favalet.CLR.Core\Favalet.CLR.Core.csproj" />
+    <ProjectReference Include="..\Favalon.Core\Favalon.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>
 

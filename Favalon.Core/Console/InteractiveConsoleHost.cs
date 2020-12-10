@@ -23,7 +23,7 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 
-namespace Favalon.Internal
+namespace Favalon.Console
 {
     public interface IInteractiveHost :
         IObservable<Input>

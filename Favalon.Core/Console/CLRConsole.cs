@@ -21,7 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 
-namespace Favalon.Internal
+namespace Favalon.Console
 {
     public interface IConsole :
         IDisposable
@@ -37,6 +37,8 @@ namespace Favalon.Internal
         
         void SetColumnPosition(int column);
 
+        IDisposable PushColor(ConsoleColor newColor);
+
         void Alarm();
         
         ConsoleKeyInfo ReadKey(CancellationToken token);
@@ -47,6 +49,7 @@ namespace Favalon.Internal
         private readonly Queue<ConsoleKeyInfo> queue = new Queue<ConsoleKeyInfo>();
         private readonly ManualResetEventSlim gate = new ManualResetEventSlim();
         private readonly Thread thread;
+        private readonly Stack<ConsoleColor> colors = new Stack<ConsoleColor>();
         private volatile bool abort;
 
         public CLRConsole()
@@ -55,7 +58,7 @@ namespace Favalon.Internal
             {
                 while (!this.abort)
                 {
-                    var keyInfo = Console.ReadKey(true);
+                    var keyInfo = System.Console.ReadKey(true);
                     lock (this.queue)
                     {
                         this.queue.Enqueue(keyInfo);
@@ -74,25 +77,49 @@ namespace Favalon.Internal
             this.abort = true;
 
         public int ColumnPosition =>
-            Console.CursorLeft;
+            System.Console.CursorLeft;
 
         public void ClearScreen() =>
-            Console.Clear();
+            System.Console.Clear();
 
         public void Write(char ch) =>
-            Console.Write(ch);
+            System.Console.Write(ch);
         public void Write(string str) =>
-            Console.Write(str);
+            System.Console.Write(str);
         public void WriteLine() =>
-            Console.WriteLine();
+            System.Console.WriteLine();
         public void WriteLine(string str) =>
-            Console.WriteLine(str);
+            System.Console.WriteLine(str);
 
         public void SetColumnPosition(int column) =>
-            Console.SetCursorPosition(column, Console.CursorTop);
+            System.Console.SetCursorPosition(column, System.Console.CursorTop);
+
+        private sealed class ColorDisposable : IDisposable
+        {
+            private CLRConsole? parent;
+
+            public ColorDisposable(CLRConsole parent) =>
+                this.parent = parent;
+
+            public void Dispose()
+            {
+                if (this.parent != null)
+                {
+                    System.Console.ForegroundColor = this.parent.colors.Pop();
+                    this.parent = null;
+                }
+            }
+        }
+        
+        public IDisposable PushColor(ConsoleColor newColor)
+        {
+            this.colors.Push(System.Console.ForegroundColor);
+            System.Console.ForegroundColor = newColor;
+            return new ColorDisposable(this);
+        }
 
         public void Alarm() =>
-            Console.Beep();
+            System.Console.Beep();
 
         public ConsoleKeyInfo ReadKey(CancellationToken token)
         {

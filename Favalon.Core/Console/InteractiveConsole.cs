@@ -23,7 +23,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 
-namespace Favalon.Internal
+namespace Favalon.Console
 {
     public enum InputModifiers
     {
