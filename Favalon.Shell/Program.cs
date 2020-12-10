@@ -86,11 +86,12 @@ namespace Favalon
     {
         public static int Main(string[] args)
         {
-            var console = InteractiveConsoleHost.Create("fash> ");
+            var consoleHost = InteractiveConsoleHost.Create(
+                CLRConsole.Create(), "fash> ");
 
             var lexer = Lexer.Create();
             var uri = new Uri("console", UriKind.RelativeOrAbsolute);
-            var tokens = lexer.Analyze(uri, console);
+            var tokens = lexer.Analyze(uri, consoleHost);
 
             var parser = CLRParser.Create();
             var parsed = parser.Parse(tokens);
@@ -99,69 +100,67 @@ namespace Favalon
 
             environments.MutableBindMembers(typeof(Test));
             
-            IDisposable? d = default;
-            d = parsed.Subscribe(Observer.Create<IExpression>(
-                expression =>
+            parsed.Subscribe(Observer.Create<IExpression>(expression =>
+            {
+                try
                 {
+                    var reduced = environments.Reduce(expression);
+                    switch (reduced)
+                    {
+                        case IVariableTerm("clear"):
+                            consoleHost.ClearScreen();
+                            break;
+                        case IVariableTerm("exit"):
+                            consoleHost.ShutdownAsynchronously();
+                            break;
+                        case IConstantTerm({ } value)
+                            when value.GetType().IsPrimitive || value is string:
+                            Console.WriteLine(value);
+                            break;
+                        case IConstantTerm(IEnumerable<string> lines):
+                            foreach (var line in lines)
+                            {
+                                Console.WriteLine(line);
+                            }
+                            break;
+                        default:
+                            Console.WriteLine(reduced.GetPrettyString(PrettyStringTypes.Readable));
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    IEnumerable<string> Format(Exception ex) =>
+                        ex switch
+                        {
+                            TargetInvocationException te when te.InnerException is { } ie => Format(ie),
+                            AggregateException ae => ae.InnerExceptions.SelectMany(Format),
+                            _ => new[] {$"{ex.GetType().Name}: {ex.Message}"}
+                        };
+
+                    var fgc = Console.ForegroundColor;
+                    Console.ForegroundColor = ConsoleColor.Red;
                     try
                     {
-                        var reduced = environments.Reduce(expression);
-                        switch (reduced)
+                        foreach (var message in Format(ex))
                         {
-                            case IVariableTerm("clear"):
-                                console.Clear();
-                                break;
-                            case IVariableTerm("exit"):
-                                d?.Dispose();
-                                break;
-                            case IConstantTerm({ } value)
-                                when value.GetType().IsPrimitive || value is string:
-                                Console.WriteLine(value);
-                                break;
-                            case IConstantTerm(IEnumerable<string> lines):
-                                foreach (var line in lines)
-                                {
-                                    Console.WriteLine(line);
-                                }
-                                break;
-                            default:
-                                Console.WriteLine(reduced.GetPrettyString(PrettyStringTypes.Readable));
-                                break;
+                            Console.WriteLine(message);
                         }
                     }
-                    catch (Exception ex)
+                    catch (Exception ex2)
                     {
-                        IEnumerable<string> Format(Exception ex) =>
-                            ex switch
-                            {
-                                TargetInvocationException te when te.InnerException is { } ie => Format(ie),
-                                AggregateException ae => ae.InnerExceptions.SelectMany(Format),
-                                _ => new[] {$"{ex.GetType().Name}: {ex.Message}"}
-                            };
-
-                        var fgc = Console.ForegroundColor;
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        try
-                        {
-                            foreach (var message in Format(ex))
-                            {
-                                Console.WriteLine(message);
-                            }
-                        }
-                        catch (Exception ex2)
-                        {
-                            Trace.WriteLine(ex2);
-                        }
-                        finally
-                        {
-                            Console.ForegroundColor = fgc;
-                        }
+                        Trace.WriteLine(ex2);
                     }
-                },
-                ex => { },
-                () => { }));
+                    finally
+                    {
+                        Console.ForegroundColor = fgc;
+                    }
+                }
+            },
+            ex => { },
+            () => { }));
 
-            console.Run();
+            consoleHost.Run();
 
             return 0;
         }

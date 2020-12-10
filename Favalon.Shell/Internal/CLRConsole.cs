@@ -23,19 +23,37 @@ using System.Threading;
 
 namespace Favalon.Internal
 {
-    internal sealed class UnsafeReadKeyController
+    public interface IConsole :
+        IDisposable
+    {
+        int ColumnPosition { get; }
+        
+        void ClearScreen();
+        
+        void Write(char ch);
+        void Write(string str);
+        void WriteLine();
+        void WriteLine(string str);
+        
+        void SetColumnPosition(int column);
+
+        void Alarm();
+        
+        ConsoleKeyInfo ReadKey(CancellationToken token);
+    }
+
+    public sealed class CLRConsole : IConsole
     {
         private readonly Queue<ConsoleKeyInfo> queue = new Queue<ConsoleKeyInfo>();
         private readonly ManualResetEventSlim gate = new ManualResetEventSlim();
-        private readonly CancellationToken token;
         private readonly Thread thread;
+        private volatile bool abort;
 
-        public UnsafeReadKeyController(CancellationToken token)
+        public CLRConsole()
         {
-            this.token = token;
             this.thread = new Thread(() =>
             {
-                while (!this.token.IsCancellationRequested)
+                while (!this.abort)
                 {
                     var keyInfo = Console.ReadKey(true);
                     lock (this.queue)
@@ -52,31 +70,53 @@ namespace Favalon.Internal
             this.thread.Start();
         }
 
-        public ConsoleKeyInfo? ReadKey()
+        public void Dispose() =>
+            this.abort = true;
+
+        public int ColumnPosition =>
+            Console.CursorLeft;
+
+        public void ClearScreen() =>
+            Console.Clear();
+
+        public void Write(char ch) =>
+            Console.Write(ch);
+        public void Write(string str) =>
+            Console.Write(str);
+        public void WriteLine() =>
+            Console.WriteLine();
+        public void WriteLine(string str) =>
+            Console.WriteLine(str);
+
+        public void SetColumnPosition(int column) =>
+            Console.SetCursorPosition(column, Console.CursorTop);
+
+        public void Alarm() =>
+            Console.Beep();
+
+        public ConsoleKeyInfo ReadKey(CancellationToken token)
         {
-            try
+            while (true)
             {
-                while (true)
+                token.ThrowIfCancellationRequested();
+                this.gate.Wait(token);
+
+                lock (this.queue)
                 {
-                    this.gate.Wait(this.token);
-                    lock (this.queue)
+                    if (this.queue.Count >= 1)
                     {
-                        if (this.queue.Count >= 1)
+                        var keyInfo = this.queue.Dequeue();
+                        if (this.queue.Count == 0)
                         {
-                            var keyInfo = this.queue.Dequeue();
-                            if (this.queue.Count == 0)
-                            {
-                                this.gate.Reset();
-                            }
-                            return keyInfo;
+                            this.gate.Reset();
                         }
+                        return keyInfo;
                     }
                 }
             }
-            catch (OperationCanceledException)
-            {
-                return null;
-            }
         }
+
+        public static CLRConsole Create() =>
+            new CLRConsole();
     }
 }

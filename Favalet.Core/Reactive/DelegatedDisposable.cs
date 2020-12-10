@@ -24,14 +24,14 @@ using System.Threading;
 namespace Favalet.Reactive.Disposables
 {
     [DebuggerStepThrough]
-    public sealed class CancellationDisposable : IDisposable
+    public sealed class DelegatedDisposable : IDisposable
     {
-        private readonly CancellationTokenSource source;
+        private readonly Action action;
 
-        public CancellationDisposable(CancellationTokenSource source) =>
-            this.source = source;
+        public DelegatedDisposable(Action action) =>
+            this.action = action;
 
         public void Dispose() =>
-            this.source.Cancel();
+            this.action();
     }
 }
