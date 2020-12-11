@@ -114,7 +114,7 @@ namespace Favalet.Expressions
     }
 
     public interface ITypeConstructorTerm :
-        ITypeTerm, ICallableExpression
+        ITypeTerm, ICallableReduceExpression
     {
     }
 
@@ -134,7 +134,7 @@ namespace Favalet.Expressions
             get => higherOrder;
         }
 
-        public IExpression Call(IReduceContext context, IExpression argument)
+        public IExpression Reduce(IReduceContext context, IExpression argument)
         {
             if (argument is ITypeTerm typeArgument)
             {

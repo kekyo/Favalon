@@ -27,7 +27,7 @@ using System.Diagnostics;
 namespace Favalet.Expressions
 {
     public interface ILambdaExpression :
-        ICallableExpression
+        ICallableReduceExpression
     {
         IExpression Parameter { get; }
         IExpression Body { get; }
@@ -291,7 +291,7 @@ namespace Favalet.Expressions
             }
         }
 
-        public IExpression Call(IReduceContext context, IExpression argument) =>
+        public IExpression Reduce(IReduceContext context, IExpression argument) =>
             (this.Parameter is IBoundVariableTerm bound ?
                 context.Bind(bound, argument) :
                 context).

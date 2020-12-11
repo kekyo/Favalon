@@ -26,9 +26,14 @@ using System.Diagnostics;
 
 namespace Favalet.Expressions
 {
-    public interface ICallableExpression : IExpression
+    public interface ICallableInferExpression : IExpression
     {
-        IExpression Call(IReduceContext context, IExpression argument);
+        IExpression Infer(IInferContext context, IExpression argument);
+    }
+
+    public interface ICallableReduceExpression : IExpression
+    {
+        IExpression Reduce(IReduceContext context, IExpression argument);
     }
 
     public interface IApplyExpression : IExpression
@@ -119,8 +124,18 @@ namespace Favalet.Expressions
 
         protected override IExpression Infer(IInferContext context)
         {
+            var function = this.Function;
             var argument = context.Infer(this.Argument);
-            var function = context.Infer(this.Function);
+
+            if (function is ICallableInferExpression callable)
+            {
+                function = callable.Infer(context, argument);
+            }
+            else
+            {
+                function = context.Infer(function);
+            }
+            
             var higherOrder = context.Infer(this.HigherOrder);
 
             var functionHigherOrder = LambdaExpression.Create(
@@ -166,16 +181,16 @@ namespace Favalet.Expressions
                 // Apply with left outermost strategy at lambda expression.
                 if (currentFunction is ILambdaExpression lambda)
                 {
-                    var result = lambda.Call(context, this.Argument);
+                    var result = lambda.Reduce(context, this.Argument);
                     return context.Reduce(result);
                 }
 
                 // Apply with right outermost strategy,
                 // because maybe cannot analyze inside of the function.
-                if (currentFunction is ICallableExpression callable)
+                if (currentFunction is ICallableReduceExpression callable)
                 {
                     var argument = context.Reduce(this.Argument);
-                    return callable.Call(context, argument);
+                    return callable.Reduce(context, argument);
                 }
 
                 var reducedFunction = context.Reduce(currentFunction);

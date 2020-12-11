@@ -21,13 +21,12 @@ using Favalet.Contexts;
 using Favalet.Expressions.Specialized;
 using Favalet.Ranges;
 using System.Collections;
-using System.Diagnostics;
 using System.Linq;
 
 namespace Favalet.Expressions.Operators
 {
     public sealed class LambdaOperatorExpression :
-        Expression, ICallableExpression
+        Expression, ICallableInferExpression, ICallableReduceExpression
     {
         private static readonly LambdaExpression higherOrder =
             LambdaExpression.Create(
@@ -63,6 +62,15 @@ namespace Favalet.Expressions.Operators
             }
         }
 
+        IExpression ICallableInferExpression.Infer(IInferContext context, IExpression argumentHint)
+        {
+            var target = argumentHint is IApplyExpression({} parameter, {} body) ?
+                (IExpression)LambdaExpression.Create(parameter, body, this.Range) :
+                this;
+
+            return context.Infer(target);
+        }
+
         protected override IExpression Fixup(IFixupContext context)
         {
             var higherOrder = context.Fixup(this.HigherOrder);
@@ -91,7 +99,7 @@ namespace Favalet.Expressions.Operators
             }
         }
 
-        public IExpression Call(IReduceContext context, IExpression argument)
+        public IExpression Reduce(IReduceContext context, IExpression argument)
         {
             var target = argument is IApplyExpression({} parameter, {} body) ?
                 LambdaExpression.Create(parameter, body, this.Range) :

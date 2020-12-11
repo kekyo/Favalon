@@ -28,7 +28,7 @@ using Favalet.Ranges;
 namespace Favalet.Expressions.Algebraic
 {
     public interface ILogicalOperator :
-        ICallableExpression
+        ICallableReduceExpression
     {
     }
 
@@ -63,7 +63,7 @@ namespace Favalet.Expressions.Algebraic
         protected override IExpression Reduce(IReduceContext context) =>
             this;
 
-        public IExpression Call(IReduceContext context, IExpression argument) =>
+        public IExpression Reduce(IReduceContext context, IExpression argument) =>
             LogicalCalculator.Instance.Calculate(argument);
 
         protected override IEnumerable GetXmlValues(IXmlRenderContext context) =>

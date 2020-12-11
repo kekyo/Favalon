@@ -29,7 +29,7 @@ using Favalet.Ranges;
 namespace Favalet.Expressions
 {
     public interface IMethodTerm :
-        ITerm, ICallableExpression
+        ITerm, ICallableReduceExpression
     {
         MethodBase RuntimeMethod { get; }
     }
@@ -86,7 +86,7 @@ namespace Favalet.Expressions
         protected override IExpression Reduce(IReduceContext context) =>
             this;
 
-        public IExpression Call(IReduceContext context, IExpression argument)
+        public IExpression Reduce(IReduceContext context, IExpression argument)
         {
             if (argument is IConstantTerm constant)
             {
