@@ -90,13 +90,9 @@ namespace Favalet.Expressions
             }
             
             var higherOrder = context.Infer(this.HigherOrder);
-            var variables = context.
-                LookupVariables(this.Symbol).
-                Memoize();
-
-            if (variables.Length >= 1)
+            if (context.LookupVariables(this.Symbol) is { } results)
             {
-                var targets = variables.
+                var targets = results.Variables.
                     Where(v => !context.TypeCalculator.ExactEquals(this, v.Expression)).
                     Select(v =>
                         (symbolHigherOrder: context.Infer(context.MakeRewritableHigherOrder(v.SymbolHigherOrder)), 
@@ -202,19 +198,22 @@ namespace Favalet.Expressions
                 var target = bounds[0];
                 if (target is IBoundVariableTerm bound)
                 {
-                    var variables = context.TypeCalculator.SortExpressions(
-                        expression => expression.HigherOrder,
-                        context.LookupVariables(bound.Symbol).
-                            Where(variable => context.TypeCalculator.Equals(variable.SymbolHigherOrder, bound.HigherOrder)).
-                            Select(variable => variable.Expression)).
-                        Memoize();
-                    if (variables.Length == 1)
+                    if (context.LookupVariables(bound.Symbol) is { } results)
                     {
-                        return context.Reduce(variables[0]);
-                    }
-                    else if (variables.Length >= 2)
-                    {
-                        return new VariableTerm(this.Symbol, this.HigherOrder, variables, this.Range);
+                        var variables = context.TypeCalculator.SortExpressions(
+                            expression => expression.HigherOrder,
+                            results.Variables
+                                .Where(variable =>
+                                    context.TypeCalculator.Equals(variable.SymbolHigherOrder, bound.HigherOrder))
+                                .Select(variable => variable.Expression)).Memoize();
+                        if (variables.Length == 1)
+                        {
+                            return context.Reduce(variables[0]);
+                        }
+                        else if (variables.Length >= 2)
+                        {
+                            return new VariableTerm(this.Symbol, this.HigherOrder, variables, this.Range);
+                        }
                     }
                 }
                 else

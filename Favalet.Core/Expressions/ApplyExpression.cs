@@ -17,14 +17,12 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-using System;
 using Favalet.Contexts;
 using Favalet.Expressions.Specialized;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using Favalet.Ranges;
+using System;
+using System.Collections;
+using System.Diagnostics;
 
 namespace Favalet.Expressions
 {

@@ -30,7 +30,7 @@ namespace Favalet.Expressions.Specialized
         Expression, IIgnoreUnificationTerm
     {
         private DeadEndTerm() :
-            base(TextRange.Unknown)
+            base(TextRange.Internal)
         { }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]

@@ -38,7 +38,10 @@ namespace Favalet.Contexts
     {
         IExpression Infer(IExpression expression);
     
-        IInferContext Bind(IBoundVariableTerm parameter, IExpression expression);
+        IInferContext Bind(
+            BoundAttributes attributes,
+            IBoundVariableTerm parameter,
+            IExpression expression);
 
         void Unify(
             IExpression fromHigherOrder,
@@ -60,30 +63,31 @@ namespace Favalet.Contexts
     {
         IExpression Reduce(IExpression expression);
     
-        IReduceContext Bind(IBoundVariableTerm parameter, IExpression expression);
+        IReduceContext Bind(
+            BoundAttributes attributes,
+            IBoundVariableTerm parameter,
+            IExpression expression);
     }
 
     internal sealed class ReduceContext :
-        IInferContext, IFixupContext, IReduceContext
+        ScopeContext, IInferContext, IFixupContext, IReduceContext
     {
         private readonly Environments rootScope;
-        private readonly IScopeContext parentScope;
         private readonly UnifyContext unifyContext;
-        private VariableInformationRegistry? registry;
         private PlaceholderOrderHints orderHint = PlaceholderOrderHints.VariableOrAbove;
 
         [DebuggerStepThrough]
         private ReduceContext(
             Environments rootScope,
-            IScopeContext parentScope,
-            UnifyContext unifyContext)
+            ScopeContext parentScope,
+            UnifyContext unifyContext) :
+            base(parentScope)
         {
             this.rootScope = rootScope;
-            this.parentScope = parentScope;
             this.unifyContext = unifyContext;
         }
 
-        public ITypeCalculator TypeCalculator
+        public override ITypeCalculator TypeCalculator
         {
             [DebuggerStepThrough]
             get => this.rootScope.TypeCalculator;
@@ -142,41 +146,37 @@ namespace Favalet.Contexts
         public IExpression Reduce(IExpression expression) =>
             expression is Expression expr ? expr.InternalReduce(this) : expression;
 
-        [DebuggerStepThrough]
         private ReduceContext Bind(
-            IBoundVariableTerm symbol, IExpression expression)
+            BoundAttributes attributes,
+            IBoundVariableTerm symbol,
+            IExpression expression)
         {
             var newContext = new ReduceContext(
                 this.rootScope,
                 this,
                 this.unifyContext);
-
-            newContext.registry = new VariableInformationRegistry();
-            newContext.registry.Register(symbol, expression, true);
+            
+            newContext.MutableBind(
+                attributes,
+                symbol,
+                expression,
+                true);
 
             return newContext;
         }
 
         [DebuggerStepThrough]
         IInferContext IInferContext.Bind(
-            IBoundVariableTerm symbol, IExpression expression) =>
-            this.Bind(symbol, expression);
+            BoundAttributes attributes,
+            IBoundVariableTerm symbol,
+            IExpression expression) =>
+            this.Bind(attributes, symbol, expression);
         [DebuggerStepThrough]
         IReduceContext IReduceContext.Bind(
-            IBoundVariableTerm symbol, IExpression expression) =>
-            this.Bind(symbol, expression);
-
-        [DebuggerStepThrough]
-        public IEnumerable<VariableInformation> LookupVariables(string symbol)
-        {
-            var overrideVariables =
-                this.registry?.Lookup(symbol) ??
-                ArrayEx.Empty<VariableInformation>();
-            return (overrideVariables.Length >= 1) ?
-                overrideVariables :
-                this.parentScope?.LookupVariables(symbol) ??
-                    Enumerable.Empty<VariableInformation>();
-        }
+            BoundAttributes attributes,
+            IBoundVariableTerm symbol,
+            IExpression expression) =>
+            this.Bind(attributes, symbol, expression);
 
         [DebuggerStepThrough]
         public void Unify(
@@ -209,8 +209,21 @@ namespace Favalet.Contexts
         [DebuggerStepThrough]
         public static ReduceContext Create(
             Environments rootScope,
-            IScopeContext parentScope,
+            ScopeContext parentScope,
             UnifyContext unifyContext) =>
             new ReduceContext(rootScope, parentScope, unifyContext);
+    }
+
+    public static class ReduceContextExtension
+    {
+        [DebuggerStepThrough]
+        public static IInferContext Bind(
+            this IInferContext context, IBoundVariableTerm symbol, IExpression expression) =>
+            context.Bind(BoundAttributes.Prefix | BoundAttributes.LeftToRight, symbol, expression);
+        
+        [DebuggerStepThrough]
+        public static IReduceContext Bind(
+            this IReduceContext context, IBoundVariableTerm symbol, IExpression expression) =>
+            context.Bind(BoundAttributes.Prefix | BoundAttributes.LeftToRight, symbol, expression);
     }
 }

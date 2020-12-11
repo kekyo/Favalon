@@ -19,6 +19,7 @@
 
 using Favalet.Contexts;
 using Favalet.Expressions;
+using Favalet.Expressions.Operators;
 using Favalet.Expressions.Specialized;
 using Favalet.Contexts.Unifiers;
 using Favalet.Ranges;
@@ -29,12 +30,21 @@ using System.Threading;
 
 namespace Favalet
 {
+    [Flags]
+    public enum BoundAttributes
+    {
+        Prefix = 0x00,
+        Infix = 0x01,
+        LeftToRight = 0x00,
+        RightToLeft = 0x02,
+    }
+    
     public interface IEnvironments :
         IScopeContext
     {
         ITopology? LastTopology { get; }
         
-        void MutableBind(IBoundVariableTerm symbol, IExpression expression);
+        void MutableBind(BoundAttributes attributes, IBoundVariableTerm symbol, IExpression expression);
     }
 
     public class Environments :
@@ -42,16 +52,18 @@ namespace Favalet
     {
         private UnifyContext? lastContext;
         private int placeholderIndex = -1;
-        private bool saveLastTopology;
+        private readonly bool saveLastTopology;
 
         [DebuggerStepThrough]
         protected Environments(ITypeCalculator typeCalculator, bool saveLastTopology) :
-            base(null, typeCalculator)
+            base(null)
         {
+            this.TypeCalculator = typeCalculator;            
             this.saveLastTopology = saveLastTopology;
-            this.MutableBind(Generator.kind.Symbol, TextRange.Internal, Generator.kind);
         }
         
+        public override ITypeCalculator TypeCalculator { get; }
+
         public ITopology? LastTopology =>
             this.lastContext;
 
@@ -147,11 +159,11 @@ namespace Favalet
         }
 
         [DebuggerStepThrough]
-        public void MutableBind(IBoundVariableTerm symbol, IExpression expression) =>
-            base.MutableBind(symbol, expression, true);
-        [DebuggerStepThrough]
-        internal void UnsafeMutableBind(IBoundVariableTerm symbol, IExpression expression) =>
-            base.MutableBind(symbol, expression, false);
+        public void MutableBind(
+            BoundAttributes attributes,
+            IBoundVariableTerm symbol,
+            IExpression expression) =>
+            base.MutableBind(attributes, symbol, expression, true);
 
         [DebuggerStepThrough]
         public static Environments Create(
@@ -160,12 +172,35 @@ namespace Favalet
 #else
             bool saveLastTopology = false
 #endif
-            ) =>
-            new Environments(Favalet.TypeCalculator.Instance, saveLastTopology);
+        )
+        {
+            var environments =
+                new Environments(Favalet.TypeCalculator.Instance, saveLastTopology);
+            environments.MutableBindDefaults();
+            return environments;
+        }
     }
 
     public static class EnvironmentsExtension
     {
+        [DebuggerStepThrough]
+        public static void MutableBind(
+            this IEnvironments environments, IBoundVariableTerm symbol, IExpression expression) =>
+            environments.MutableBind(BoundAttributes.Prefix | BoundAttributes.LeftToRight, symbol, expression);
+        
+        [DebuggerStepThrough]
+        public static void MutableBindDefaults(
+            this IEnvironments environments)
+        {
+            // Type kind symbol.
+            environments.MutableBind(
+                Generator.kind.Symbol, TextRange.Internal, Generator.kind);
+            
+            // Lambda operator.
+            environments.MutableBind(
+                "->", TextRange.Internal, LambdaOperatorExpression.Instance);
+        }
+        
         [DebuggerStepThrough]
         public static void MutableBind(
             this IEnvironments environment,
