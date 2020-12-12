@@ -213,7 +213,7 @@ namespace Favalet.Contexts.Unifiers
                 {
                     IPlaceholderTerm ph => $"ph{ph.Index}",
                     // TODO: IPairExpression _ => $"",
-                    _ => $"ex{expression.GetHashCode()}",
+                    _ => $"ex{(uint)expression.GetHashCode()}",
                 };
             
             sb.AppendLine("    #nodes");
