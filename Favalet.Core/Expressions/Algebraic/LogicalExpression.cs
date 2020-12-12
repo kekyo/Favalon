@@ -62,11 +62,17 @@ namespace Favalet.Expressions.Algebraic
 
         public override bool Equals(IExpression? other) =>
             other is ILogicalExpression rhs && this.Equals(rhs);
-        
+
+        protected override IExpression Transpose(ITransposeContext context) =>
+            new LogicalExpression(
+                context.Transpose(this.Operand),
+                context.Transpose(this.HigherOrder),
+                this.Range);
+
         protected override IExpression MakeRewritable(IMakeRewritableContext context) =>
             new LogicalExpression(
                 context.MakeRewritable(this.Operand),
-                context.MakeRewritable(this.HigherOrder),
+                context.MakeRewritableHigherOrder(this.HigherOrder),
                 this.Range);
 
         protected override IExpression Infer(IInferContext context)

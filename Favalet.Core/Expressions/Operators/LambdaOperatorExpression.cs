@@ -44,6 +44,11 @@ namespace Favalet.Expressions.Operators
 
         public override IExpression HigherOrder { get; }
 
+        protected override IExpression Transpose(ITransposeContext context) =>
+            new LambdaOperatorExpression(
+                context.Transpose(this.HigherOrder),
+                this.Range);
+
         protected override IExpression MakeRewritable(IMakeRewritableContext context) =>
             new LambdaOperatorExpression(
                 context.MakeRewritableHigherOrder(this.HigherOrder),

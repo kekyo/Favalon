@@ -18,13 +18,8 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using Favalet.Expressions;
-using Favalet.Expressions.Algebraic;
 using Favalet.Expressions.Specialized;
-using Favalet.Ranges;
-using Favalet.Internal;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 namespace Favalet.Contexts
 {
@@ -38,6 +33,14 @@ namespace Favalet.Contexts
         {
             this.Attributes = attributes;
             this.Variables = vis;
+        }
+
+        public void Deconstruct(
+            out BoundAttributes attributes,
+            out VariableInformation[] vis)
+        {
+            attributes = this.Attributes;
+            vis = this.Variables;
         }
         
         public static BoundVariables Create(BoundAttributes attributes, VariableInformation[] vis) =>

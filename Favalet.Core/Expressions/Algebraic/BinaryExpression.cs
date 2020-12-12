@@ -96,6 +96,13 @@ namespace Favalet.Expressions.Algebraic
         internal abstract IExpression OnCreate(
             IExpression left, IExpression right, IExpression higherOrder, TextRange range);
 
+        protected sealed override IExpression Transpose(ITransposeContext context) =>
+            this.OnCreate(
+                context.Transpose(this.Left),
+                context.Transpose(this.Right),
+                context.Transpose(this.HigherOrder),
+                this.Range);
+
         protected sealed override IExpression MakeRewritable(IMakeRewritableContext context) =>
             this.OnCreate(
                 context.MakeRewritable(this.Left),

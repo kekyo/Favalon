@@ -152,6 +152,74 @@ namespace Favalet.Inferring
 
             AssertLogicalEqual(expression, expected, actual);
         }
+        
+        [Test]
+        public void BoundVariableWithAttributes1()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ PREFIX|LTR = a -> a
+            environment.MutableBind(
+                BoundAttributes.PrefixLeftToRight,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // $$$ 123
+            var expression =
+                Apply(
+                    Variable("$$$"),
+                    Constant(123));
+
+            var actual = environment.Infer(expression);
+
+            // ($$$:(int -> int) 123:int):int
+            var expected =
+                Apply(
+                    Variable("$$$",
+                        Lambda(
+                            Type<int>(),
+                            Type<int>())),
+                    Constant(123),
+                    Type<int>());
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
+        
+        [Test]
+        public void BoundVariableWithAttributes2()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ INFIX|LTR = a -> a
+            environment.MutableBind(
+                BoundAttributes.InfixLeftToRight,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // 123 $$$
+            var expression =
+                Apply(
+                    Constant(123),
+                    Variable("$$$"));
+
+            var actual = environment.Infer(expression);
+
+            // ($$$:(int -> int) 123:int):int
+            var expected =
+                Apply(
+                    Variable("$$$",
+                        Lambda(
+                            Type<int>(),
+                            Type<int>())),
+                    Constant(123),
+                    Type<int>());
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
         #endregion
  
         #region TypeVariable

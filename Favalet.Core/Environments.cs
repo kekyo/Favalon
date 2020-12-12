@@ -24,19 +24,19 @@ using Favalet.Expressions.Specialized;
 using Favalet.Contexts.Unifiers;
 using Favalet.Ranges;
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 
 namespace Favalet
 {
-    [Flags]
     public enum BoundAttributes
     {
-        Prefix = 0x00,
-        Infix = 0x01,
-        LeftToRight = 0x00,
-        RightToLeft = 0x02,
+        PrefixLeftToRight,    // default
+        InfixLeftToRight,
+        PrefixRightToLeft,
+        InfixRightToLeft,
     }
     
     public interface IEnvironments :
@@ -102,8 +102,14 @@ namespace Favalet
         {
             Debug.WriteLine($"Infer[{context.GetHashCode()}:before] :");
             Debug.WriteLine(expression.GetXml());
+
+            var transposed = context.Transpose(expression);
+            unifyContext.SetTargetRoot(transposed);
   
-            var rewritable = context.MakeRewritable(expression);
+            Debug.WriteLine($"Infer[{context.GetHashCode()}:transposed] :");
+            Debug.WriteLine(transposed.GetXml());
+
+            var rewritable = context.MakeRewritable(transposed);
             unifyContext.SetTargetRoot(rewritable);
 
             Debug.WriteLine($"Infer[{context.GetHashCode()}:rewritable] :");
@@ -186,7 +192,7 @@ namespace Favalet
         [DebuggerStepThrough]
         public static void MutableBind(
             this IEnvironments environments, IBoundVariableTerm symbol, IExpression expression) =>
-            environments.MutableBind(BoundAttributes.Prefix | BoundAttributes.LeftToRight, symbol, expression);
+            environments.MutableBind(BoundAttributes.PrefixLeftToRight, symbol, expression);
         
         [DebuggerStepThrough]
         public static void MutableBindDefaults(

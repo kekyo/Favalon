@@ -40,6 +40,9 @@ namespace Favalet.Expressions.Specialized
         public override bool Equals(IExpression? other) =>
             false;
 
+        protected override IExpression Transpose(ITransposeContext context) =>
+            this;
+
         protected override IExpression MakeRewritable(IMakeRewritableContext context) =>
             this;
 

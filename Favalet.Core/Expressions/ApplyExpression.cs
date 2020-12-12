@@ -110,6 +110,31 @@ namespace Favalet.Expressions
         public override bool Equals(IExpression? other) =>
             other is IApplyExpression rhs && this.Equals(rhs);
 
+        protected override IExpression Transpose(ITransposeContext context)
+        {
+            var function = context.Transpose(this.Function);
+            var argument = context.Transpose(this.Argument);
+            var higherOrder = context.Transpose(this.HigherOrder);
+
+            if (argument is IVariableTerm(_, { } attributes))
+            {
+                return attributes switch
+                {
+                    BoundAttributes.PrefixLeftToRight =>
+                        new ApplyExpression(function, argument, higherOrder, this.Range),
+                    BoundAttributes.InfixLeftToRight =>
+                        new ApplyExpression(argument, function, higherOrder, this.Range),
+                    // BoundAttributes.PrefixRightToLeft => ,
+                    // BoundAttributes.InfixRightToLeft => ,
+                    _ => new ApplyExpression(function, argument, higherOrder, this.Range)
+                };
+            }
+            else
+            {
+                return new ApplyExpression(function, argument, higherOrder, this.Range);
+            }
+        }
+
         protected override IExpression MakeRewritable(IMakeRewritableContext context) =>
             new ApplyExpression(
                 context.MakeRewritable(this.Function),

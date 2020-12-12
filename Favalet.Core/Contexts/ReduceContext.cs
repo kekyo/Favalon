@@ -20,13 +20,16 @@
 using Favalet.Contexts.Unifiers;
 using Favalet.Expressions;
 using Favalet.Expressions.Specialized;
-using Favalet.Internal;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 namespace Favalet.Contexts
 {
+    public interface ITransposeContext :
+        IScopeContext
+    {
+        IExpression Transpose(IExpression expression);
+    }
+    
     public interface IMakeRewritableContext
     {
         IExpression MakeRewritable(IExpression expression);
@@ -70,7 +73,7 @@ namespace Favalet.Contexts
     }
 
     internal sealed class ReduceContext :
-        ScopeContext, IInferContext, IFixupContext, IReduceContext
+        ScopeContext, ITransposeContext, IInferContext, IFixupContext, IReduceContext
     {
         private readonly Environments rootScope;
         private readonly UnifyContext unifyContext;
@@ -92,6 +95,10 @@ namespace Favalet.Contexts
             [DebuggerStepThrough]
             get => this.rootScope.TypeCalculator;
         }
+
+        [DebuggerStepThrough]
+        public IExpression Transpose(IExpression expression) =>
+            expression is Expression expr ? expr.InternalTranspose(this) : expression;
 
         public IExpression MakeRewritable(IExpression expression)
         {
@@ -219,11 +226,11 @@ namespace Favalet.Contexts
         [DebuggerStepThrough]
         public static IInferContext Bind(
             this IInferContext context, IBoundVariableTerm symbol, IExpression expression) =>
-            context.Bind(BoundAttributes.Prefix | BoundAttributes.LeftToRight, symbol, expression);
+            context.Bind(BoundAttributes.PrefixLeftToRight, symbol, expression);
         
         [DebuggerStepThrough]
         public static IReduceContext Bind(
             this IReduceContext context, IBoundVariableTerm symbol, IExpression expression) =>
-            context.Bind(BoundAttributes.Prefix | BoundAttributes.LeftToRight, symbol, expression);
+            context.Bind(BoundAttributes.PrefixLeftToRight, symbol, expression);
     }
 }

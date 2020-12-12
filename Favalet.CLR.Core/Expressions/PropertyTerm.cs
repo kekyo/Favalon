@@ -64,11 +64,11 @@ namespace Favalet.Expressions
         public override bool Equals(IExpression? other) =>
             other is IPropertyTerm rhs && this.Equals(rhs);
         
+        protected override IExpression Transpose(ITransposeContext context) =>
+            this;
+
         protected override IExpression MakeRewritable(IMakeRewritableContext context) =>
-            new PropertyTerm(
-                this.RuntimeProperty,
-                context.MakeRewritableHigherOrder(this.HigherOrder),
-                this.Range);
+            this;
 
         protected override IExpression Infer(IInferContext context) =>
             this;
