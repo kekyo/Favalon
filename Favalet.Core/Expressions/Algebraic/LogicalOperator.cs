@@ -50,7 +50,10 @@ namespace Favalet.Expressions.Algebraic
 
         public override bool Equals(IExpression? other) =>
             other is ILogicalOperator rhs && this.Equals(rhs);
-        
+
+        protected override IExpression Transpose(ITransposeContext context) =>
+            this;
+
         protected override IExpression MakeRewritable(IMakeRewritableContext context) =>
             this;
 

@@ -60,6 +60,9 @@ namespace Favalet
             public string Symbol =>
                 $"'{this.Index}";
 
+            protected override IExpression Transpose(ITransposeContext context) =>
+                throw new NotImplementedException();
+
             protected override IExpression MakeRewritable(IMakeRewritableContext context) =>
                 throw new NotImplementedException();
 

@@ -70,12 +70,12 @@ namespace Favalet.Expressions
 
         public override bool Equals(IExpression? other) =>
             other is IMethodTerm rhs && this.Equals(rhs);
-        
+                
+        protected override IExpression Transpose(ITransposeContext context) =>
+            this;
+
         protected override IExpression MakeRewritable(IMakeRewritableContext context) =>
-            new MethodTerm(
-                this.RuntimeMethod,
-                LazySlim.Create(context.MakeRewritableHigherOrder(this.HigherOrder)),
-                this.Range);
+            this;
 
         protected override IExpression Infer(IInferContext context) =>
             this;

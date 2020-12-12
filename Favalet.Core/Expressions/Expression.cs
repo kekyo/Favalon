@@ -82,11 +82,15 @@ namespace Favalet.Expressions
                 _ => this.HigherOrder.IsContainsPlaceholder(includeHigherOrder)
             });
 
+        protected abstract IExpression Transpose(ITransposeContext context);
         protected abstract IExpression MakeRewritable(IMakeRewritableContext context);
         protected abstract IExpression Infer(IInferContext context);
         protected abstract IExpression Fixup(IFixupContext context);
         protected abstract IExpression Reduce(IReduceContext context);
 
+        [DebuggerStepThrough]
+        internal IExpression InternalTranspose(ITransposeContext context) =>
+            this.Transpose(context);
         [DebuggerStepThrough]
         internal IExpression InternalMakeRewritable(IMakeRewritableContext context) =>
             this.MakeRewritable(context);

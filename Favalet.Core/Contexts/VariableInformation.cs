@@ -17,15 +17,16 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+using Favalet.Expressions;
+using Favalet.Expressions.Specialized;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Favalet.Expressions;
-using Favalet.Expressions.Specialized;
-using Favalet.Internal;
 
 namespace Favalet.Contexts
 {
+    [DebuggerStepThrough]
     public readonly struct VariableInformation
     {
 #if DEBUG
@@ -57,16 +58,28 @@ namespace Favalet.Contexts
     
     internal sealed class VariableInformationRegistry
     {
-        private readonly Dictionary<string, List<VariableInformation>> variables =
-            new Dictionary<string, List<VariableInformation>>();
+        private readonly Dictionary<string, (BoundAttributes attributes, List<VariableInformation> list)> variables =
+            new Dictionary<string, (BoundAttributes attributes, List<VariableInformation> list)>();
+
+        private VariableInformationRegistry()
+        { }
 
         public void Register(
-            IBoundVariableTerm variable, IExpression expression, bool checkDuplicate)
+            BoundAttributes attributes,
+            IBoundVariableTerm variable,
+            IExpression expression,
+            bool checkDuplicate)
         {
-            if (!this.variables.TryGetValue(variable.Symbol, out var list))
+            if (!this.variables.TryGetValue(variable.Symbol, out var entry))
             {
-                list = new List<VariableInformation>();
-                this.variables.Add(variable.Symbol, list);
+                entry = (attributes, new List<VariableInformation>());
+                this.variables.Add(variable.Symbol, entry);
+            }
+
+            if (entry.attributes != attributes)
+            {
+                throw new ArgumentException(
+                    $"Couldn't change bound attributes: {entry.attributes} --> {attributes}");
             }
 
             var vi = VariableInformation.Create(
@@ -76,21 +89,24 @@ namespace Favalet.Contexts
 
             if (checkDuplicate)
             {
-                if (!list.Any(entry => entry.Equals(vi)))
+                if (!entry.list.Any(vi_ => vi_.Equals(vi)))
                 {
-                    list.Add(vi);
+                    entry.list.Add(vi);
                 }
             }
             else
             {
-                Debug.Assert(!list.Any(entry => entry.Equals(vi)));
-                list.Add(vi);
+                Debug.Assert(!entry.list.Any(vi_ => vi_.Equals(vi)));
+                entry.list.Add(vi);
             }
         }
 
-        public VariableInformation[] Lookup(string symbol) =>
-            this.variables.TryGetValue(symbol, out var list) ?
-                list.ToArray() :
-                ArrayEx.Empty<VariableInformation>();
+        public (BoundAttributes attributes, List<VariableInformation> vis)? Lookup(string symbol) =>
+            this.variables.TryGetValue(symbol, out var entry) ?
+                entry :
+                default((BoundAttributes attributes, List<VariableInformation> vis)?);
+        
+        public static VariableInformationRegistry Create() =>
+            new VariableInformationRegistry();
     }
 }

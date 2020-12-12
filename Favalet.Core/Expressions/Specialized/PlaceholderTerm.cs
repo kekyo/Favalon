@@ -90,6 +90,9 @@ namespace Favalet.Expressions.Specialized
         public override bool Equals(IExpression? other) =>
             other is IIdentityTerm rhs && this.Equals(rhs);
 
+        protected override IExpression Transpose(ITransposeContext context) =>
+            this;
+
         protected override IExpression MakeRewritable(IMakeRewritableContext context) =>
             this;  // Placeholder already rewritable on the unifier infrastructure.
 

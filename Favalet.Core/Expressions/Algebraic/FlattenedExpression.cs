@@ -42,6 +42,9 @@ namespace Favalet.Expressions.Algebraic
         public sealed override int GetHashCode() =>
             this.Operands.Aggregate(0, (agg, operand) => agg ^ operand?.GetHashCode() ?? 0);
 
+        protected sealed override IExpression Transpose(ITransposeContext context) =>
+            throw new InvalidOperationException();
+
         protected sealed override IExpression MakeRewritable(IMakeRewritableContext context) =>
             throw new InvalidOperationException();
 

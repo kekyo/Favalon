@@ -53,6 +53,12 @@ namespace Favalet.Expressions.Specialized
             get => this.Symbol;
         }
 
+        protected override IExpression Transpose(ITransposeContext context) =>
+            new BoundVariableTerm(
+                this.Symbol,
+                context.Transpose(this.HigherOrder),
+                this.Range);
+
         protected override IExpression MakeRewritable(IMakeRewritableContext context) =>
             new BoundVariableTerm(
                 this.Symbol,

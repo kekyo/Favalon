@@ -30,7 +30,7 @@ namespace Favalet.Expressions.Specialized
         Expression, IIgnoreUnificationTerm
     {
         private DeadEndTerm() :
-            base(TextRange.Unknown)
+            base(TextRange.Internal)
         { }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -39,6 +39,9 @@ namespace Favalet.Expressions.Specialized
 
         public override bool Equals(IExpression? other) =>
             false;
+
+        protected override IExpression Transpose(ITransposeContext context) =>
+            this;
 
         protected override IExpression MakeRewritable(IMakeRewritableContext context) =>
             this;

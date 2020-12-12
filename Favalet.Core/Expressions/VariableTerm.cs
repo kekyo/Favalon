@@ -32,6 +32,7 @@ namespace Favalet.Expressions
     public interface IVariableTerm :
         IIdentityTerm
     {
+        BoundAttributes? Attributes { get; }
     }
     
     public sealed class VariableTerm :
@@ -40,13 +41,20 @@ namespace Favalet.Expressions
         private readonly IExpression[]? bounds;
         
         public readonly string Symbol;
+        public readonly BoundAttributes? Attributes;
 
         [DebuggerStepThrough]
-        private VariableTerm(string symbol, IExpression higherOrder, IExpression[]? bounds, TextRange range) :
+        private VariableTerm(
+            string symbol,
+            IExpression higherOrder,
+            BoundAttributes? attributes,
+            IExpression[]? bounds,
+            TextRange range) :
             base(range)
         {
             this.HigherOrder = higherOrder;
             this.Symbol = symbol;
+            this.Attributes = attributes;
             this.bounds = bounds;
         }
 
@@ -66,6 +74,13 @@ namespace Favalet.Expressions
             get => this.Symbol;
         }
 
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        BoundAttributes? IVariableTerm.Attributes
+        {
+            [DebuggerStepThrough]
+            get => this.Attributes;
+        }
+
         public override int GetHashCode() =>
             this.Symbol.GetHashCode();
 
@@ -75,10 +90,38 @@ namespace Favalet.Expressions
         public override bool Equals(IExpression? other) =>
             other is IIdentityTerm rhs && this.Equals(rhs);
 
+        protected override IExpression Transpose(ITransposeContext context)
+        {
+            Debug.Assert(this.Attributes == null);
+            Debug.Assert(this.bounds == null);
+
+            var higherOrder = context.Transpose(this.HigherOrder);
+
+            if (context.LookupVariables(this.Symbol) is ({ } attributes, _))
+            {
+                return new VariableTerm(
+                    this.Symbol,
+                    higherOrder,
+                    attributes,
+                    this.bounds,
+                    this.Range);
+            }
+            else
+            {
+                return new VariableTerm(
+                    this.Symbol,
+                    higherOrder,
+                    BoundAttributes.PrefixLeftToRight,
+                    this.bounds,
+                    this.Range);
+            }
+        }
+
         protected override IExpression MakeRewritable(IMakeRewritableContext context) =>
             new VariableTerm(
                 this.Symbol,
                 context.MakeRewritableHigherOrder(this.HigherOrder),
+                this.Attributes,
                 this.bounds,
                 this.Range);
         
@@ -88,15 +131,11 @@ namespace Favalet.Expressions
             {
                 return this;
             }
-            
-            var higherOrder = context.Infer(this.HigherOrder);
-            var variables = context.
-                LookupVariables(this.Symbol).
-                Memoize();
 
-            if (variables.Length >= 1)
+            var higherOrder = context.Infer(this.HigherOrder);
+            if (context.LookupVariables(this.Symbol) is { } results)
             {
-                var targets = variables.
+                var targets = results.Variables.
                     Where(v => !context.TypeCalculator.ExactEquals(this, v.Expression)).
                     Select(v =>
                         (symbolHigherOrder: context.Infer(context.MakeRewritableHigherOrder(v.SymbolHigherOrder)), 
@@ -126,7 +165,12 @@ namespace Favalet.Expressions
                         expression => expression.HigherOrder,
                         targets.Select(entry => entry.expression)).
                     Memoize();
-                return new VariableTerm(this.Symbol, higherOrder, bounds, this.Range);
+                return new VariableTerm(
+                    this.Symbol,
+                    higherOrder,
+                    results.Attributes,
+                    bounds,
+                    this.Range);
             }
 
             if (object.ReferenceEquals(this.HigherOrder, higherOrder))
@@ -135,7 +179,12 @@ namespace Favalet.Expressions
             }
             else
             {
-                return new VariableTerm(this.Symbol, higherOrder, this.bounds, this.Range);
+                return new VariableTerm(
+                    this.Symbol,
+                    higherOrder,
+                    this.Attributes,
+                    this.bounds,
+                    this.Range);
             }
         }
 
@@ -179,7 +228,12 @@ namespace Favalet.Expressions
 
                     if (filteredTargets.Length >= 1)
                     {
-                        return new VariableTerm(this.Symbol, higherOrder, filteredTargets, this.Range);
+                        return new VariableTerm(
+                            this.Symbol,
+                            higherOrder,
+                            this.Attributes,
+                            filteredTargets, 
+                            this.Range);
                     }
                 }
             }
@@ -190,7 +244,12 @@ namespace Favalet.Expressions
             }
             else
             {
-                return new VariableTerm(this.Symbol, higherOrder, this.bounds, this.Range);
+                return new VariableTerm(
+                    this.Symbol,
+                    higherOrder,
+                    this.Attributes,
+                    this.bounds,
+                    this.Range);
             }
         }
 
@@ -202,19 +261,27 @@ namespace Favalet.Expressions
                 var target = bounds[0];
                 if (target is IBoundVariableTerm bound)
                 {
-                    var variables = context.TypeCalculator.SortExpressions(
-                        expression => expression.HigherOrder,
-                        context.LookupVariables(bound.Symbol).
-                            Where(variable => context.TypeCalculator.Equals(variable.SymbolHigherOrder, bound.HigherOrder)).
-                            Select(variable => variable.Expression)).
-                        Memoize();
-                    if (variables.Length == 1)
+                    if (context.LookupVariables(bound.Symbol) is { } results)
                     {
-                        return context.Reduce(variables[0]);
-                    }
-                    else if (variables.Length >= 2)
-                    {
-                        return new VariableTerm(this.Symbol, this.HigherOrder, variables, this.Range);
+                        var variables = context.TypeCalculator.SortExpressions(
+                            expression => expression.HigherOrder,
+                            results.Variables
+                                .Where(variable =>
+                                    context.TypeCalculator.Equals(variable.SymbolHigherOrder, bound.HigherOrder))
+                                .Select(variable => variable.Expression)).Memoize();
+                        if (variables.Length == 1)
+                        {
+                            return context.Reduce(variables[0]);
+                        }
+                        else if (variables.Length >= 2)
+                        {
+                            return new VariableTerm(
+                                this.Symbol,
+                                this.HigherOrder,
+                                this.Attributes,
+                                variables,
+                                this.Range);
+                        }
                     }
                 }
                 else
@@ -232,13 +299,35 @@ namespace Favalet.Expressions
         protected override string GetPrettyString(IPrettyStringContext context) =>
             context.FinalizePrettyString(
                 this,
-                this.Symbol);
+                (context.Type >= PrettyStringTypes.Strict) ?
+                    this.Attributes switch
+                    {
+                        BoundAttributes.PrefixLeftToRight => $"{this.Symbol} @ PL",
+                        BoundAttributes.InfixLeftToRight => $"{this.Symbol} @ IL",
+                        BoundAttributes.PrefixRightToLeft => $"{this.Symbol} @ PR",
+                        BoundAttributes.InfixRightToLeft => $"{this.Symbol} @ IR",
+                        _ => this.Symbol
+                    } :
+                    this.Symbol);
 
         [DebuggerStepThrough]
         public static VariableTerm Create(string symbol, IExpression higherOrder, TextRange range) =>
-            new VariableTerm(symbol, higherOrder, default, range);
+            new VariableTerm(symbol, higherOrder, default, default, range);
         [DebuggerStepThrough]
         public static VariableTerm Create(string symbol, TextRange range) =>
-            new VariableTerm(symbol, UnspecifiedTerm.Instance, default, range);
+            new VariableTerm(symbol, UnspecifiedTerm.Instance, default, default, range);
+    }
+
+    [DebuggerStepThrough]
+    public static class VariableTermExtension
+    {
+        public static void Deconstruct(
+            this IVariableTerm variable,
+            out string symbol,
+            out BoundAttributes? attributes)
+        {
+            symbol = variable.Symbol;
+            attributes = variable.Attributes;
+        }
     }
 }

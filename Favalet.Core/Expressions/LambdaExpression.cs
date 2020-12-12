@@ -183,6 +183,13 @@ namespace Favalet.Expressions
         public override bool Equals(IExpression? other) =>
             other is ILambdaExpression rhs && this.Equals(rhs);
 
+        protected override IExpression Transpose(ITransposeContext context) =>
+            LambdaExpressionFactory.Instance.Create(
+                context.Transpose(this.Parameter),
+                context.Transpose(this.Body),
+                () => context.Transpose(this.HigherOrder),
+                this.Range);
+
         protected override IExpression MakeRewritable(IMakeRewritableContext context) =>
             LambdaExpressionFactory.Instance.Create(
                 context.MakeRewritable(this.Parameter),

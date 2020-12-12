@@ -61,6 +61,9 @@ namespace Favalet.Expressions
         public override bool Equals(IExpression? other) =>
             other is ITypeTerm rhs && this.Equals(rhs);
 
+        protected override IExpression Transpose(ITransposeContext context) =>
+            this;
+
         protected override IExpression MakeRewritable(IMakeRewritableContext context) =>
             this;
 
