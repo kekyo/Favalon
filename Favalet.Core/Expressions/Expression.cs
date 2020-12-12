@@ -117,11 +117,17 @@ namespace Favalet.Expressions
 
         public string Xml =>
             this.GetXml().ToString();
+        
+        public string StrictAll =>
+            $"{this.Type}: {this.GetPrettyString(PrettyStringTypes.StrictAll)}";
         public string Strict =>
             $"{this.Type}: {this.GetPrettyString(PrettyStringTypes.Strict)}";
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        public string ReadableAll =>
+            $"{this.Type}: {this.GetPrettyString(PrettyStringTypes.ReadableAll)}";
         public string Readable =>
             $"{this.Type}: {this.GetPrettyString(PrettyStringTypes.Readable)}";
+        public string Minimum =>
+            $"{this.Type}: {this.GetPrettyString(PrettyStringTypes.Minimum)}";
 
         public sealed override string ToString() =>
             this.Readable;

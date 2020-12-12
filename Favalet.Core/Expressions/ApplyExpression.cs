@@ -123,7 +123,12 @@ namespace Favalet.Expressions
                     BoundAttributes.PrefixLeftToRight =>
                         new ApplyExpression(function, argument, higherOrder, this.Range),
                     BoundAttributes.InfixLeftToRight =>
-                        new ApplyExpression(argument, function, higherOrder, this.Range),
+                        function is IApplyExpression({ } fi, { } ai) appi ?
+                            new ApplyExpression(
+                                new ApplyExpression(fi, argument, UnspecifiedTerm.Instance, appi.Range),
+                                ai,
+                                higherOrder, this.Range) :
+                            new ApplyExpression(argument, function, higherOrder, this.Range),
                     // BoundAttributes.PrefixRightToLeft => ,
                     // BoundAttributes.InfixRightToLeft => ,
                     _ => new ApplyExpression(function, argument, higherOrder, this.Range)

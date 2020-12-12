@@ -21,6 +21,7 @@ using Favalet.Contexts;
 using Favalet.Expressions;
 using NUnit.Framework;
 using System;
+using Favalet.Expressions.Operators;
 using Favalet.Expressions.Specialized;
 using static Favalet.CLRGenerator;
 using static Favalet.Generator;
@@ -218,6 +219,189 @@ namespace Favalet.Inferring
                     Constant(123),
                     Type<int>());
 
+            AssertLogicalEqual(expression, expected, actual);
+        }
+         
+        [Test]
+        public void BoundVariableWithAttributes3()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ INFIX|LTR = a -> a
+            environment.MutableBind(
+                BoundAttributes.InfixLeftToRight,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // abc 123 $$$ 456
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable("abc"),
+                            Constant(123)),
+                        Variable("$$$")),
+                    Constant(456));
+            
+            var actual = environment.Infer(expression);
+
+            // abc $$$ 123 456
+            // (((((abc:(('1 -> '1) -> (int -> (int -> '0))) $$$:('1 -> '1)):(int -> (int -> '0))) 123:int):(int -> '0)) 456:int):'0
+            var provider = PseudoPlaceholderProvider.Create();
+            var ph0 = provider.CreatePlaceholder();
+            var ph1 = provider.CreatePlaceholder();
+            var expected =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable(
+                                "abc",
+                                Lambda(
+                                    Lambda(
+                                        ph1,
+                                        ph1),
+                                    Lambda(
+                                        Type<int>(),
+                                        Lambda(
+                                            Type<int>(),
+                                            ph0)))),
+                            Variable(
+                                "$$$",
+                                Lambda(
+                                    ph1,
+                                    ph1)),
+                            Lambda(
+                                Type<int>(),
+                                Lambda(
+                                    Type<int>(),
+                                    ph0))),
+                        Constant(123),
+                        Lambda(
+                            Type<int>(),
+                            ph0)),
+                    Constant(456),
+                    ph0);
+            
+            AssertLogicalEqual(expression, expected, actual);
+        }
+         
+        [Test]
+        public void BoundVariableWithAttributes4()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ INFIX|LTR = a -> a
+            environment.MutableBind(
+                BoundAttributes.InfixLeftToRight,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // abc 123 $$$ 456 $$$
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Apply(
+                                Variable("abc"),
+                                Constant(123)),
+                            Variable("$$$")),
+                        Constant(456)),
+                    Variable("$$$"));
+            
+            var actual = environment.Infer(expression);
+
+            // abc $$$ 123 $$$ 456
+            var expected =
+                Apply(
+                    Apply(
+                        Apply(
+                            Apply(
+                                Variable("abc"),
+                                Variable("$$$")),
+                            Constant(123)),
+                        Variable("$$$")),
+                    Constant(456));
+            
+            AssertLogicalEqual(expression, expected, actual);
+        }
+         
+        [Test]
+        public void BoundVariableWithAttributes5()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ INFIX|LTR = a -> a
+            environment.MutableBind(
+                BoundAttributes.InfixLeftToRight,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // abc 123 $$$ $$$ 456
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Apply(
+                                Variable("abc"),
+                                Constant(123)),
+                            Variable("$$$")),
+                        Variable("$$$")),
+                    Constant(456));
+            
+            var actual = environment.Infer(expression);
+
+            // abc $$$ $$$ 123 456
+            var expected =
+                Apply(
+                    Apply(
+                        Apply(
+                            Apply(
+                                Variable("abc"),
+                                Variable("$$$")),
+                            Variable("$$$")),
+                        Constant(123)),
+                    Constant(456));
+            
+            AssertLogicalEqual(expression, expected, actual);
+        }
+         
+        [Test]
+        public void BoundVariableWithAttributes6()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ INFIX|LTR = a -> a
+            environment.MutableBind(
+                BoundAttributes.InfixLeftToRight,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // $$$ abc 123
+            var expression =
+                Apply(
+                    Apply(
+                        Variable("$$$"),
+                        Variable("abc")),
+                    Constant(123));
+            
+            var actual = environment.Infer(expression);
+
+            // $$$ abc 123
+            var expected =
+                Apply(
+                    Apply(
+                        Variable("$$$"),
+                        Variable("abc")),
+                    Constant(123));
+            
             AssertLogicalEqual(expression, expected, actual);
         }
         #endregion
