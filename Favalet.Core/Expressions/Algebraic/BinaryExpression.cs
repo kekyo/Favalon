@@ -90,8 +90,8 @@ namespace Favalet.Expressions.Algebraic
 
         [DebuggerStepThrough]
         IExpression IPairExpression.Create(
-            IExpression left, IExpression right, IExpression higherOrder, TextRange range) =>
-            this.OnCreate(left, right, higherOrder, range);
+            IExpression left, IExpression right, TextRange range) =>
+            this.OnCreate(left, right, UnspecifiedTerm.Instance, range);
         
         internal abstract IExpression OnCreate(
             IExpression left, IExpression right, IExpression higherOrder, TextRange range);

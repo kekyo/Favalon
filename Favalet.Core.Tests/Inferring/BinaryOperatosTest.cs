@@ -21,9 +21,10 @@ using Favalet.Contexts;
 using Favalet.Expressions;
 using NUnit.Framework;
 using System;
-
+using Favalet.Expressions.Algebraic;
 using static Favalet.CLRGenerator;
 using static Favalet.Generator;
+using TextRange = Favalet.Ranges.TextRange;
 
 namespace Favalet.Inferring
 {
@@ -44,6 +45,15 @@ namespace Favalet.Inferring
                     actual.GetPrettyString(PrettyStringTypes.Readable));
             }
         }
+        
+        private static AndExpression And(IExpression lhs, IExpression rhs) =>
+            AndExpression.Create(lhs, rhs, TextRange.Unknown);
+        private static AndExpression And(IExpression lhs, IExpression rhs, IExpression higherOrder) =>
+            AndExpression.UnsafeCreate(lhs, rhs, higherOrder, TextRange.Unknown);
+        private static OrExpression Or(IExpression lhs, IExpression rhs) =>
+            OrExpression.Create(lhs, rhs, TextRange.Unknown);
+        private static OrExpression Or(IExpression lhs, IExpression rhs, IExpression higherOrder) =>
+            OrExpression.UnsafeCreate(lhs, rhs, higherOrder, TextRange.Unknown);
 
         private static readonly Func<IExpression, IExpression, IExpression?, IExpression>[] BinaryOperators =
             new[]
@@ -54,7 +64,7 @@ namespace Favalet.Inferring
                     ho is IExpression ? Or(lhs, rhs, ho) : Or(lhs, rhs)),
             };
 
-        [TestCaseSource("BinaryOperators")]
+        [TestCaseSource(nameof(BinaryOperators))]
         public void BinaryWithoutAnnotation1(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
@@ -81,7 +91,7 @@ namespace Favalet.Inferring
             AssertLogicalEqual(expression, expected, actual);
         }
 
-        [TestCaseSource("BinaryOperators")]
+        [TestCaseSource(nameof(BinaryOperators))]
         public void BinaryWithoutAnnotation2(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
@@ -114,7 +124,7 @@ namespace Favalet.Inferring
 
         /////////////////////////////////////////////////////
 
-        [TestCaseSource("BinaryOperators")]
+        [TestCaseSource(nameof(BinaryOperators))]
         public void BinaryWithAnnotation11(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
@@ -139,7 +149,7 @@ namespace Favalet.Inferring
             AssertLogicalEqual(expression, expected, actual);
         }
 
-        [TestCaseSource("BinaryOperators")]
+        [TestCaseSource(nameof(BinaryOperators))]
         public void BinaryWithAnnotation12(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
@@ -164,7 +174,7 @@ namespace Favalet.Inferring
             AssertLogicalEqual(expression, expected, actual);
         }
 
-        [TestCaseSource("BinaryOperators")]
+        [TestCaseSource(nameof(BinaryOperators))]
         public void BinaryWithAnnotation13(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
@@ -189,7 +199,7 @@ namespace Favalet.Inferring
             AssertLogicalEqual(expression, expected, actual);
         }
 
-        [TestCaseSource("BinaryOperators")]
+        [TestCaseSource(nameof(BinaryOperators))]
         public void BinaryWithAnnotation14(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
@@ -214,7 +224,7 @@ namespace Favalet.Inferring
             AssertLogicalEqual(expression, expected, actual);
         }
 
-        [TestCaseSource("BinaryOperators")]
+        [TestCaseSource(nameof(BinaryOperators))]
         public void BinaryWithAnnotation15(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
@@ -241,7 +251,7 @@ namespace Favalet.Inferring
 
         /////////////////////////////////////////////////////
 
-        [TestCaseSource("BinaryOperators")]
+        [TestCaseSource(nameof(BinaryOperators))]
         public void BinaryWithAnnotation21(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
@@ -272,7 +282,7 @@ namespace Favalet.Inferring
             AssertLogicalEqual(expression, expected, actual);
         }
 
-        [TestCaseSource("BinaryOperators")]
+        [TestCaseSource(nameof(BinaryOperators))]
         public void BinaryWithAnnotation22(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
@@ -303,7 +313,7 @@ namespace Favalet.Inferring
             AssertLogicalEqual(expression, expected, actual);
         }
 
-        [TestCaseSource("BinaryOperators")]
+        [TestCaseSource(nameof(BinaryOperators))]
         public void BinaryWithAnnotation23(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
@@ -334,7 +344,7 @@ namespace Favalet.Inferring
             AssertLogicalEqual(expression, expected, actual);
         }
 
-        [TestCaseSource("BinaryOperators")]
+        [TestCaseSource(nameof(BinaryOperators))]
         public void BinaryWithAnnotation24(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
@@ -365,7 +375,7 @@ namespace Favalet.Inferring
             AssertLogicalEqual(expression, expected, actual);
         }
 
-        [TestCaseSource("BinaryOperators")]
+        [TestCaseSource(nameof(BinaryOperators))]
         public void BinaryWithAnnotation25(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
@@ -396,7 +406,7 @@ namespace Favalet.Inferring
             AssertLogicalEqual(expression, expected, actual);
         }
 
-        [TestCaseSource("BinaryOperators")]
+        [TestCaseSource(nameof(BinaryOperators))]
         public void BinaryWithAnnotation26(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
@@ -427,7 +437,7 @@ namespace Favalet.Inferring
             AssertLogicalEqual(expression, expected, actual);
         }
 
-        [TestCaseSource("BinaryOperators")]
+        [TestCaseSource(nameof(BinaryOperators))]
         public void BinaryWithAnnotation27(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
@@ -458,7 +468,7 @@ namespace Favalet.Inferring
             AssertLogicalEqual(expression, expected, actual);
         }
 
-        [TestCaseSource("BinaryOperators")]
+        [TestCaseSource(nameof(BinaryOperators))]
         public void BinaryWithAnnotation28(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
@@ -489,7 +499,7 @@ namespace Favalet.Inferring
             AssertLogicalEqual(expression, expected, actual);
         }
 
-        [TestCaseSource("BinaryOperators")]
+        [TestCaseSource(nameof(BinaryOperators))]
         public void BinaryWithAnnotation29(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
@@ -520,7 +530,7 @@ namespace Favalet.Inferring
             AssertLogicalEqual(expression, expected, actual);
         }
 
-        [TestCaseSource("BinaryOperators")]
+        [TestCaseSource(nameof(BinaryOperators))]
         public void BinaryWithAnnotation30(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
@@ -551,7 +561,7 @@ namespace Favalet.Inferring
             AssertLogicalEqual(expression, expected, actual);
         }
 
-        [TestCaseSource("BinaryOperators")]
+        [TestCaseSource(nameof(BinaryOperators))]
         public void BinaryWithAnnotation31(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
@@ -582,7 +592,7 @@ namespace Favalet.Inferring
             AssertLogicalEqual(expression, expected, actual);
         }
 
-        [TestCaseSource("BinaryOperators")]
+        [TestCaseSource(nameof(BinaryOperators))]
         public void BinaryWithAnnotation32(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
@@ -613,7 +623,7 @@ namespace Favalet.Inferring
             AssertLogicalEqual(expression, expected, actual);
         }
 
-        [TestCaseSource("BinaryOperators")]
+        [TestCaseSource(nameof(BinaryOperators))]
         public void BinaryWithAnnotation33(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {
@@ -644,7 +654,7 @@ namespace Favalet.Inferring
             AssertLogicalEqual(expression, expected, actual);
         }
 
-        [TestCaseSource("BinaryOperators")]
+        [TestCaseSource(nameof(BinaryOperators))]
         public void BinaryWithAnnotation34(
             Func<IExpression, IExpression, IExpression?, IExpression> oper)
         {

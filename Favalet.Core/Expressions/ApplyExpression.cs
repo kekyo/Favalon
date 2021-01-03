@@ -100,8 +100,8 @@ namespace Favalet.Expressions
         }
 
         [DebuggerStepThrough]
-        IExpression IPairExpression.Create(      /* TODO: vvv */
-            IExpression left, IExpression right, IExpression higherOrder, TextRange range) =>
+        IExpression IPairExpression.Create(
+            IExpression left, IExpression right, TextRange range) =>
             Create(left, right, range);
 
         public override int GetHashCode() =>

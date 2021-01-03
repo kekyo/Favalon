@@ -43,15 +43,11 @@ namespace Favalet.Expressions
             private readonly ILambdaExpression fourth;
 
             private LambdaExpressionFactory() =>
-                this.fourth = this.OnCreate(
+                this.fourth = new LambdaExpression(
                     FourthTerm.Instance,
                     FourthTerm.Instance,
                     DeadEndTerm.Instance,
                     TextRange.Unknown);
-
-            private ILambdaExpression OnCreate(
-                IExpression parameter, IExpression body, IExpression higherOrder, TextRange range) =>
-                new LambdaExpression(parameter, body, higherOrder, range);
             
             public IExpression Create(
                 IExpression parameter, IExpression body, Func<IExpression> higherOrder, TextRange range)
@@ -65,13 +61,13 @@ namespace Favalet.Expressions
                         return this.fourth;
                     case (FourthTerm _, _):
                     case (_, FourthTerm _):
-                        return this.OnCreate(
+                        return new LambdaExpression(
                             parameter,
                             body,
                             DeadEndTerm.Instance,
                             range);
                     default:
-                        return this.OnCreate(
+                        return new LambdaExpression(
                             parameter,
                             body,
                             higherOrder(),
@@ -166,12 +162,8 @@ namespace Favalet.Expressions
 
         [DebuggerStepThrough]
         IExpression IPairExpression.Create(
-            IExpression left, IExpression right, IExpression higherOrder, TextRange range)
-        {
-            Debug.Assert(higherOrder is UnspecifiedTerm);
-
-            return LambdaExpressionFactory.Instance.Create(left, right, range);
-        }
+            IExpression left, IExpression right, TextRange range) =>
+            LambdaExpressionFactory.Instance.Create(left, right, range);
 
         public override int GetHashCode() =>
             this.Parameter.GetHashCode() ^ this.Body.GetHashCode();

@@ -17,6 +17,7 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+using System.ComponentModel;
 using Favalet.Expressions.Specialized;
 using Favalet.Ranges;
 using System.Diagnostics;
@@ -37,15 +38,20 @@ namespace Favalet.Expressions.Algebraic
             base(left, right, higherOrder, range)
         { }
 
+        [DebuggerStepThrough]
         internal override IExpression OnCreate(
             IExpression left, IExpression right, IExpression higherOrder, TextRange range) =>
             new OrExpression(left, right, higherOrder, range);
 
-        public static OrExpression Create(
-            IExpression left, IExpression right, IExpression higherOrder, TextRange range) =>
-            new OrExpression(left, right, higherOrder, range);
+        [DebuggerStepThrough]
         public static OrExpression Create(
             IExpression left, IExpression right, TextRange range) =>
             new OrExpression(left, right, UnspecifiedTerm.Instance, range);
+
+        [DebuggerStepThrough]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public static OrExpression UnsafeCreate(
+            IExpression left, IExpression right, IExpression higherOrder, TextRange range) =>
+            new OrExpression(left, right, higherOrder, range);
     }
 }

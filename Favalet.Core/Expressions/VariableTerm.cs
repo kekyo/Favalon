@@ -127,7 +127,7 @@ namespace Favalet.Expressions
         
         protected override IExpression Infer(IInferContext context)
         {
-            if (this.bounds is IExpression[])
+            if (this.bounds != null)
             {
                 return this;
             }
@@ -146,13 +146,11 @@ namespace Favalet.Expressions
                 {
                     var symbolHigherOrder = LogicalCalculator.ConstructNested(
                         targets.Select(v => v.symbolHigherOrder).Memoize(),
-                        UnspecifiedTerm.Instance,
                         OrExpression.Create,
                         this.Range)!;
 
                     var expressionHigherOrder = LogicalCalculator.ConstructNested(
                         targets.Select(v => v.expression.HigherOrder).Memoize(),
-                        UnspecifiedTerm.Instance,
                         OrExpression.Create,
                         this.Range)!;
                
@@ -192,8 +190,7 @@ namespace Favalet.Expressions
         {
             var higherOrder = context.FixupHigherOrder(this.HigherOrder);
 
-            if (this.bounds is { } bounds &&
-                bounds.Length >= 1)
+            if (this.bounds is { Length: >= 1 } bounds)
             {
                 var targets = bounds.
                     Select(context.Fixup).
@@ -205,7 +202,6 @@ namespace Favalet.Expressions
                         targets.
                             Select(target => target.HigherOrder).
                             Memoize(),
-                        UnspecifiedTerm.Instance,
                         OrExpression.Create,
                         this.Range)!;
 
@@ -255,8 +251,7 @@ namespace Favalet.Expressions
 
         protected override IExpression Reduce(IReduceContext context)
         {
-            if (this.bounds is { } bounds &&
-                bounds.Length >= 1)
+            if (this.bounds is { Length: >= 1 } bounds)
             {
                 var target = bounds[0];
                 if (target is IBoundVariableTerm bound)

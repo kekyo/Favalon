@@ -19,6 +19,7 @@
 
 using Favalet.Contexts;
 using Favalet.Expressions;
+using Favalet.Expressions.Algebraic;
 using NUnit.Framework;
 
 using static Favalet.CLRGenerator;
@@ -91,10 +92,11 @@ namespace Favalet.Inferring
 
             // (true:bool && false:bool):bool
             var expected =
-                And(
+                AndExpression.UnsafeCreate(
                     Variable("true", Type<bool>()),
                     Variable("false", Type<bool>()),
-                    Type<bool>());
+                    Type<bool>(),
+                    Ranges.TextRange.Unknown);
 
             AssertLogicalEqual(expression, expected, actual);
         }
