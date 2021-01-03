@@ -139,7 +139,7 @@ namespace Favalet.Expressions
         }
 
         [DebuggerStepThrough]
-        public static ITerm From(MethodBase method, TextRange range) =>
+        public static IExpression From(MethodBase method, TextRange range) =>
             new MethodTerm(
                 method,
                 LazySlim.Create(() => CreateHigherOrder(method, CLRGenerator.TextRange(method))),

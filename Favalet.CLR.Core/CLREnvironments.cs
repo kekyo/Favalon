@@ -91,7 +91,7 @@ namespace Favalet
             }
         }
         
-        private static ITerm MutableBindMember(
+        private static IExpression MutableBindMember(
             IEnvironments environments, PropertyInfo property, TextRange range)
         {
             var propertyTerm = PropertyTerm.From(property, range);
@@ -115,11 +115,11 @@ namespace Favalet
             return propertyTerm;
         }
         
-        public static ITerm MutableBindMember(
+        public static IExpression MutableBindMember(
             this IEnvironments environments, PropertyInfo property) =>
             MutableBindMember(environments, property, CLRGenerator.TextRange(property));
 
-        private static ITerm MutableBindMember(
+        private static IExpression MutableBindMember(
             IEnvironments environments, MethodBase method, TextRange range)
         {
             var methodTerm = MethodTerm.From(method, range);
@@ -150,7 +150,7 @@ namespace Favalet
             return methodTerm;
         }
         
-        public static ITerm MutableBindMember(
+        public static IExpression MutableBindMember(
             this IEnvironments environments, MethodBase method) =>
             MutableBindMember(environments, method, CLRGenerator.TextRange(method));
 

@@ -90,7 +90,7 @@ namespace Favalet.Expressions
                 this.RuntimeProperty.GetReadableName());
 
         [DebuggerStepThrough]
-        public static ITerm From(PropertyInfo runtimeProperty, TextRange range)
+        public static IExpression From(PropertyInfo runtimeProperty, TextRange range)
         {
             var isStatic =
                 (runtimeProperty.GetGetMethod() ?? runtimeProperty.GetSetMethod())?.IsStatic ?? true;
