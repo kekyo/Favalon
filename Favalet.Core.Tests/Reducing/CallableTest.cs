@@ -438,7 +438,7 @@ namespace Favalet.Reducing
         }
 
         [TestCase(1, 2, 3)]
-        [TestCase(1.1, 2.2, 3.3)]
+        [TestCase(1.0, 2.0, 3.0)]
         [TestCase("a", "b", "ab")]
         public void ApplyOverloadedMethod2(object a, object b, object r)
         {

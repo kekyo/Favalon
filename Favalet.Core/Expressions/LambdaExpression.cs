@@ -41,13 +41,21 @@ namespace Favalet.Expressions
         private sealed class LambdaExpressionFactory
         {
             private readonly ILambdaExpression fourth;
+            private readonly ILambdaExpression typeKind;
 
-            private LambdaExpressionFactory() =>
+            private LambdaExpressionFactory()
+            {
                 this.fourth = new LambdaExpression(
                     FourthTerm.Instance,
                     FourthTerm.Instance,
                     DeadEndTerm.Instance,
                     TextRange.Unknown);
+                this.typeKind = new LambdaExpression(
+                    TypeKindTerm.Instance,
+                    TypeKindTerm.Instance,
+                    this.fourth,
+                    TextRange.Unknown);
+            }
             
             public IExpression Create(
                 IExpression parameter, IExpression body, Func<IExpression> higherOrder, TextRange range)
@@ -59,6 +67,8 @@ namespace Favalet.Expressions
                         return DeadEndTerm.Instance;
                     case (FourthTerm _, FourthTerm _):
                         return this.fourth;
+                    case (TypeKindTerm _, TypeKindTerm _):
+                        return this.typeKind;
                     case (FourthTerm _, _):
                     case (_, FourthTerm _):
                         return new LambdaExpression(
