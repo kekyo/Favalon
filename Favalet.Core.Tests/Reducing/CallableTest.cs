@@ -393,25 +393,29 @@ namespace Favalet.Reducing
             AssertLogicalEqual(expression, expected, actual);
         }
 
-        public static class OverloadTest
+        #region Overloads
+        public static class OverloadTest1
         {
             public static string Overload(int value) =>
                 value.ToString();
             public static string Overload(double value) =>
                 value.ToString();
+            public static string Overload(string value) =>
+                value.ToString();
         }
 
         [TestCase(123, "123")]
         [TestCase(123.456, "123.456")]
-        public void ApplyOverloadedMethod(object argument, object result)
+        [TestCase("abc", "abc")]
+        public void ApplyOverloadedMethod1(object argument, object result)
         {
             var environments = CLREnvironments();
-            var typeTerm = environments.MutableBindMembers(typeof(OverloadTest));
+            var typeTerm = environments.MutableBindMembers(typeof(OverloadTest1));
             
-            // OverloadTest.Overload(123)
+            // OverloadTest1.Overload(123)
             var expression =
                 Apply(
-                    Variable("Favalet.Reducing.OverloadTest.Overload"),
+                    Variable("Favalet.Reducing.OverloadTest1.Overload"),
                     Constant(argument));
 
             var actual = environments.Reduce(expression);
@@ -422,5 +426,77 @@ namespace Favalet.Reducing
 
             AssertLogicalEqual(expression, expected, actual);
         }
+        
+        public static class OverloadTest2
+        {
+            public static int Overload(int a, int b) =>
+                a + b;
+            public static double Overload(double a, double b) =>
+                a + b;
+            public static string Overload(string a, string b) =>
+                a + b;
+        }
+
+        [TestCase(1, 2, 3)]
+        [TestCase(1.1, 2.2, 3.3)]
+        [TestCase("a", "b", "ab")]
+        public void ApplyOverloadedMethod2(object a, object b, object r)
+        {
+            var environments = CLREnvironments();
+            var typeTerm = environments.MutableBindMembers(typeof(OverloadTest2));
+            
+            // OverloadTest2.Overload(1, 2)
+            var expression =
+                Apply(
+                    Apply(
+                        Variable("Favalet.Reducing.OverloadTest2.Overload"),
+                        Constant(a)),
+                    Constant(b));
+
+            var actual = environments.Reduce(expression);
+
+            // 3
+            var expected =
+                Constant(r);
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
+        #endregion
+
+        /*
+        public readonly struct OperatorTest
+        {
+            public readonly int v;
+
+            public OperatorTest(int v) =>
+                this.v = v;
+            
+            public static OperatorTest operator +(OperatorTest b) =>
+                new OperatorTest(100 + b.v);
+            public static OperatorTest operator -(OperatorTest b) =>
+                new OperatorTest(100 - b.v);
+        }
+
+        [TestCase(1, 101)]
+        public void Operator(int a, int r)
+        {
+            var environments = CLREnvironments();
+            var typeTerm = environments.MutableBindMembers(typeof(OperatorTest));
+            
+            // OperatorTest + 1
+            var expression =
+                Apply(
+                    Variable("+"),
+                    Constant(new OperatorTest(a)));
+
+            var actual = environments.Reduce(expression);
+
+            // "101"
+            var expected =
+                Constant(new OperatorTest(r));
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
+    */
     }
 }
