@@ -24,6 +24,7 @@ using System;
 
 using static Favalet.CLRGenerator;
 using static Favalet.Generator;
+using static Favalet.TestUtiltiies;
 
 namespace Favalet.Inferring
 {

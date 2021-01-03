@@ -87,16 +87,6 @@ namespace Favalet
         public static LambdaExpression Lambda(
             string parameter, IExpression body) =>
             LambdaExpression.Create(BoundVariableTerm.Create(parameter, TextRange.Unknown), body, TextRange.Unknown);
-        public static LambdaExpression Lambda(
-            IExpression parameter, IExpression body, ILambdaExpression higherOrder) =>
-            LambdaExpression.Create(parameter, body, higherOrder, TextRange.Unknown);
-        public static LambdaExpression Lambda(
-            string parameter, IExpression body, ILambdaExpression higherOrder) =>
-            LambdaExpression.Create(
-                BoundVariableTerm.Create(parameter, TextRange.Unknown),
-                body,
-                higherOrder,
-                TextRange.Unknown);
 
         public static ApplyExpression Apply(
             IExpression function, IExpression argument) =>

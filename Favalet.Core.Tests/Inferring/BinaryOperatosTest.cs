@@ -21,10 +21,10 @@ using Favalet.Contexts;
 using Favalet.Expressions;
 using NUnit.Framework;
 using System;
-using Favalet.Expressions.Algebraic;
+
 using static Favalet.CLRGenerator;
 using static Favalet.Generator;
-using TextRange = Favalet.Ranges.TextRange;
+using static Favalet.TestUtiltiies;
 
 namespace Favalet.Inferring
 {
@@ -46,15 +46,6 @@ namespace Favalet.Inferring
             }
         }
         
-        private static AndExpression And(IExpression lhs, IExpression rhs) =>
-            AndExpression.Create(lhs, rhs, TextRange.Unknown);
-        private static AndExpression And(IExpression lhs, IExpression rhs, IExpression higherOrder) =>
-            AndExpression.UnsafeCreate(lhs, rhs, higherOrder, TextRange.Unknown);
-        private static OrExpression Or(IExpression lhs, IExpression rhs) =>
-            OrExpression.Create(lhs, rhs, TextRange.Unknown);
-        private static OrExpression Or(IExpression lhs, IExpression rhs, IExpression higherOrder) =>
-            OrExpression.UnsafeCreate(lhs, rhs, higherOrder, TextRange.Unknown);
-
         private static readonly Func<IExpression, IExpression, IExpression?, IExpression>[] BinaryOperators =
             new[]
             {

@@ -303,16 +303,16 @@ namespace Favalet.Expressions
             context.FinalizePrettyString(
                 this,
                 $"{context.GetPrettyString(this.Parameter)} -> {context.GetPrettyString(this.Body)}");
-        
-        public static LambdaExpression Create(
-            IExpression parameter, IExpression body, ILambdaExpression higherOrder, TextRange range) =>
-            (LambdaExpression)LambdaExpressionFactory.Instance.Create(
-                parameter, body, higherOrder, range);
 
         public static LambdaExpression Create(
             IExpression parameter, IExpression body, TextRange range) =>
             (LambdaExpression)LambdaExpressionFactory.Instance.Create(
                 parameter, body, range);
+         
+        public static LambdaExpression UnsafeCreate(
+            IExpression parameter, IExpression body, ILambdaExpression higherOrder, TextRange range) =>
+            (LambdaExpression)LambdaExpressionFactory.Instance.Create(
+                parameter, body, higherOrder, range);
     }
 
     [DebuggerStepThrough]
