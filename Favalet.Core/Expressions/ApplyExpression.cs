@@ -22,7 +22,11 @@ using Favalet.Expressions.Specialized;
 using Favalet.Ranges;
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 
 namespace Favalet.Expressions
 {
@@ -96,9 +100,9 @@ namespace Favalet.Expressions
         }
 
         [DebuggerStepThrough]
-        IExpression IPairExpression.Create(
+        IExpression IPairExpression.Create(      /* TODO: vvv */
             IExpression left, IExpression right, IExpression higherOrder, TextRange range) =>
-            Create(left, right, higherOrder, range);
+            Create(left, right, range);
 
         public override int GetHashCode() =>
             this.Function.GetHashCode() ^ this.Argument.GetHashCode();
@@ -110,34 +114,143 @@ namespace Favalet.Expressions
         public override bool Equals(IExpression? other) =>
             other is IApplyExpression rhs && this.Equals(rhs);
 
+        private IEnumerable<IExpression> EnumerateRecursively(ITransposeContext context)
+        {
+            var stack = new Stack<IExpression>();
+            stack.Push(this.Argument);
+            stack.Push(this.Function);
+            
+            while (stack.Count >= 1)
+            {
+                var current = stack.Pop();
+                if (current is IApplyExpression apply)
+                {
+                    stack.Push(apply.Argument);
+                    stack.Push(apply.Function);
+                    continue;
+                }
+
+                var transposed = context.Transpose(current);
+                yield return transposed;
+            }
+        }
+
+        private static IEnumerable<IExpression> TransposeInfix(IEnumerable<IExpression> expressions)
+        {
+            var enumerator = expressions.GetEnumerator();
+            try
+            {
+                var mn = enumerator.MoveNext();
+                Debug.Assert(mn);
+                var last = enumerator.Current!;
+
+                mn = enumerator.MoveNext();
+                Debug.Assert(mn);
+                
+                // In this place, the first node is [last].
+                // ex: '$$$' is PREFIX|RTL
+                //  [last]
+                //     v
+                //   ($$$ abc) (($$$ def) 123)
+                //    Fst        Fst
+                var firstNode = false;
+                do
+                {
+                    var current = enumerator.Current!;
+                    if (!firstNode && current is IVariableTerm(_, BoundAttributes.InfixLeftToRight or BoundAttributes.InfixRightToLeft))
+                    {
+                        yield return current;
+                    }
+                    else
+                    {
+                        // Will make first node in the expression by RTL.
+                        firstNode = last is IVariableTerm(_, BoundAttributes.PrefixRightToLeft or BoundAttributes.InfixRightToLeft);
+                        
+                        yield return last;
+                        last = current;
+                    }
+                }
+                while (enumerator.MoveNext());
+
+                yield return last;
+            }
+            finally
+            {
+                if (enumerator is IDisposable d)
+                {
+                    d.Dispose();
+                }
+            }
+        }
+
+        private static IExpression TransposeRtl(IEnumerable<IExpression> expressions)
+        {
+            var enumerator = expressions.GetEnumerator();
+            try
+            {
+                var mn = enumerator.MoveNext();
+                Debug.Assert(mn);
+                var last2 = enumerator.Current!;
+
+                mn = enumerator.MoveNext();
+                Debug.Assert(mn);
+
+                var last1 = enumerator.Current!;
+                IExpression applied = new ApplyExpression(last2, last1, UnspecifiedTerm.Instance,
+                    last2.Range.Combine(last1.Range));
+                    
+                if (enumerator.MoveNext())
+                {
+                    var rtls = new Stack<IExpression>();
+                    do
+                    {
+                        var current = enumerator.Current!;
+                        if (last2 is IVariableTerm(_, BoundAttributes.PrefixRightToLeft or BoundAttributes.InfixRightToLeft))
+                        {
+                            rtls.Push(applied);
+                            applied = current;
+                        }
+                        else
+                        {
+                            applied = new ApplyExpression(applied, current, UnspecifiedTerm.Instance,
+                                applied.Range.Combine(current.Range));
+                        }
+
+                        last2 = last1;
+                        last1 = current;
+                    }
+                    while (enumerator.MoveNext());
+
+                    while (rtls.Count >= 1)
+                    {
+                        var rtl = rtls.Pop();
+                        applied = new ApplyExpression(rtl, applied, UnspecifiedTerm.Instance,
+                            rtl.Range.Combine(applied.Range));
+                    }
+                }
+
+                return applied;
+            }
+            finally
+            {
+                if (enumerator is IDisposable d)
+                {
+                    d.Dispose();
+                }
+            }
+        }
+
         protected override IExpression Transpose(ITransposeContext context)
         {
-            var function = context.Transpose(this.Function);
-            var argument = context.Transpose(this.Argument);
-            var higherOrder = context.Transpose(this.HigherOrder);
-
-            if (argument is IVariableTerm(_, { } attributes))
-            {
-                return attributes switch
-                {
-                    BoundAttributes.PrefixLeftToRight =>
-                        new ApplyExpression(function, argument, higherOrder, this.Range),
-                    BoundAttributes.InfixLeftToRight =>
-                        function is IApplyExpression({ } fi, { } ai) appi ?
-                            new ApplyExpression(
-                                new ApplyExpression(fi, argument, UnspecifiedTerm.Instance, appi.Range),
-                                ai,
-                                higherOrder, this.Range) :
-                            new ApplyExpression(argument, function, higherOrder, this.Range),
-                    // BoundAttributes.PrefixRightToLeft => ,
-                    // BoundAttributes.InfixRightToLeft => ,
-                    _ => new ApplyExpression(function, argument, higherOrder, this.Range)
-                };
-            }
-            else
-            {
-                return new ApplyExpression(function, argument, higherOrder, this.Range);
-            }
+#if DEBUG
+            var seq = this.EnumerateRecursively(context).ToArray();
+            var tiseq = TransposeInfix(seq).ToArray();
+            var result = TransposeRtl(tiseq);
+            return result;
+#else
+            return TransposeInfix(this.EnumerateRecursively(context)).
+                Aggregate((l, r) => new ApplyExpression(l, r, UnspecifiedTerm.Instance, l.Range.Combine(r.Range)));
+#endif
         }
 
         protected override IExpression MakeRewritable(IMakeRewritableContext context) =>
@@ -251,12 +364,15 @@ namespace Favalet.Expressions
 
         [DebuggerStepThrough]
         public static ApplyExpression Create(
-            IExpression function, IExpression argument, IExpression higherOrder, TextRange range) =>
-            new ApplyExpression(function, argument, higherOrder, range);
-        [DebuggerStepThrough]
-        public static ApplyExpression Create(
             IExpression function, IExpression argument, TextRange range) =>
             new ApplyExpression(function, argument, UnspecifiedTerm.Instance, range);
+
+        [DebuggerStepThrough]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public static ApplyExpression UnsafeCreate(
+            IExpression function, IExpression argument, IExpression higherOrder, TextRange range) =>
+            // Will drop higher order expression when inferring.
+            new ApplyExpression(function, argument, higherOrder, range);
     }
 
     [DebuggerStepThrough]
