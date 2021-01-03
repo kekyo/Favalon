@@ -500,6 +500,31 @@ namespace Favalet.Reducing
         }
         #endregion
 
+        [Test]
+        public void ApplyExtensionMethod()
+        {
+            var environments = CLREnvironments();
+            var typeTerm = environments.MutableBindMembers(typeof(ExtensionMethodTest));
+            
+            // 1.Overload(2, 3)
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable("Favalet.Reducing.ExtensionMethodTest.Overload"),
+                            Constant(2)),
+                        Constant(3)),
+                    Constant(1));
+
+            var actual = environments.Reduce(expression);
+
+            // 321
+            var expected =
+                Constant(321);
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
+
         /*
         public readonly struct OperatorTest
         {
@@ -535,5 +560,11 @@ namespace Favalet.Reducing
             AssertLogicalEqual(expression, expected, actual);
         }
     */
+    }
+        
+    public static class ExtensionMethodTest
+    {
+        public static int Overload(this int a, int b, int c) =>
+            a + b * 10 + c * 100;
     }
 }

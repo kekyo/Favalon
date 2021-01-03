@@ -116,14 +116,25 @@ namespace Favalet.Expressions
             }
             else if (this.RuntimeMethod.IsStatic)
             {
-                var method = (MethodInfo) this.RuntimeMethod;
-                var result = method.Invoke(null, arguments);    // TODO: extension
-                return result;
+                var method = (MethodInfo)this.RuntimeMethod;
+                if (method.IsDefined(typeof(ExtensionAttribute), false))
+                {
+                    var index = arguments.Length - 1;
+                    var args = arguments.Take(index).Prepend(arguments[index]).ToArray();
+                    var result = method.Invoke(null, args);
+                    return result;
+                }
+                else
+                {
+                    var result = method.Invoke(null, arguments);
+                    return result;
+                }
             }
             else
             {
                 var method = (MethodInfo) this.RuntimeMethod;
-                var result = method.Invoke(arguments[0], arguments.Skip(1).ToArray());
+                var args = arguments.Skip(1).ToArray();
+                var result = method.Invoke(arguments[0], args);
                 return result;
             }
         }
