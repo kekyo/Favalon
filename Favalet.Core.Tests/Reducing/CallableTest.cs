@@ -439,7 +439,7 @@ namespace Favalet.Reducing
 
         [TestCase(1, 2, 3)]
         [TestCase(1.0, 2.0, 3.0)]
-        [TestCase("a", "b", "ab")]
+        [TestCase("a1", "b2", "a1b2")]
         public void ApplyOverloadedMethod2(object a, object b, object r)
         {
             var environments = CLREnvironments();
@@ -456,6 +456,43 @@ namespace Favalet.Reducing
             var actual = environments.Reduce(expression);
 
             // 3
+            var expected =
+                Constant(r);
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
+        
+        public static class OverloadTest3
+        {
+            public static int Overload(int a, int b, int c) =>
+                a + b + c;
+            public static double Overload(double a, double b, double c) =>
+                a + b + c;
+            public static string Overload(string a, string b, string c) =>
+                a + b + c;
+        }
+
+        [TestCase(1, 2, 3, 6)]
+        [TestCase(1.0, 2.0, 3.0, 6.0)]
+        [TestCase("a1", "b2", "c3", "a1b2c3")]
+        public void ApplyOverloadedMethod3(object a, object b, object c, object r)
+        {
+            var environments = CLREnvironments();
+            var typeTerm = environments.MutableBindMembers(typeof(OverloadTest3));
+            
+            // OverloadTest3.Overload(1, 2, 3)
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable("Favalet.Reducing.OverloadTest3.Overload"),
+                            Constant(a)),
+                        Constant(b)),
+                    Constant(c));
+
+            var actual = environments.Reduce(expression);
+
+            // 6
             var expected =
                 Constant(r);
 
