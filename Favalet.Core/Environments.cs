@@ -31,12 +31,16 @@ using System.Threading;
 
 namespace Favalet
 {
+    [Flags]
     public enum BoundAttributes
     {
-        PrefixLeftToRight,    // default
-        InfixLeftToRight,
-        PrefixRightToLeft,
-        InfixRightToLeft,
+        PrefixLeftToRight = 0x00,
+        PrefixRightToLeft = 0x02,
+        InfixLeftToRight = 0x01,
+        InfixRightToLeft = 0x03,
+
+        InfixMask = 0x01,
+        RightToLeftMask = 0x02,
     }
     
     public interface IEnvironments :
@@ -187,39 +191,78 @@ namespace Favalet
         }
     }
 
+    [DebuggerStepThrough]
     public static class EnvironmentsExtension
     {
-        [DebuggerStepThrough]
         public static void MutableBind(
-            this IEnvironments environments, IBoundVariableTerm symbol, IExpression expression) =>
-            environments.MutableBind(BoundAttributes.PrefixLeftToRight, symbol, expression);
-        
-        [DebuggerStepThrough]
-        public static void MutableBindDefaults(
-            this IEnvironments environments)
-        {
-            // Type kind symbol.
+            this IEnvironments environments,
+            BoundAttributes attributes,
+            string symbol,
+            IExpression expression) =>
             environments.MutableBind(
-                Generator.kind.Symbol, TextRange.Internal, Generator.kind);
-            
-            // Lambda operator.
-            environments.MutableBind(
-                "->", TextRange.Internal, LambdaOperatorExpression.Instance);
-        }
+                attributes,
+                BoundVariableTerm.Create(symbol, TextRange.Unknown),
+                expression);
         
-        [DebuggerStepThrough]
+        public static void MutableBind(
+            this IEnvironments environments,
+            BoundAttributes attributes,
+            string symbol,
+            TextRange range,
+            IExpression expression) =>
+            environments.MutableBind(
+                attributes,
+                BoundVariableTerm.Create(symbol, range),
+                expression);
+        
+        public static void MutableBind(
+            this IEnvironments environments,
+            IBoundVariableTerm symbol,
+            IExpression expression) =>
+            environments.MutableBind(
+                BoundAttributes.PrefixLeftToRight,
+                symbol,
+                expression);
+        
         public static void MutableBind(
             this IEnvironments environment,
             string symbol,
             IExpression expression) =>
-            environment.MutableBind(BoundVariableTerm.Create(symbol, TextRange.Unknown), expression);
+            environment.MutableBind(
+                BoundVariableTerm.Create(symbol, TextRange.Unknown),
+                expression);
         
-        [DebuggerStepThrough]
         public static void MutableBind(
             this IEnvironments environment,
             string symbol,
             TextRange range,
             IExpression expression) =>
-            environment.MutableBind(BoundVariableTerm.Create(symbol, range), expression);
+            environment.MutableBind(
+                BoundVariableTerm.Create(symbol, range),
+                expression);
+         
+        public static void MutableBindDefaults(
+            this IEnvironments environments)
+        {
+            // Unspecified symbol.
+            environments.MutableBind(
+                BoundAttributes.PrefixLeftToRight, "_",
+                TextRange.Internal, UnspecifiedTerm.Instance);
+
+            // Type fourth symbol.
+            environments.MutableBind(
+                BoundAttributes.PrefixLeftToRight, "#",
+                TextRange.Internal, FourthTerm.Instance);
+
+            // Type kind symbol.
+            environments.MutableBind(
+                BoundAttributes.PrefixLeftToRight, Generator.kind.Symbol,
+                TextRange.Internal, Generator.kind);
+
+            // Lambda operator.
+            environments.MutableBind(
+                BoundAttributes.InfixMask | BoundAttributes.RightToLeftMask, "->",
+                TextRange.Internal, LambdaOperatorExpression.Instance);
+        }
     }
 }

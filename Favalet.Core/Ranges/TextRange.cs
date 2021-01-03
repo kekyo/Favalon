@@ -58,7 +58,7 @@ namespace Favalet.Ranges
         public TextRange Combine(TextRange range) =>
             this.Uri.Equals(range.Uri) ?
                 this.Combine(range.First, range.Last) :
-                throw new InvalidOperationException();
+                Unknown;
         public TextRange Combine(TextPosition first, TextPosition last) =>
             new TextRange(
                 this.Uri,
@@ -68,7 +68,7 @@ namespace Favalet.Ranges
         public TextRange Subtract(TextRange range) =>
             this.Uri.Equals(range.Uri) ?
                 this.Subtract(range.First, range.Last) :
-                throw new InvalidOperationException();
+                Unknown;
         public TextRange Subtract(TextPosition first, TextPosition last) =>
             new TextRange(
                 this.Uri,

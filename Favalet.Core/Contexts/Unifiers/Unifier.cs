@@ -327,7 +327,7 @@ namespace Favalet.Contexts.Unifiers
             IExpression expression1,
             IExpression expression2,
             bool bidirectional) =>
-            this.InternalUnify(
+            this.InternalUnify(   // TODO: trap failure deeper unification.
                 context, expression1, expression2,
                 bidirectional ? UnifyDirections.BiDirectional : UnifyDirections.Forward,
                 true);

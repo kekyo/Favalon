@@ -113,8 +113,5 @@ namespace Favalet
         public static ApplyExpression Apply(
             IExpression function, IExpression argument) =>
             ApplyExpression.Create(function, argument, TextRange.Unknown);
-        public static ApplyExpression Apply(
-            IExpression function, IExpression argument, IExpression higherOrder) =>
-            ApplyExpression.Create(function, argument, higherOrder, TextRange.Unknown);
     }
 }

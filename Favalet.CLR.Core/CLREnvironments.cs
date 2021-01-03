@@ -57,11 +57,18 @@ namespace Favalet
         {
             if (environments is Environments re)
             {
-                re.MutableBind(BoundAttributes.PrefixLeftToRight, bound, expression, false);
+                re.MutableBind(
+                    BoundAttributes.PrefixLeftToRight,
+                    bound,
+                    expression,
+                    false);
             }
             else
             {
-                environments.MutableBind(BoundAttributes.PrefixLeftToRight, bound, expression);
+                environments.MutableBind(
+                    BoundAttributes.PrefixLeftToRight,
+                    bound,
+                    expression);
             }
         }
         

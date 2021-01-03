@@ -299,15 +299,9 @@ namespace Favalet.Expressions
         protected override string GetPrettyString(IPrettyStringContext context) =>
             context.FinalizePrettyString(
                 this,
-                (context.Type >= PrettyStringTypes.Strict) ?
-                    this.Attributes switch
-                    {
-                        BoundAttributes.PrefixLeftToRight => $"{this.Symbol} @ PL",
-                        BoundAttributes.InfixLeftToRight => $"{this.Symbol} @ IL",
-                        BoundAttributes.PrefixRightToLeft => $"{this.Symbol} @ PR",
-                        BoundAttributes.InfixRightToLeft => $"{this.Symbol} @ IR",
-                        _ => this.Symbol
-                    } :
+                ((context.Type >= PrettyStringTypes.Strict) &&
+                    this.Attributes is { }) ?
+                    $"{this.Symbol}@{this.Attributes}" :
                     this.Symbol);
 
         [DebuggerStepThrough]
