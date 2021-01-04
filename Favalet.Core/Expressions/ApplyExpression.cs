@@ -26,6 +26,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 
 namespace Favalet.Expressions
 {
@@ -247,8 +248,7 @@ namespace Favalet.Expressions
             var result = TransposeRtl(tiseq);
             return result;
 #else
-            return TransposeInfix(this.EnumerateRecursively(context)).
-                Aggregate((l, r) => new ApplyExpression(l, r, UnspecifiedTerm.Instance, l.Range.Combine(r.Range)));
+            return TransposeRtl(TransposeInfix(this.EnumerateRecursively(context)));
 #endif
         }
 
