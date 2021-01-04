@@ -24,6 +24,7 @@ using System;
 
 using static Favalet.CLRGenerator;
 using static Favalet.Generator;
+using static Favalet.TestUtiltiies;
 
 namespace Favalet.Inferring
 {
@@ -839,6 +840,33 @@ namespace Favalet.Inferring
                     BoundVariable("a", ph0),
                     Variable("b", Type<int>()),
                     Lambda(ph0, Type<int>()));
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
+ 
+        //[Test]
+        public void LambdaOperator1()
+        {
+            var environments = Environments();
+
+            // -> a a
+            var expression =
+                Apply(
+                    Apply(
+                        Variable("->"),
+                        Variable("a")),
+                    Variable("a"));
+
+            var actual = environments.Infer(expression);
+
+            // (a:'0 -> a:'0):('0 -> '0)
+            var provider = PseudoPlaceholderProvider.Create();
+            var ph0 = provider.CreatePlaceholder();
+            var expected =
+                Lambda(
+                    BoundVariable("a", ph0),
+                    Variable("a", ph0),
+                    Lambda(ph0, ph0));
 
             AssertLogicalEqual(expression, expected, actual);
         }

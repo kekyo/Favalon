@@ -17,12 +17,20 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-using System.Diagnostics;
+using Favalet.Expressions;
+using Favalet.Expressions.Algebraic;
+using Favalet.Ranges;
 
-namespace Favalet.Internal
+namespace Favalet
 {
-    [DebuggerStepThrough]
-    internal struct Unit
+    public static class TestUtiltiies
     {
+        public static AndExpression And(IExpression lhs, IExpression rhs, IExpression higherOrder) =>
+            AndExpression.UnsafeCreate(lhs, rhs, higherOrder, TextRange.Unknown);
+        public static OrExpression Or(IExpression lhs, IExpression rhs, IExpression higherOrder) =>
+            OrExpression.UnsafeCreate(lhs, rhs, higherOrder, TextRange.Unknown);
+        public static LambdaExpression Lambda(
+            IExpression parameter, IExpression body, ILambdaExpression higherOrder) =>
+            LambdaExpression.UnsafeCreate(parameter, body, higherOrder, TextRange.Unknown);
     }
 }

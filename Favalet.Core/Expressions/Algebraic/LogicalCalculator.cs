@@ -161,7 +161,7 @@ namespace Favalet.Expressions.Algebraic
             var fl = FlattenedExpression.Flatten(left, this.SortExpressions);
             var fr = FlattenedExpression.Flatten(right, this.SortExpressions);
 
-            if (fr is TFlattenedExpression(IExpression[] rightOperands))
+            if (fr is TFlattenedExpression({ } rightOperands))
             {
                 return rightOperands.
                     SelectMany(rightOperand =>
@@ -173,7 +173,7 @@ namespace Favalet.Expressions.Algebraic
                             _ => Enumerable.Empty<IExpression>()
                         });
             }
-            else if (fl is TFlattenedExpression(IExpression[] leftOperands))
+            else if (fl is TFlattenedExpression({ } leftOperands))
             {
                 return leftOperands.
                     SelectMany(leftOperand =>
@@ -262,7 +262,7 @@ namespace Favalet.Expressions.Algebraic
                     var absorption =
                         this.ComputeAbsorption<OrFlattenedExpression>(left, right, choicer, choicer.ChoiceForAnd).
                         Memoize();
-                    if (ConstructNested(absorption, binary.HigherOrder, OrExpression.Create, binary.Range) is IExpression result1)
+                    if (ConstructNested(absorption, OrExpression.Create, binary.Range) is { } result1)
                     {
                         return this.Calculate(result1, choicer);
                     }
@@ -271,7 +271,7 @@ namespace Favalet.Expressions.Algebraic
                     var shrinked =
                         this.ComputeShrink<IAndExpression>(left, right, choicer, choicer.ChoiceForAnd).
                         Memoize();
-                    if (ConstructNested(shrinked, binary.HigherOrder, AndExpression.Create, binary.Range) is IExpression result2)
+                    if (ConstructNested(shrinked, AndExpression.Create, binary.Range) is { } result2)
                     {
                         return result2;
                     }
@@ -282,7 +282,7 @@ namespace Favalet.Expressions.Algebraic
                     var absorption =
                         this.ComputeAbsorption<AndFlattenedExpression>(left, right, choicer, choicer.ChoiceForOr).
                         Memoize();
-                    if (ConstructNested(absorption, binary.HigherOrder, AndExpression.Create, binary.Range) is IExpression result1)
+                    if (ConstructNested(absorption, AndExpression.Create, binary.Range) is { } result1)
                     {
                         return this.Calculate(result1, choicer);
                     }
@@ -291,7 +291,7 @@ namespace Favalet.Expressions.Algebraic
                     var shrinked =
                         this.ComputeShrink<IOrExpression>(left, right, choicer, choicer.ChoiceForOr).
                         Memoize();
-                    if (ConstructNested(shrinked, binary.HigherOrder, OrExpression.Create, binary.Range) is IExpression result2)
+                    if (ConstructNested(shrinked, OrExpression.Create, binary.Range) is { } result2)
                     {
                         return result2;
                     }
@@ -306,8 +306,7 @@ namespace Favalet.Expressions.Algebraic
                 else
                 {
                     // Reconstruct
-                    return ((IPairExpression)binary).Create(
-                        left, right, UnspecifiedTerm.Instance, binary.Range);
+                    return ((IPairExpression)binary).Create(left, right, binary.Range);
                 }
             }
 
@@ -316,18 +315,17 @@ namespace Favalet.Expressions.Algebraic
 
         public static IExpression? ConstructNested(
             IExpression[] results,
-            IExpression higherOrder,
-            Func<IExpression, IExpression, IExpression, TextRange, IExpression> creator,
+            Func<IExpression, IExpression, TextRange, IExpression> creator,
             TextRange range) =>
             results.Length switch
             {
                 0 => null,
                 1 => results[0],
-                2 => creator(results[0], results[1], higherOrder, range),
+                2 => creator(results[0], results[1], range),
                 _ => results.Skip(2).
                     Aggregate(
-                        creator(results[0], results[1], higherOrder, range),
-                        (agg, v) => creator(agg, v, higherOrder, range))  // TODO: range
+                        creator(results[0], results[1], range),
+                        (agg, v) => creator(agg, v, agg.Range.Combine(v.Range)))
             };
 
         public static readonly LogicalCalculator Instance =

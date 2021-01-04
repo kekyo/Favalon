@@ -34,14 +34,11 @@ namespace Favalet
         public static Environments Environments() =>
             Favalet.Environments.Create();
 
-        internal static readonly VariableTerm kind =
-            VariableTerm.Create("*", FourthTerm.Instance, TextRange.Internal);
-
 #if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static VariableTerm Kind() =>
-            kind;
+        public static TypeKindTerm Kind() =>
+            TypeKindTerm.Instance;
         public static VariableTerm Kind(string symbol) =>
             VariableTerm.Create(symbol, FourthTerm.Instance, TextRange.Unknown);
 
@@ -71,27 +68,15 @@ namespace Favalet
 
         public static AndExpression And(IExpression lhs, IExpression rhs) =>
             AndExpression.Create(lhs, rhs, TextRange.Unknown);
-        public static AndExpression And(IExpression lhs, IExpression rhs, IExpression higherOrder) =>
-            AndExpression.Create(lhs, rhs, higherOrder, TextRange.Unknown);
-
         public static IExpression? AndByExpressions(params IExpression[] expressions) =>
             LogicalCalculator.ConstructNested(
-                expressions, UnspecifiedTerm.Instance, AndExpression.Create, TextRange.Unknown);
-        public static IExpression? AndByExpressions(IExpression higherOrder, params IExpression[] expressions) =>
-            LogicalCalculator.ConstructNested(
-                expressions, higherOrder, AndExpression.Create, TextRange.Unknown);
+                expressions, AndExpression.Create, TextRange.Unknown);
 
         public static OrExpression Or(IExpression lhs, IExpression rhs) =>
             OrExpression.Create(lhs, rhs, TextRange.Unknown);
-        public static OrExpression Or(IExpression lhs, IExpression rhs, IExpression higherOrder) =>
-            OrExpression.Create(lhs, rhs, higherOrder, TextRange.Unknown);
-
         public static IExpression? OrByExpressions(params IExpression[] expressions) =>
             LogicalCalculator.ConstructNested(
-                expressions, UnspecifiedTerm.Instance, OrExpression.Create, TextRange.Unknown);
-        public static IExpression? OrByExpressions(IExpression higherOrder, params IExpression[] expressions) =>
-            LogicalCalculator.ConstructNested(
-                expressions, higherOrder, OrExpression.Create, TextRange.Unknown);
+                expressions, OrExpression.Create, TextRange.Unknown);
 
         public static LambdaExpression Lambda(
             IExpression parameter, IExpression body) =>
@@ -99,22 +84,9 @@ namespace Favalet
         public static LambdaExpression Lambda(
             string parameter, IExpression body) =>
             LambdaExpression.Create(BoundVariableTerm.Create(parameter, TextRange.Unknown), body, TextRange.Unknown);
-        public static LambdaExpression Lambda(
-            IExpression parameter, IExpression body, ILambdaExpression higherOrder) =>
-            LambdaExpression.Create(parameter, body, higherOrder, TextRange.Unknown);
-        public static LambdaExpression Lambda(
-            string parameter, IExpression body, ILambdaExpression higherOrder) =>
-            LambdaExpression.Create(
-                BoundVariableTerm.Create(parameter, TextRange.Unknown),
-                body,
-                higherOrder,
-                TextRange.Unknown);
 
         public static ApplyExpression Apply(
             IExpression function, IExpression argument) =>
             ApplyExpression.Create(function, argument, TextRange.Unknown);
-        public static ApplyExpression Apply(
-            IExpression function, IExpression argument, IExpression higherOrder) =>
-            ApplyExpression.Create(function, argument, higherOrder, TextRange.Unknown);
     }
 }

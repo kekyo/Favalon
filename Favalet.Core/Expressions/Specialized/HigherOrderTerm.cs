@@ -26,22 +26,22 @@ using Favalet.Ranges;
 namespace Favalet.Expressions.Specialized
 {
     [DebuggerStepThrough]
-    public sealed class FourthTerm :
+    public abstract class HigherOrderTerm<TTerm> :
         Expression, ITerm
+        where TTerm : ITerm
     {
-        private FourthTerm(TextRange range) :
+        private protected HigherOrderTerm(TextRange range) :
             base(range)
         { }
 
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        public override IExpression HigherOrder =>
-            DeadEndTerm.Instance;
-
-        public bool Equals(FourthTerm rhs) =>
+        public bool Equals(TTerm rhs) =>
             rhs != null;
 
         public override bool Equals(IExpression? other) =>
-            other is FourthTerm;
+            other is TTerm;
+
+        protected override IExpression Transpose(ITransposeContext context) =>
+            this;
 
         protected override IExpression MakeRewritable(IMakeRewritableContext context) =>
             this;
@@ -57,11 +57,43 @@ namespace Favalet.Expressions.Specialized
 
         protected override IEnumerable GetXmlValues(IXmlRenderContext context) =>
             Enumerable.Empty<object>();
+    }
+        
+    [DebuggerStepThrough]
+    public sealed class TypeKindTerm :
+        HigherOrderTerm<TypeKindTerm>
+    {
+        private TypeKindTerm() :
+            base(TextRange.Internal)
+        { }
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        public override IExpression HigherOrder =>
+            FourthTerm.Instance;
+
+        protected override string GetPrettyString(IPrettyStringContext context) =>
+            "*";
+
+        public static readonly TypeKindTerm Instance =
+            new TypeKindTerm();
+    }
+
+    [DebuggerStepThrough]
+    public sealed class FourthTerm :
+        HigherOrderTerm<FourthTerm>
+    {
+        private FourthTerm() :
+            base(TextRange.Internal)
+        { }
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        public override IExpression HigherOrder =>
+            DeadEndTerm.Instance;
 
         protected override string GetPrettyString(IPrettyStringContext context) =>
             "#";
 
         public static readonly FourthTerm Instance =
-            new FourthTerm(TextRange.Unknown);  // TODO: range
+            new FourthTerm();
     }
 }

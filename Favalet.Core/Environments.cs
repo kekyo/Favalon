@@ -19,22 +19,36 @@
 
 using Favalet.Contexts;
 using Favalet.Expressions;
+using Favalet.Expressions.Operators;
 using Favalet.Expressions.Specialized;
 using Favalet.Contexts.Unifiers;
 using Favalet.Ranges;
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 
 namespace Favalet
 {
+    [Flags]
+    public enum BoundAttributes
+    {
+        PrefixLeftToRight = 0x00,
+        PrefixRightToLeft = 0x02,
+        InfixLeftToRight = 0x01,
+        InfixRightToLeft = 0x03,
+
+        InfixMask = 0x01,
+        RightToLeftMask = 0x02,
+    }
+    
     public interface IEnvironments :
         IScopeContext
     {
         ITopology? LastTopology { get; }
         
-        void MutableBind(IBoundVariableTerm symbol, IExpression expression);
+        void MutableBind(BoundAttributes attributes, IBoundVariableTerm symbol, IExpression expression);
     }
 
     public class Environments :
@@ -42,16 +56,18 @@ namespace Favalet
     {
         private UnifyContext? lastContext;
         private int placeholderIndex = -1;
-        private bool saveLastTopology;
+        private readonly bool saveLastTopology;
 
         [DebuggerStepThrough]
         protected Environments(ITypeCalculator typeCalculator, bool saveLastTopology) :
-            base(null, typeCalculator)
+            base(null)
         {
+            this.TypeCalculator = typeCalculator;            
             this.saveLastTopology = saveLastTopology;
-            this.MutableBind(Generator.kind.Symbol, TextRange.Internal, Generator.kind);
         }
         
+        public override ITypeCalculator TypeCalculator { get; }
+
         public ITopology? LastTopology =>
             this.lastContext;
 
@@ -90,8 +106,14 @@ namespace Favalet
         {
             Debug.WriteLine($"Infer[{context.GetHashCode()}:before] :");
             Debug.WriteLine(expression.GetXml());
+
+            var transposed = context.Transpose(expression);
+            unifyContext.SetTargetRoot(transposed);
   
-            var rewritable = context.MakeRewritable(expression);
+            Debug.WriteLine($"Infer[{context.GetHashCode()}:transposed] :");
+            Debug.WriteLine(transposed.GetXml());
+
+            var rewritable = context.MakeRewritable(transposed);
             unifyContext.SetTargetRoot(rewritable);
 
             Debug.WriteLine($"Infer[{context.GetHashCode()}:rewritable] :");
@@ -147,11 +169,11 @@ namespace Favalet
         }
 
         [DebuggerStepThrough]
-        public void MutableBind(IBoundVariableTerm symbol, IExpression expression) =>
-            base.MutableBind(symbol, expression, true);
-        [DebuggerStepThrough]
-        internal void UnsafeMutableBind(IBoundVariableTerm symbol, IExpression expression) =>
-            base.MutableBind(symbol, expression, false);
+        public void MutableBind(
+            BoundAttributes attributes,
+            IBoundVariableTerm symbol,
+            IExpression expression) =>
+            base.MutableBind(attributes, symbol, expression, true);
 
         [DebuggerStepThrough]
         public static Environments Create(
@@ -160,25 +182,87 @@ namespace Favalet
 #else
             bool saveLastTopology = false
 #endif
-            ) =>
-            new Environments(Favalet.TypeCalculator.Instance, saveLastTopology);
+        )
+        {
+            var environments =
+                new Environments(Favalet.TypeCalculator.Instance, saveLastTopology);
+            environments.MutableBindDefaults();
+            return environments;
+        }
     }
 
+    [DebuggerStepThrough]
     public static class EnvironmentsExtension
     {
-        [DebuggerStepThrough]
+        public static void MutableBind(
+            this IEnvironments environments,
+            BoundAttributes attributes,
+            string symbol,
+            IExpression expression) =>
+            environments.MutableBind(
+                attributes,
+                BoundVariableTerm.Create(symbol, TextRange.Unknown),
+                expression);
+        
+        public static void MutableBind(
+            this IEnvironments environments,
+            BoundAttributes attributes,
+            string symbol,
+            TextRange range,
+            IExpression expression) =>
+            environments.MutableBind(
+                attributes,
+                BoundVariableTerm.Create(symbol, range),
+                expression);
+        
+        public static void MutableBind(
+            this IEnvironments environments,
+            IBoundVariableTerm symbol,
+            IExpression expression) =>
+            environments.MutableBind(
+                BoundAttributes.PrefixLeftToRight,
+                symbol,
+                expression);
+        
         public static void MutableBind(
             this IEnvironments environment,
             string symbol,
             IExpression expression) =>
-            environment.MutableBind(BoundVariableTerm.Create(symbol, TextRange.Unknown), expression);
+            environment.MutableBind(
+                BoundVariableTerm.Create(symbol, TextRange.Unknown),
+                expression);
         
-        [DebuggerStepThrough]
         public static void MutableBind(
             this IEnvironments environment,
             string symbol,
             TextRange range,
             IExpression expression) =>
-            environment.MutableBind(BoundVariableTerm.Create(symbol, range), expression);
+            environment.MutableBind(
+                BoundVariableTerm.Create(symbol, range),
+                expression);
+         
+        public static void MutableBindDefaults(
+            this IEnvironments environments)
+        {
+            // Unspecified symbol.
+            environments.MutableBind(
+                BoundAttributes.PrefixLeftToRight, "_",
+                TextRange.Internal, UnspecifiedTerm.Instance);
+
+            // Type fourth symbol.
+            environments.MutableBind(
+                BoundAttributes.PrefixLeftToRight, "#",
+                TextRange.Internal, FourthTerm.Instance);
+
+            // Type kind symbol.
+            environments.MutableBind(
+                BoundAttributes.PrefixLeftToRight, "*",
+                TextRange.Internal, TypeKindTerm.Instance);
+
+            // Lambda operator.
+            environments.MutableBind(
+                BoundAttributes.InfixMask | BoundAttributes.RightToLeftMask, "->",
+                TextRange.Internal, LambdaOperatorExpression.Instance);
+        }
     }
 }

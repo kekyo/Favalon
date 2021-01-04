@@ -76,6 +76,17 @@ namespace Favalet.Internal
             }
             yield return value;
         }
+        
+        public static IEnumerable<T> Prepend<T>(
+            this IEnumerable<T> enumerable,
+            T value)
+        {
+            yield return value;
+            foreach (var v in enumerable)
+            {
+                yield return v;
+            }
+        }
 #endif
 
         public static bool EqualsPartiallyOrdered<T>(

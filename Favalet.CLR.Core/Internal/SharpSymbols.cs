@@ -48,6 +48,7 @@ namespace Favalet.Internal
                 { typeof(IntPtr), "nint" },
                 { typeof(UIntPtr), "nuint" },
                 { typeof(IEnumerable<>), "seq" },
+                { typeof(ValueTuple), "unit" },
             };
         
         public static readonly Dictionary<string, string> OperatorSymbols =

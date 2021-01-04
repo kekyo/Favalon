@@ -18,13 +18,28 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 #if NET40
+
 using System.Diagnostics;
 using System.Collections.Generic;
 
 namespace System
 {
     [DebuggerStepThrough]
-    internal struct ValueTuple<T1, T2>
+    public struct ValueTuple
+    {
+    }
+
+    [DebuggerStepThrough]
+    public struct ValueTuple<T1>
+    {
+        public readonly T1 Item1;
+
+        public ValueTuple(T1 item1) =>
+            this.Item1 = item1;
+    }
+
+    [DebuggerStepThrough]
+    public struct ValueTuple<T1, T2>
     {
         public readonly T1 Item1;
         public readonly T2 Item2;
@@ -37,7 +52,7 @@ namespace System
     }
 
     [DebuggerStepThrough]
-    internal struct ValueTuple<T1, T2, T3>
+    public struct ValueTuple<T1, T2, T3>
     {
         public readonly T1 Item1;
         public readonly T2 Item2;
@@ -52,7 +67,7 @@ namespace System
     }
 
     [DebuggerStepThrough]
-    internal readonly struct ValueTuple<T1, T2, T3, T4>
+    public readonly struct ValueTuple<T1, T2, T3, T4>
     {
         public readonly T1 Item1;
         public readonly T2 Item2;
@@ -72,7 +87,7 @@ namespace System
 namespace System.Runtime.CompilerServices
 {
     [AttributeUsage(AttributeTargets.All)]
-    internal sealed class TupleElementNamesAttribute : Attribute
+    public sealed class TupleElementNamesAttribute : Attribute
     {
         public IList<string>? TransformNames { get; }
 
@@ -80,5 +95,16 @@ namespace System.Runtime.CompilerServices
             this.TransformNames = transformNames;
     }
 }
-#endif
 
+#else
+
+using System.Runtime.CompilerServices;
+
+[assembly: TypeForwardedTo(typeof(System.ValueTuple))]
+[assembly: TypeForwardedTo(typeof(System.ValueTuple<>))]
+[assembly: TypeForwardedTo(typeof(System.ValueTuple<,>))]
+[assembly: TypeForwardedTo(typeof(System.ValueTuple<,,>))]
+[assembly: TypeForwardedTo(typeof(System.ValueTuple<,,,>))]
+[assembly: TypeForwardedTo(typeof(System.Runtime.CompilerServices.TupleElementNamesAttribute))]
+
+#endif

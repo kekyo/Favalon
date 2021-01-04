@@ -19,11 +19,12 @@
 
 using Favalet.Contexts;
 using Favalet.Expressions;
+using Favalet.Expressions.Algebraic;
 using NUnit.Framework;
-using System;
-using Favalet.Expressions.Specialized;
+
 using static Favalet.CLRGenerator;
 using static Favalet.Generator;
+using static Favalet.TestUtiltiies;
 
 namespace Favalet.Inferring
 {
@@ -44,6 +45,8 @@ namespace Favalet.Inferring
                     actual.GetPrettyString(PrettyStringTypes.Readable));
             }
         }
+ 
+        ////////////////////////////////////////////////////////////////////////////////////
 
         #region Variable
         [Test]
@@ -90,15 +93,18 @@ namespace Favalet.Inferring
 
             // (true:bool && false:bool):bool
             var expected =
-                And(
+                AndExpression.UnsafeCreate(
                     Variable("true", Type<bool>()),
                     Variable("false", Type<bool>()),
-                    Type<bool>());
+                    Type<bool>(),
+                    Ranges.TextRange.Unknown);
 
             AssertLogicalEqual(expression, expected, actual);
         }
         #endregion
- 
+  
+        ////////////////////////////////////////////////////////////////////////////////////
+
         #region BoundVariable
         [Test]
         public void BoundVariableFixedRelation1()
@@ -153,7 +159,1031 @@ namespace Favalet.Inferring
             AssertLogicalEqual(expression, expected, actual);
         }
         #endregion
+         
+        ////////////////////////////////////////////////////////////////////////////////////
+
+        #region Attributes
+        [Test]
+        public void BoundVariableWithPrefixAttributes1()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ PREFIX|LTR = a -> a
+            environment.MutableBind(
+                BoundAttributes.PrefixLeftToRight,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // $$$ 123
+            var expression =
+                Apply(
+                    Variable("$$$"),
+                    Constant(123));
+
+            var actual = environment.Infer(expression);
+
+            // $$$ 123
+            var expected =
+                Apply(
+                    Variable("$$$"),
+                    Constant(123));
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
+
+        [Test]
+        public void BoundVariableWithPrefixAttributes2()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ PREFIX|LTR = a -> a
+            environment.MutableBind(
+                BoundAttributes.PrefixLeftToRight,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // abc 123 $$$ 456
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable("abc"),
+                            Constant(123)),
+                        Variable("$$$")),
+                    Constant(456));
+            
+            var actual = environment.Infer(expression);
+
+            // ((abc 123) $$$) 456
+            var expected =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable("abc"),
+                            Constant(123)),
+                        Variable("$$$")),
+                    Constant(456));
+            
+            AssertLogicalEqual(expression, expected, actual);
+        }
+
+        [Test]
+        public void BoundVariableWithPrefixAttributes3()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ PREFIX|LTR = a -> a
+            environment.MutableBind(
+                BoundAttributes.PrefixLeftToRight,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // abc 123 $$$ 456 $$$
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Apply(
+                                Variable("abc"),
+                                Constant(123)),
+                            Variable("$$$")),
+                        Constant(456)),
+                    Variable("$$$"));
+            
+            var actual = environment.Infer(expression);
+
+            // (((abc 123) $$$) 456) $$$
+            var expected =
+                Apply(
+                    Apply(
+                        Apply(
+                            Apply(
+                                Variable("abc"),
+                                Constant(123)),
+                            Variable("$$$")),
+                        Constant(456)),
+                    Variable("$$$"));
+            
+            AssertLogicalEqual(expression, expected, actual);
+        }
+
+        //////////////////////////////////////////////////////////
+         
+        [Test]
+        public void BoundVariableWithInfixAttributes1()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ INFIX|LTR = a -> a
+            environment.MutableBind(
+                BoundAttributes.InfixLeftToRight,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // 123 $$$
+            var expression =
+                Apply(
+                    Constant(123),
+                    Variable("$$$"));
+
+            var actual = environment.Infer(expression);
+
+            // $$$ 123
+            var expected =
+                Apply(
+                    Variable("$$$"),
+                    Constant(123));
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
+         
+        [Test]
+        public void BoundVariableWithInfixAttributes2()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ INFIX|LTR = a -> a
+            environment.MutableBind(
+                BoundAttributes.InfixLeftToRight,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // abc 123 $$$ 456
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable("abc"),
+                            Constant(123)),
+                        Variable("$$$")),
+                    Constant(456));
+            
+            var actual = environment.Infer(expression);
+
+            // ((abc $$$) 123) 456
+            var expected =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable("abc"),
+                            Variable("$$$")),
+                        Constant(123)),
+                    Constant(456));
+            
+            AssertLogicalEqual(expression, expected, actual);
+        }
+         
+        [Test]
+        public void BoundVariableWithInfixAttributes3()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ INFIX|LTR = a -> a
+            environment.MutableBind(
+                BoundAttributes.InfixLeftToRight,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // abc 123 $$$ 456 $$$
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Apply(
+                                Variable("abc"),
+                                Constant(123)),
+                            Variable("$$$")),
+                        Constant(456)),
+                    Variable("$$$"));
+            
+            var actual = environment.Infer(expression);
+
+            // (((abc $$$) 123) $$$) 456
+            var expected =
+                Apply(
+                    Apply(
+                        Apply(
+                            Apply(
+                                Variable("abc"),
+                                Variable("$$$")),
+                            Constant(123)),
+                        Variable("$$$")),
+                    Constant(456));
+            
+            AssertLogicalEqual(expression, expected, actual);
+        }
+         
+        [Test]
+        public void BoundVariableWithInfixAttributes4()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ INFIX|LTR = a -> a
+            environment.MutableBind(
+                BoundAttributes.InfixLeftToRight,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // abc 123 $$$ $$$ 456
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Apply(
+                                Variable("abc"),
+                                Constant(123)),
+                            Variable("$$$")),
+                        Variable("$$$")),
+                    Constant(456));
+            
+            var actual = environment.Infer(expression);
+
+            // (((abc $$$) $$$) 123) 456
+            var expected =
+                Apply(
+                    Apply(
+                        Apply(
+                            Apply(
+                                Variable("abc"),
+                                Variable("$$$")),
+                            Variable("$$$")),
+                        Constant(123)),
+                    Constant(456));
+            
+            AssertLogicalEqual(expression, expected, actual);
+        }
+         
+        [Test]
+        public void BoundVariableWithInfixAttributes5()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ INFIX|LTR = a -> a
+            environment.MutableBind(
+                BoundAttributes.InfixLeftToRight,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // $$$ abc 123
+            var expression =
+                Apply(
+                    Apply(
+                        Variable("$$$"),
+                        Variable("abc")),
+                    Constant(123));
+            
+            var actual = environment.Infer(expression);
+
+            // ($$$ abc) 123
+            var expected =
+                Apply(
+                    Apply(
+                        Variable("$$$"),
+                        Variable("abc")),
+                    Constant(123));
+            
+            AssertLogicalEqual(expression, expected, actual);
+        }
+
+        //////////////////////////////////////////////////////////
+                  
+        [Test]
+        public void BoundVariableWithPrefixRightToLeftAttributes1()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ PREFIX|RTL = a -> a
+            environment.MutableBind(
+                BoundAttributes.PrefixRightToLeft,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // $$$ 123
+            var expression =
+                Apply(
+                    Variable("$$$"),
+                    Constant(123));
+            
+            var actual = environment.Infer(expression);
+
+            // $$$ 123
+            var expected =
+                Apply(
+                    Variable("$$$"),
+                    Constant(123));
+            
+            AssertLogicalEqual(expression, expected, actual);
+        }
+
+        [Test]
+        public void BoundVariableWithPrefixRightToLeftAttributes2()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ PREFIX|RTL = a -> a
+            environment.MutableBind(
+                BoundAttributes.PrefixRightToLeft,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // $$$ abc 123
+            var expression =
+                Apply(
+                    Apply(
+                        Variable("$$$"),
+                        Variable("abc")),
+                    Constant(123));
+            
+            var actual = environment.Infer(expression);
+
+            // ($$$ abc) 123
+            var expected =
+                Apply(
+                    Apply(
+                        Variable("$$$"),
+                        Variable("abc")),
+                    Constant(123));
+            
+            AssertLogicalEqual(expression, expected, actual);
+        }
+  
+        [Test]
+        public void BoundVariableWithPrefixRightToLeftAttributes3()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ PREFIX|RTL = a -> a
+            environment.MutableBind(
+                BoundAttributes.PrefixRightToLeft,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // $$$ abc def 123
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable("$$$"),
+                            Variable("abc")),
+                        Variable("def")),
+                    Constant(123));
+            
+            var actual = environment.Infer(expression);
+
+            // ($$$ abc) (def 456)
+            var expected =
+                Apply(
+                    Apply(
+                        Variable("$$$"),
+                        Variable("abc")),
+                    Apply(
+                        Variable("def"),
+                        Constant(123)));
+            
+            AssertLogicalEqual(expression, expected, actual);
+        }
+          
+        [Test]
+        public void BoundVariableWithPrefixRightToLeftAttributes4()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ PREFIX|RTL = a -> a
+            environment.MutableBind(
+                BoundAttributes.PrefixRightToLeft,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // abc $$$ 123
+            var expression =
+                Apply(
+                    Apply(
+                        Variable("abc"),
+                        Variable("$$$")),
+                    Constant(123));
+            
+            var actual = environment.Infer(expression);
+
+            // abc $$$ 123
+            var expected =
+                Apply(
+                    Apply(
+                        Variable("abc"),
+                        Variable("$$$")),
+                    Constant(123));
+            
+            AssertLogicalEqual(expression, expected, actual);
+        }
+      
+        [Test]
+        public void BoundVariableWithPrefixRightToLeftAttributes5()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ PREFIX|RTL = a -> a
+            environment.MutableBind(
+                BoundAttributes.PrefixRightToLeft,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // abc $$$ def 123
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable("abc"),
+                            Variable("$$$")),
+                        Variable("def")),
+                    Constant(123));
+            
+            var actual = environment.Infer(expression);
+
+            // ((abc $$$) def) 123
+            var expected =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable("abc"),
+                            Variable("$$$")),
+                        Variable("def")),
+                    Constant(123));
+            
+            AssertLogicalEqual(expression, expected, actual);
+        }
+        
+        [Test]
+        public void BoundVariableWithPrefixRightToLeftAttributes6()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ PREFIX|RTL = a -> a
+            environment.MutableBind(
+                BoundAttributes.PrefixRightToLeft,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // abc $$$ 123 def 456
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Apply(
+                                Variable("abc"),
+                                Variable("$$$")),
+                            Constant(123)),
+                        Variable("def")),
+                    Constant(456));
+            
+            var actual = environment.Infer(expression);
+
+            // ((abc $$$) 123) (def 456)
+            var expected =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable("abc"),
+                            Variable("$$$")),
+                        Constant(123)),
+                    Apply(
+                        Variable("def"),
+                        Constant(456)));
+            
+            AssertLogicalEqual(expression, expected, actual);
+        }
+          
+        [Test]
+        public void BoundVariableWithPrefixRightToLeftAttributes7()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ PREFIX|RTL = a -> a
+            environment.MutableBind(
+                BoundAttributes.PrefixRightToLeft,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // $$$ abc $$$ def 123
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Apply(
+                                Variable("$$$"),
+                                Variable("abc")),
+                            Variable("$$$")),
+                        Variable("def")),
+                    Constant(123));
+            
+            var actual = environment.Infer(expression);
+
+            // ($$$ abc) (($$$ def) 123)
+            var expected =
+                Apply(
+                    Apply(
+                        Variable("$$$"),
+                        Variable("abc")),
+                    Apply(
+                        Apply(
+                            Variable("$$$"),
+                            Variable("def")),
+                        Constant(123)));
+            
+            AssertLogicalEqual(expression, expected, actual);
+        }
+
+        [Test]
+        public void BoundVariableWithPrefixRightToLeftAttributes8()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ PREFIX|RTL = a -> a
+            environment.MutableBind(
+                BoundAttributes.PrefixRightToLeft,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // abc $$$ def $$$ ghi 123
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Apply(
+                                Apply(
+                                    Variable("abc"),
+                                    Variable("$$$")),
+                                Variable("def")),
+                            Variable("$$$")),
+                        Variable("ghi")),
+                    Constant(123));
+            
+            var actual = environment.Infer(expression);
+
+            // ((abc $$$) def) (($$$ ghi) 123)
+            var expected =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable("abc"),
+                            Variable("$$$")),
+                        Variable("def")),
+                    Apply(
+                        Apply(
+                            Variable("$$$"),
+                            Variable("ghi")),
+                        Constant(123)));
+            
+            AssertLogicalEqual(expression, expected, actual);
+        }
+
+        [Test]
+        public void BoundVariableWithPrefixRightToLeftAttributes9()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ PREFIX|RTL = a -> a
+            environment.MutableBind(
+                BoundAttributes.PrefixRightToLeft,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // abc $$$ def $$$ ghi jkl 123
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Apply(
+                                Apply(
+                                    Apply(
+                                        Variable("abc"),
+                                        Variable("$$$")),
+                                    Variable("def")),
+                                Variable("$$$")),
+                            Variable("ghi")),
+                        Variable("jkl")),
+                    Constant(123));
+            
+            var actual = environment.Infer(expression);
+
+            // ((abc $$$) def) (($$$ ghi) (jkl 123))
+            var expected =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable("abc"),
+                            Variable("$$$")),
+                        Variable("def")),
+                    Apply(
+                        Apply(
+                            Variable("$$$"),
+                            Variable("ghi")),
+                        Apply(
+                            Variable("jkl"),
+                            Constant(123))));
+            
+            AssertLogicalEqual(expression, expected, actual);
+        }
+
+        //////////////////////////////////////////////////////////
+                  
+        [Test]
+        public void BoundVariableWithInfixRightToLeftAttributes1()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ INFIX|RTL = a -> a
+            environment.MutableBind(
+                BoundAttributes.InfixRightToLeft,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // $$$ 123
+            var expression =
+                Apply(
+                    Variable("$$$"),
+                    Constant(123));
+            
+            var actual = environment.Infer(expression);
+
+            // TODO: cause error?
+
+            // $$$ 123
+            var expected =
+                Apply(
+                    Variable("$$$"),
+                    Constant(123));
+            
+            AssertLogicalEqual(expression, expected, actual);
+        }
+
+        [Test]
+        public void BoundVariableWithInfixRightToLeftAttributes2()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ INFIX|RTL = a -> a
+            environment.MutableBind(
+                BoundAttributes.InfixRightToLeft,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // $$$ abc 123
+            var expression =
+                Apply(
+                    Apply(
+                        Variable("$$$"),
+                        Variable("abc")),
+                    Constant(123));
+            
+            var actual = environment.Infer(expression);
+
+            // TODO: cause error?
+
+            // ($$$ abc) 123
+            var expected =
+                Apply(
+                    Apply(
+                        Variable("$$$"),
+                        Variable("abc")),
+                    Constant(123));
+            
+            AssertLogicalEqual(expression, expected, actual);
+        }
+  
+        [Test]
+        public void BoundVariableWithInfixRightToLeftAttributes3()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ INFIX|RTL = a -> a
+            environment.MutableBind(
+                BoundAttributes.InfixRightToLeft,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // $$$ abc def 123
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable("$$$"),
+                            Variable("abc")),
+                        Variable("def")),
+                    Constant(123));
+            
+            var actual = environment.Infer(expression);
+
+            // TODO: cause error?
+
+            // ($$$ abc) (def 456)
+            var expected =
+                Apply(
+                    Apply(
+                        Variable("$$$"),
+                        Variable("abc")),
+                    Apply(
+                        Variable("def"),
+                        Constant(123)));
+            
+            AssertLogicalEqual(expression, expected, actual);
+        }
+          
+        [Test]
+        public void BoundVariableWithInfixRightToLeftAttributes4()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ INFIX|RTL = a -> a
+            environment.MutableBind(
+                BoundAttributes.InfixRightToLeft,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // abc $$$ 123
+            var expression =
+                Apply(
+                    Apply(
+                        Variable("abc"),
+                        Variable("$$$")),
+                    Constant(123));
+            
+            var actual = environment.Infer(expression);
+
+            // ($$$ abc) 123
+            var expected =
+                Apply(
+                    Apply(
+                        Variable("$$$"),
+                        Variable("abc")),
+                    Constant(123));
+            
+            AssertLogicalEqual(expression, expected, actual);
+        }
+      
+        [Test]
+        public void BoundVariableWithInfixRightToLeftAttributes5()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ INFIX|RTL = a -> a
+            environment.MutableBind(
+                BoundAttributes.InfixRightToLeft,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // abc $$$ def 123
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable("abc"),
+                            Variable("$$$")),
+                        Variable("def")),
+                    Constant(123));
+            
+            var actual = environment.Infer(expression);
+
+            // ($$$ abc) (def 123)
+            var expected =
+                Apply(
+                    Apply(
+                        Variable("$$$"),
+                        Variable("abc")),
+                    Apply(
+                        Variable("def"),
+                        Constant(123)));
+        
+            AssertLogicalEqual(expression, expected, actual);
+        }
+        
+        [Test]
+        public void BoundVariableWithInfixRightToLeftAttributes6()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ INFIX|RTL = a -> a
+            environment.MutableBind(
+                BoundAttributes.InfixRightToLeft,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // abc $$$ def 123 456
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Apply(
+                                Variable("abc"),
+                                Variable("$$$")),
+                            Variable("def")),
+                        Constant(123)),
+                    Constant(456));
+            
+            var actual = environment.Infer(expression);
+
+            // ($$$ abc) ((def 123) 456)
+            var expected =
+                Apply(
+                    Apply(
+                        Variable("$$$"),
+                        Variable("abc")),
+                    Apply(
+                        Apply(
+                            Variable("def"),
+                            Constant(123)),
+                        Constant(456)));
+            
+            AssertLogicalEqual(expression, expected, actual);
+        }
+          
+        [Test]
+        public void BoundVariableWithInfixRightToLeftAttributes7()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ INFIX|RTL = a -> a
+            environment.MutableBind(
+                BoundAttributes.InfixRightToLeft,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // $$$ abc $$$ def 123
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Apply(
+                                Variable("$$$"),
+                                Variable("abc")),
+                            Variable("$$$")),
+                        Variable("def")),
+                    Constant(123));
+            
+            var actual = environment.Infer(expression);
+
+            // TODO: cause error?
+            
+            // ($$$ abc) (($$$ def) 123)
+            var expected =
+                Apply(
+                    Apply(
+                        Variable("$$$"),
+                        Variable("abc")),
+                    Apply(
+                        Apply(
+                            Variable("$$$"),
+                            Variable("def")),
+                        Constant(123)));
+            
+            AssertLogicalEqual(expression, expected, actual);
+        }
+
+        [Test]
+        public void BoundVariableWithInfixRightToLeftAttributes8()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ INFIX|RTL = a -> a
+            environment.MutableBind(
+                BoundAttributes.InfixRightToLeft,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // abc $$$ def $$$ ghi 123
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Apply(
+                                Apply(
+                                    Variable("abc"),
+                                    Variable("$$$")),
+                                Variable("def")),
+                            Variable("$$$")),
+                        Variable("ghi")),
+                    Constant(123));
+            
+            var actual = environment.Infer(expression);
+
+            // ($$$ abc) (($$$ def) (ghi 123))
+            var expected =
+                Apply(
+                    Apply(
+                        Variable("$$$"),
+                        Variable("abc")),
+                    Apply(
+                        Apply(
+                            Variable("$$$"),
+                            Variable("def")),
+                        Apply(
+                            Variable("ghi"),
+                            Constant(123))));
+            
+            AssertLogicalEqual(expression, expected, actual);
+        }
+
+        [Test]
+        public void BoundVariableWithInfixRightToLeftAttributes9()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ INFIX|RTL = a -> a
+            environment.MutableBind(
+                BoundAttributes.InfixRightToLeft,
+                BoundVariable("$$$"),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // abc $$$ def $$$ ghi jkl 123
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Apply(
+                                Apply(
+                                    Apply(
+                                        Variable("abc"),
+                                        Variable("$$$")),
+                                    Variable("def")),
+                                Variable("$$$")),
+                            Variable("ghi")),
+                        Variable("jkl")),
+                    Constant(123));
+            
+            var actual = environment.Infer(expression);
+
+            // ($$$ abc) (($$$ def) ((ghi jkl) 123))
+            var expected =
+                Apply(
+                    Apply(
+                        Variable("$$$"),
+                        Variable("abc")),
+                    Apply(
+                        Apply(
+                            Variable("$$$"),
+                            Variable("def")),
+                        Apply(
+                            Apply(
+                                Variable("ghi"),
+                                Variable("jkl")),
+                            Constant(123))));
+            
+            AssertLogicalEqual(expression, expected, actual);
+        }
+        #endregion
  
+        ////////////////////////////////////////////////////////////////////////////////////
+        
         #region TypeVariable
         [Test]
         public void TypeVariable1()

@@ -24,6 +24,7 @@ using System;
 using System.Collections;
 using System.Diagnostics;
 using System.Xml.Linq;
+using Favalet.Expressions.Specialized;
 
 namespace Favalet.Expressions
 {
@@ -60,6 +61,9 @@ namespace Favalet.Expressions
 
         public override bool Equals(IExpression? other) =>
             other is ITypeTerm rhs && this.Equals(rhs);
+
+        protected override IExpression Transpose(ITransposeContext context) =>
+            this;
 
         protected override IExpression MakeRewritable(IMakeRewritableContext context) =>
             this;
@@ -109,7 +113,7 @@ namespace Favalet.Expressions
         public override IExpression HigherOrder
         {
             [DebuggerStepThrough]
-            get => Generator.kind;
+            get => TypeKindTerm.Instance;
         }
     }
 
@@ -122,7 +126,7 @@ namespace Favalet.Expressions
         TypeTerm, ITypeConstructorTerm
     {
         private static readonly ILambdaExpression higherOrder =
-            LambdaExpression.Create(Generator.kind, Generator.kind, TextRange.Internal);
+            LambdaExpression.Create(TypeKindTerm.Instance, TypeKindTerm.Instance, TextRange.Internal);
         
         internal TypeConstructorTerm(Type runtimeType, TextRange range) :
             base(runtimeType, range)

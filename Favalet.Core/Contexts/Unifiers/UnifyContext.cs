@@ -173,14 +173,14 @@ namespace Favalet.Contexts.Unifiers
             return new Disposer(this);
         }
 
-        public bool Commit(bool commit, bool raiseCouldNotUnify)
+        public bool Commit(bool commit, ErrorCollections raiseCouldNotUnify)
         {
             if (commit)
             {
                 this.scopes.Pop();
                 this.scopes.Push(this.topology);
             }
-            else if (raiseCouldNotUnify)
+            else if (raiseCouldNotUnify == ErrorCollections.JustRaise)
             {
                 throw new InvalidOperationException();
             }
@@ -213,7 +213,7 @@ namespace Favalet.Contexts.Unifiers
                 {
                     IPlaceholderTerm ph => $"ph{ph.Index}",
                     // TODO: IPairExpression _ => $"",
-                    _ => $"ex{expression.GetHashCode()}",
+                    _ => $"ex{(uint)expression.GetHashCode()}",
                 };
             
             sb.AppendLine("    #nodes");

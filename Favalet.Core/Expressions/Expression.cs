@@ -21,6 +21,7 @@ using Favalet.Contexts;
 using Favalet.Expressions.Specialized;
 using System;
 using System.Collections;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Xml.Linq;
 using Favalet.Ranges;
@@ -54,16 +55,24 @@ namespace Favalet.Expressions
         protected Expression(TextRange range) =>
             this.Range = range;
 
-        public string Type =>
-            this.GetType().Name.
-            Replace("Expression", string.Empty).
-            Replace("Term", string.Empty);
+        public string Type
+        {
+            [DebuggerStepThrough]
+            get => this.GetTypeName();
+        }
 
         public abstract IExpression HigherOrder { get; }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         TextRange IExpression.Range =>
             this.Range;
+        
+        [DebuggerStepThrough]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        protected virtual string GetTypeName() =>
+            this.GetType().Name.
+                Replace("Expression", string.Empty).
+                Replace("Term", string.Empty);
 
         [DebuggerStepThrough]
         public bool IsContainsPlaceholder(bool includeHigherOrder = true) =>
@@ -82,11 +91,15 @@ namespace Favalet.Expressions
                 _ => this.HigherOrder.IsContainsPlaceholder(includeHigherOrder)
             });
 
+        protected abstract IExpression Transpose(ITransposeContext context);
         protected abstract IExpression MakeRewritable(IMakeRewritableContext context);
         protected abstract IExpression Infer(IInferContext context);
         protected abstract IExpression Fixup(IFixupContext context);
         protected abstract IExpression Reduce(IReduceContext context);
 
+        [DebuggerStepThrough]
+        internal IExpression InternalTranspose(ITransposeContext context) =>
+            this.Transpose(context);
         [DebuggerStepThrough]
         internal IExpression InternalMakeRewritable(IMakeRewritableContext context) =>
             this.MakeRewritable(context);
@@ -113,11 +126,17 @@ namespace Favalet.Expressions
 
         public string Xml =>
             this.GetXml().ToString();
+        
+        public string StrictAll =>
+            $"{this.Type}: {this.GetPrettyString(PrettyStringTypes.StrictAll)}";
         public string Strict =>
             $"{this.Type}: {this.GetPrettyString(PrettyStringTypes.Strict)}";
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        public string ReadableAll =>
+            $"{this.Type}: {this.GetPrettyString(PrettyStringTypes.ReadableAll)}";
         public string Readable =>
             $"{this.Type}: {this.GetPrettyString(PrettyStringTypes.Readable)}";
+        public string Minimum =>
+            $"{this.Type}: {this.GetPrettyString(PrettyStringTypes.Minimum)}";
 
         public sealed override string ToString() =>
             this.Readable;

@@ -18,54 +18,76 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using Favalet.Expressions;
-using Favalet.Expressions.Algebraic;
 using Favalet.Expressions.Specialized;
-using Favalet.Ranges;
-using Favalet.Internal;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 namespace Favalet.Contexts
 {
+    [DebuggerStepThrough]
+    public readonly struct BoundVariables
+    {
+        public readonly BoundAttributes Attributes;
+        public readonly VariableInformation[] Variables;
+
+        private BoundVariables(BoundAttributes attributes, VariableInformation[] vis)
+        {
+            this.Attributes = attributes;
+            this.Variables = vis;
+        }
+
+        public void Deconstruct(
+            out BoundAttributes attributes,
+            out VariableInformation[] vis)
+        {
+            attributes = this.Attributes;
+            vis = this.Variables;
+        }
+        
+        public static BoundVariables Create(BoundAttributes attributes, VariableInformation[] vis) =>
+            new BoundVariables(attributes, vis);
+    }
+    
     public interface IScopeContext
     {
         ITypeCalculator TypeCalculator { get; }
 
-        IEnumerable<VariableInformation> LookupVariables(string symbol);
+        BoundVariables? LookupVariables(string symbol);
     }
 
     public abstract class ScopeContext :
         IScopeContext
     {
-        private readonly ScopeContext? parent;
+        private readonly ScopeContext? parentScope;
         private VariableInformationRegistry? registry;
 
         [DebuggerStepThrough]
-        internal ScopeContext(ScopeContext? parent, ITypeCalculator typeCalculator)
+        private protected ScopeContext(ScopeContext? parentScope) =>
+            this.parentScope = parentScope;
+
+        public abstract ITypeCalculator TypeCalculator { get; }
+
+        [DebuggerStepThrough]
+        protected internal void MutableBind(
+            BoundAttributes attributes,
+            IBoundVariableTerm symbol,
+            IExpression expression,
+            bool checkDuplicate)
         {
-            this.parent = parent;
-            this.TypeCalculator = typeCalculator;
+            this.registry ??= VariableInformationRegistry.Create();
+            this.registry.Register(attributes, symbol, expression, checkDuplicate);
         }
 
-        public ITypeCalculator TypeCalculator { get; }
-
-        private protected void MutableBind(
-            IBoundVariableTerm symbol, IExpression expression, bool checkDuplicate)
+        [DebuggerStepThrough]
+        public BoundVariables? LookupVariables(string symbol)
         {
-            this.registry ??= new VariableInformationRegistry();
-            this.registry.Register(symbol, expression, checkDuplicate);
-        }
-
-        public IEnumerable<VariableInformation> LookupVariables(string symbol)
-        {
-            var overrideVariables =
-                this.registry?.Lookup(symbol) ??
-                ArrayEx.Empty<VariableInformation>();
-            return (overrideVariables.Length >= 1) ?
-                overrideVariables :
-                this.parent?.LookupVariables(symbol) ??
-                    Enumerable.Empty<VariableInformation>();
+            if (this.registry?.Lookup(symbol) is { } results)
+            {
+                return BoundVariables.Create(results.attributes, results.vis.ToArray());
+            }
+            else 
+            {
+                return this.parentScope?.LookupVariables(symbol) ;
+            }
         }
     }
 }

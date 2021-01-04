@@ -32,7 +32,7 @@ namespace Favalet.Expressions.Specialized
         
         Type IdentityType { get; }
 
-        IExpression Create(IExpression left, IExpression right, IExpression higherOrder, TextRange range);
+        IExpression Create(IExpression left, IExpression right, TextRange range);
     }
 
     public static class PairExpressionExtension
@@ -53,12 +53,11 @@ namespace Favalet.Expressions.Specialized
         public static IExpression? Create(
             this IPairExpression pair,
             IEnumerable<IExpression> children,
-            IExpression higherOrder,
             TextRange range) =>
             children.ToArray() switch
             {
-                IExpression[] arr when arr.Length == 2 =>
-                    pair.Create(arr[0], arr[1], higherOrder, range),
+                { Length: 2 } arr =>
+                    pair.Create(arr[0], arr[1], range),
                 _ =>
                     throw new InvalidOperationException()
             };

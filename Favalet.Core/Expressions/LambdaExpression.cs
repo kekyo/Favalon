@@ -41,17 +41,21 @@ namespace Favalet.Expressions
         private sealed class LambdaExpressionFactory
         {
             private readonly ILambdaExpression fourth;
+            private readonly ILambdaExpression typeKind;
 
-            private LambdaExpressionFactory() =>
-                this.fourth = this.OnCreate(
+            private LambdaExpressionFactory()
+            {
+                this.fourth = new LambdaExpression(
                     FourthTerm.Instance,
                     FourthTerm.Instance,
                     DeadEndTerm.Instance,
                     TextRange.Unknown);
-
-            private ILambdaExpression OnCreate(
-                IExpression parameter, IExpression body, IExpression higherOrder, TextRange range) =>
-                new LambdaExpression(parameter, body, higherOrder, range);
+                this.typeKind = new LambdaExpression(
+                    TypeKindTerm.Instance,
+                    TypeKindTerm.Instance,
+                    this.fourth,
+                    TextRange.Unknown);
+            }
             
             public IExpression Create(
                 IExpression parameter, IExpression body, Func<IExpression> higherOrder, TextRange range)
@@ -63,15 +67,17 @@ namespace Favalet.Expressions
                         return DeadEndTerm.Instance;
                     case (FourthTerm _, FourthTerm _):
                         return this.fourth;
+                    case (TypeKindTerm _, TypeKindTerm _):
+                        return this.typeKind;
                     case (FourthTerm _, _):
                     case (_, FourthTerm _):
-                        return this.OnCreate(
+                        return new LambdaExpression(
                             parameter,
                             body,
                             DeadEndTerm.Instance,
                             range);
                     default:
-                        return this.OnCreate(
+                        return new LambdaExpression(
                             parameter,
                             body,
                             higherOrder(),
@@ -166,12 +172,8 @@ namespace Favalet.Expressions
 
         [DebuggerStepThrough]
         IExpression IPairExpression.Create(
-            IExpression left, IExpression right, IExpression higherOrder, TextRange range)
-        {
-            Debug.Assert(higherOrder is UnspecifiedTerm);
-
-            return LambdaExpressionFactory.Instance.Create(left, right, range);
-        }
+            IExpression left, IExpression right, TextRange range) =>
+            LambdaExpressionFactory.Instance.Create(left, right, range);
 
         public override int GetHashCode() =>
             this.Parameter.GetHashCode() ^ this.Body.GetHashCode();
@@ -182,6 +184,13 @@ namespace Favalet.Expressions
 
         public override bool Equals(IExpression? other) =>
             other is ILambdaExpression rhs && this.Equals(rhs);
+
+        protected override IExpression Transpose(ITransposeContext context) =>
+            LambdaExpressionFactory.Instance.Create(
+                context.Transpose(this.Parameter),
+                context.Transpose(this.Body),
+                () => context.Transpose(this.HigherOrder),
+                this.Range);
 
         protected override IExpression MakeRewritable(IMakeRewritableContext context) =>
             LambdaExpressionFactory.Instance.Create(
@@ -304,16 +313,16 @@ namespace Favalet.Expressions
             context.FinalizePrettyString(
                 this,
                 $"{context.GetPrettyString(this.Parameter)} -> {context.GetPrettyString(this.Body)}");
-        
-        public static LambdaExpression Create(
-            IExpression parameter, IExpression body, ILambdaExpression higherOrder, TextRange range) =>
-            (LambdaExpression)LambdaExpressionFactory.Instance.Create(
-                parameter, body, higherOrder, range);
 
         public static LambdaExpression Create(
             IExpression parameter, IExpression body, TextRange range) =>
             (LambdaExpression)LambdaExpressionFactory.Instance.Create(
                 parameter, body, range);
+         
+        public static LambdaExpression UnsafeCreate(
+            IExpression parameter, IExpression body, ILambdaExpression higherOrder, TextRange range) =>
+            (LambdaExpression)LambdaExpressionFactory.Instance.Create(
+                parameter, body, higherOrder, range);
     }
 
     [DebuggerStepThrough]
