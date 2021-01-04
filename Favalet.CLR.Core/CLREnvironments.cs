@@ -91,7 +91,7 @@ namespace Favalet
             }
         }
         
-        private static ITerm MutableBindMember(
+        private static IExpression MutableBindMember(
             IEnvironments environments, PropertyInfo property, TextRange range)
         {
             var propertyTerm = PropertyTerm.From(property, range);
@@ -115,11 +115,11 @@ namespace Favalet
             return propertyTerm;
         }
         
-        public static ITerm MutableBindMember(
+        public static IExpression MutableBindMember(
             this IEnvironments environments, PropertyInfo property) =>
             MutableBindMember(environments, property, CLRGenerator.TextRange(property));
 
-        private static ITerm MutableBindMember(
+        private static IExpression MutableBindMember(
             IEnvironments environments, MethodBase method, TextRange range)
         {
             var methodTerm = MethodTerm.From(method, range);
@@ -150,7 +150,7 @@ namespace Favalet
             return methodTerm;
         }
         
-        public static ITerm MutableBindMember(
+        public static IExpression MutableBindMember(
             this IEnvironments environments, MethodBase method) =>
             MutableBindMember(environments, method, CLRGenerator.TextRange(method));
 
@@ -182,11 +182,11 @@ namespace Favalet
             IEnvironments environments, Type type, TextRange range)
         {
             var typeTerm = MutableBindMember(environments, type, range);
-                
+
             foreach (var constructor in type.GetDeclaredConstructors().
                 Where(constructor =>
                     constructor.IsPublic && !constructor.IsStatic &&
-                    (constructor.GetParameters().Length == 1)))  // TODO: 1parameter
+                    (constructor.GetParameters().Length >= 1)))  // TODO: unit
             {
                 MutableBindMember(environments, constructor, range);
             }
@@ -202,12 +202,12 @@ namespace Favalet
             {
                 MutableBindMember(environments, property, range);
             }
-                
+
             foreach (var method in type.GetDeclaredMethods().
                 Where(method =>
                     method.IsPublic && !method.IsGenericMethod &&
                     (method.ReturnType != typeof(void)) &&    // TODO: void
-                    (method.GetParameters().Length == (method.IsStatic ? 1 : 0)) &&   // TODO: 1parameter
+                    (method.GetParameters().Length >= (method.IsStatic ? 1 : 0)) &&   // TODO: unit
                     !properties.ContainsKey(method)))
             {
                 MutableBindMember(environments, method, range);

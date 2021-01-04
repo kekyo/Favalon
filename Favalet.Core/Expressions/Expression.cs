@@ -21,6 +21,7 @@ using Favalet.Contexts;
 using Favalet.Expressions.Specialized;
 using System;
 using System.Collections;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Xml.Linq;
 using Favalet.Ranges;
@@ -54,16 +55,24 @@ namespace Favalet.Expressions
         protected Expression(TextRange range) =>
             this.Range = range;
 
-        public string Type =>
-            this.GetType().Name.
-            Replace("Expression", string.Empty).
-            Replace("Term", string.Empty);
+        public string Type
+        {
+            [DebuggerStepThrough]
+            get => this.GetTypeName();
+        }
 
         public abstract IExpression HigherOrder { get; }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         TextRange IExpression.Range =>
             this.Range;
+        
+        [DebuggerStepThrough]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        protected virtual string GetTypeName() =>
+            this.GetType().Name.
+                Replace("Expression", string.Empty).
+                Replace("Term", string.Empty);
 
         [DebuggerStepThrough]
         public bool IsContainsPlaceholder(bool includeHigherOrder = true) =>

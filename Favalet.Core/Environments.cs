@@ -256,8 +256,8 @@ namespace Favalet
 
             // Type kind symbol.
             environments.MutableBind(
-                BoundAttributes.PrefixLeftToRight, Generator.kind.Symbol,
-                TextRange.Internal, Generator.kind);
+                BoundAttributes.PrefixLeftToRight, "*",
+                TextRange.Internal, TypeKindTerm.Instance);
 
             // Lambda operator.
             environments.MutableBind(

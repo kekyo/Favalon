@@ -34,14 +34,11 @@ namespace Favalet
         public static Environments Environments() =>
             Favalet.Environments.Create();
 
-        internal static readonly VariableTerm kind =
-            VariableTerm.Create("*", FourthTerm.Instance, TextRange.Internal);
-
 #if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static VariableTerm Kind() =>
-            kind;
+        public static TypeKindTerm Kind() =>
+            TypeKindTerm.Instance;
         public static VariableTerm Kind(string symbol) =>
             VariableTerm.Create(symbol, FourthTerm.Instance, TextRange.Unknown);
 
