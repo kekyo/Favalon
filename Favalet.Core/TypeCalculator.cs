@@ -23,6 +23,7 @@ using Favalet.Internal;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Favalet.Expressions.Specialized;
 
 namespace Favalet
 {
@@ -52,8 +53,8 @@ namespace Favalet
                 IExpression left, IExpression right)
             {
                 // Function variance:
-                if (left is ILambdaExpression(IExpression lp, IExpression lr) &&
-                    right is ILambdaExpression(IExpression rp, IExpression rr))
+                if (left is ILambdaExpression({ } lp, { } lr) &&
+                    right is ILambdaExpression({ } rp, { } rr))
                 {
                     var parameter = self.ChoiceForAnd(calculator, self, lp, rp);
                     var result = self.ChoiceForAnd(calculator, self, lr, rr);
@@ -85,8 +86,8 @@ namespace Favalet
                 IExpression left, IExpression right)
             {
                 // Function variance:
-                if (left is ILambdaExpression(IExpression lp, IExpression lr) &&
-                    right is ILambdaExpression(IExpression rp, IExpression rr))
+                if (left is ILambdaExpression({ } lp, { } lr) &&
+                    right is ILambdaExpression({ } rp, { } rr))
                 {
                     var parameter = self.ChoiceForOr(calculator, self, lp, rp);
                     var result = self.ChoiceForOr(calculator, self, lr, rr);
@@ -114,6 +115,53 @@ namespace Favalet
          
             public new static readonly TypeCalculatorChoicer Instance =
                 new TypeCalculatorChoicer();
+        }
+        
+        public override IExpression Reduce(IExpression operand, IExpressionChoicer choicer)
+        {
+            // Normalize
+            if (operand is ILambdaExpression lambda)
+            {
+                var parameter = this.Reduce(lambda.Parameter, choicer);
+                var body = this.Reduce(lambda.Body, choicer);
+                
+                switch (parameter, body)
+                {
+                    case (IBinaryExpression pb, IBinaryExpression bb):
+                        return ((IPairExpression) pb).Create(
+                            ((IPairExpression) bb).Create(
+                                ((IPairExpression) lambda).Create(pb.Left, bb.Left, bb.Range),
+                                ((IPairExpression) lambda).Create(pb.Left, bb.Right, bb.Range),
+                                lambda.Range),
+                            ((IPairExpression) bb).Create(
+                                ((IPairExpression) lambda).Create(pb.Right, bb.Left, bb.Range),
+                                ((IPairExpression) lambda).Create(pb.Right, bb.Right, bb.Range),
+                                lambda.Range),
+                            lambda.Range);
+                    case (_, IBinaryExpression bb):
+                        return ((IPairExpression) bb).Create(
+                            ((IPairExpression) lambda).Create(lambda.Parameter, bb.Left, bb.Range),
+                            ((IPairExpression) lambda).Create(lambda.Parameter, bb.Right, bb.Range),
+                            lambda.Range);
+                    case (IBinaryExpression pb, _):
+                        return ((IPairExpression) pb).Create(
+                            ((IPairExpression) lambda).Create(pb.Left, lambda.Body, pb.Range),
+                            ((IPairExpression) lambda).Create(pb.Right, lambda.Body, pb.Range),
+                            lambda.Range);
+                    default:
+                        if (object.ReferenceEquals(lambda.Parameter, parameter) &&
+                            object.ReferenceEquals(lambda.Body, body))
+                        {
+                            return lambda;
+                        }
+                        else
+                        {
+                            return ((IPairExpression) lambda).Create(parameter, body, lambda.Range);
+                        }
+                }
+            }
+
+            return base.Reduce(operand, choicer);
         }
 
         public override IExpressionChoicer DefaultChoicer =>

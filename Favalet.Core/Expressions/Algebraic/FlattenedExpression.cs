@@ -19,13 +19,12 @@
 
 using Favalet.Contexts;
 using Favalet.Internal;
+using Favalet.Ranges;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Favalet.Expressions.Specialized;
-using Favalet.Ranges;
 
 namespace Favalet.Expressions.Algebraic
 {

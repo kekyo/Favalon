@@ -53,8 +53,8 @@ namespace Favalet.Expressions.Algebraic
         bool Equals(IExpression lhs, IExpression rhs);
         bool ExactEquals(IExpression lhs, IExpression rhs);
 
-        IExpression Calculate(IExpression operand, IExpressionChoicer choicer);
-        IExpression Calculate(IExpression operand);
+        IExpression Reduce(IExpression operand, IExpressionChoicer choicer);
+        IExpression Reduce(IExpression operand);
     }
 
     public class LogicalCalculator :
@@ -145,8 +145,8 @@ namespace Favalet.Expressions.Algebraic
                         (DeadEndTerm _, _) => false,
                         (_, DeadEndTerm _) => false,
                         _ => this.Equals(
-                            this.Calculate(lhs.HigherOrder),
-                            this.Calculate(rhs.HigherOrder))
+                            this.Reduce(lhs.HigherOrder),
+                            this.Reduce(rhs.HigherOrder))
                     };
             }
         }
@@ -246,15 +246,15 @@ namespace Favalet.Expressions.Algebraic
             return candidates;
         }
 
-        public IExpression Calculate(IExpression operand) =>
-            this.Calculate(operand, this.DefaultChoicer);
+        public IExpression Reduce(IExpression operand) =>
+            this.Reduce(operand, this.DefaultChoicer);
 
-        public IExpression Calculate(IExpression operand, IExpressionChoicer choicer)
+        public virtual IExpression Reduce(IExpression operand, IExpressionChoicer choicer)
         {
             if (operand is IBinaryExpression binary)
             {
-                var left = this.Calculate(binary.Left, choicer);
-                var right = this.Calculate(binary.Right, choicer);
+                var left = this.Reduce(binary.Left, choicer);
+                var right = this.Reduce(binary.Right, choicer);
 
                 if (binary is IAndExpression)
                 {
@@ -264,7 +264,7 @@ namespace Favalet.Expressions.Algebraic
                         Memoize();
                     if (ConstructNested(absorption, OrExpression.Create, binary.Range) is { } result1)
                     {
-                        return this.Calculate(result1, choicer);
+                        return this.Reduce(result1, choicer);
                     }
 
                     // Shrink
@@ -284,7 +284,7 @@ namespace Favalet.Expressions.Algebraic
                         Memoize();
                     if (ConstructNested(absorption, AndExpression.Create, binary.Range) is { } result1)
                     {
-                        return this.Calculate(result1, choicer);
+                        return this.Reduce(result1, choicer);
                     }
 
                     // Shrink

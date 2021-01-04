@@ -19,7 +19,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using Favalet.Internal;
 using Favalet.Ranges;
 
 namespace Favalet.Expressions.Specialized
@@ -54,7 +54,7 @@ namespace Favalet.Expressions.Specialized
             this IPairExpression pair,
             IEnumerable<IExpression> children,
             TextRange range) =>
-            children.ToArray() switch
+            children.Memoize() switch
             {
                 { Length: 2 } arr =>
                     pair.Create(arr[0], arr[1], range),

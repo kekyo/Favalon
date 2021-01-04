@@ -38,7 +38,7 @@ namespace Favalet.Expressions
     public sealed class VariableTerm :
         Expression, IVariableTerm
     {
-        private readonly IExpression[]? bounds;
+        private readonly IExpression[]? candidates;
         
         public readonly string Symbol;
         public readonly BoundAttributes? Attributes;
@@ -48,14 +48,14 @@ namespace Favalet.Expressions
             string symbol,
             IExpression higherOrder,
             BoundAttributes? attributes,
-            IExpression[]? bounds,
+            IExpression[]? candidates,
             TextRange range) :
             base(range)
         {
             this.HigherOrder = higherOrder;
             this.Symbol = symbol;
             this.Attributes = attributes;
-            this.bounds = bounds;
+            this.candidates = candidates;
         }
 
         public override IExpression HigherOrder { get; }
@@ -93,7 +93,7 @@ namespace Favalet.Expressions
         protected override IExpression Transpose(ITransposeContext context)
         {
             Debug.Assert(this.Attributes == null);
-            Debug.Assert(this.bounds == null);
+            Debug.Assert(this.candidates == null);
 
             var higherOrder = context.Transpose(this.HigherOrder);
 
@@ -103,7 +103,7 @@ namespace Favalet.Expressions
                     this.Symbol,
                     higherOrder,
                     attributes,
-                    this.bounds,
+                    this.candidates,
                     this.Range);
             }
             else
@@ -112,7 +112,7 @@ namespace Favalet.Expressions
                     this.Symbol,
                     higherOrder,
                     BoundAttributes.PrefixLeftToRight,
-                    this.bounds,
+                    this.candidates,
                     this.Range);
             }
         }
@@ -122,12 +122,12 @@ namespace Favalet.Expressions
                 this.Symbol,
                 context.MakeRewritableHigherOrder(this.HigherOrder),
                 this.Attributes,
-                this.bounds,
+                this.candidates,
                 this.Range);
         
         protected override IExpression Infer(IInferContext context)
         {
-            if (this.bounds != null)
+            if (this.candidates != null)
             {
                 return this;
             }
@@ -158,7 +158,7 @@ namespace Favalet.Expressions
                     context.Unify(expressionHigherOrder, higherOrder, true);
                 }
                 
-                var bounds = 
+                var candidates = 
                     context.TypeCalculator.SortExpressions(
                         expression => expression.HigherOrder,
                         targets.Select(entry => entry.expression)).
@@ -167,7 +167,7 @@ namespace Favalet.Expressions
                     this.Symbol,
                     higherOrder,
                     results.Attributes,
-                    bounds,
+                    candidates,
                     this.Range);
             }
 
@@ -181,7 +181,7 @@ namespace Favalet.Expressions
                     this.Symbol,
                     higherOrder,
                     this.Attributes,
-                    this.bounds,
+                    this.candidates,
                     this.Range);
             }
         }
@@ -190,9 +190,9 @@ namespace Favalet.Expressions
         {
             var higherOrder = context.FixupHigherOrder(this.HigherOrder);
 
-            if (this.bounds is { Length: >= 1 } bounds)
+            if (this.candidates is { Length: >= 1 })
             {
-                var targets = bounds.
+                var targets = this.candidates.
                     Select(context.Fixup).
                     Memoize();
 
@@ -205,30 +205,30 @@ namespace Favalet.Expressions
                         OrExpression.Create,
                         this.Range)!;
 
-                    var calculated = context.TypeCalculator.Calculate(
+                    var filterPredicate = context.TypeCalculator.Reduce(
                         AndExpression.Create(
                             higherOrder, targetsHigherOrder,
                             this.Range));
 
-                    var filteredTargets =
+                    var filteredCandidates =
                         context.TypeCalculator.SortExpressions(
                             expression => expression.HigherOrder,
                             targets.
                                 Select(target =>
                                     (target,
-                                        calculated: context.TypeCalculator.Calculate(
-                                            AndExpression.Create(target.HigherOrder, calculated, this.Range)))).
-                                Where(entry => entry.calculated.Equals(calculated)).
+                                     calculated: context.TypeCalculator.Reduce(
+                                        AndExpression.Create(target.HigherOrder, filterPredicate, this.Range)))).
+                                Where(entry => entry.calculated.Equals(filterPredicate)).
                                 Select(entry => entry.target)).
                         Memoize();
 
-                    if (filteredTargets.Length >= 1)
+                    if (filteredCandidates.Length >= 1)
                     {
                         return new VariableTerm(
                             this.Symbol,
                             higherOrder,
                             this.Attributes,
-                            filteredTargets, 
+                            filteredCandidates, 
                             this.Range);
                     }
                 }
@@ -244,17 +244,17 @@ namespace Favalet.Expressions
                     this.Symbol,
                     higherOrder,
                     this.Attributes,
-                    this.bounds,
+                    this.candidates,
                     this.Range);
             }
         }
 
         protected override IExpression Reduce(IReduceContext context)
         {
-            if (this.bounds is { Length: >= 1 } bounds)
+            if (this.candidates is { Length: 1 })
             {
-                var target = bounds[0];
-                if (target is IBoundVariableTerm bound)
+                var candidate = this.candidates[0];
+                if (candidate is IBoundVariableTerm bound)
                 {
                     if (context.LookupVariables(bound.Symbol) is { } results)
                     {
@@ -281,7 +281,7 @@ namespace Favalet.Expressions
                 }
                 else
                 {
-                    return context.Reduce(target);
+                    return context.Reduce(candidate);
                 }
             }
 

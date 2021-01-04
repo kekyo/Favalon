@@ -45,7 +45,7 @@ namespace Favalet.Expressions
 
     #pragma warning disable CS0659
 
-    [DebuggerDisplay("{Readable}")]
+    [DebuggerDisplay("{Minimum}")]
     public abstract class Expression :
         IExpression
     {

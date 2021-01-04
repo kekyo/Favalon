@@ -22,6 +22,7 @@ using Favalet.Expressions.Specialized;
 using Favalet.Internal;
 using Favalet.Ranges;
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
@@ -30,8 +31,9 @@ namespace Favalet
 {
     public sealed class CLREnvironments : Environments
     {
+        [EditorBrowsable(EditorBrowsableState.Never)]
         [DebuggerStepThrough]
-        private CLREnvironments(bool saveLastTopology) :
+        public CLREnvironments(bool saveLastTopology) :
             base(CLRTypeCalculator.Instance, saveLastTopology)
         { }
 
@@ -45,11 +47,13 @@ namespace Favalet
         )
         {
             var environments = new CLREnvironments(saveLastTopology);
+            environments.MutableBindDefaults();
             environments.MutableBindCLRDefaults();
             return environments;
         }
     }
 
+    [DebuggerStepThrough]
     public static class CLREnvironmentsExtension
     {
         private static void MutableBind(
@@ -72,7 +76,6 @@ namespace Favalet
             }
         }
         
-        [DebuggerStepThrough]
         private static void MutableBindMembersByAliasNames(
             IEnvironments environments,
             MemberInfo member,

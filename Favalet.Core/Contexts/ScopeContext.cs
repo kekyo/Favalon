@@ -19,6 +19,7 @@
 
 using Favalet.Expressions;
 using Favalet.Expressions.Specialized;
+using Favalet.Internal;
 using System.Diagnostics;
 
 namespace Favalet.Contexts
@@ -82,7 +83,7 @@ namespace Favalet.Contexts
         {
             if (this.registry?.Lookup(symbol) is { } results)
             {
-                return BoundVariables.Create(results.attributes, results.vis.ToArray());
+                return BoundVariables.Create(results.attributes, results.vis.Memoize());
             }
             else 
             {

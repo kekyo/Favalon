@@ -50,7 +50,14 @@ namespace Favalet.Internal
                     }
 
                 default:
-                    return x!.GetHashCode().CompareTo(y!.GetHashCode());
+                    if (x!.ExactEquals(y!))
+                    {
+                        return 0;
+                    }
+                    else
+                    {
+                        return x!.GetHashCode().CompareTo(y!.GetHashCode());
+                    }
             }
         }
 

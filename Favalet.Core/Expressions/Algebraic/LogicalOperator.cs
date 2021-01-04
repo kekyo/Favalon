@@ -67,7 +67,7 @@ namespace Favalet.Expressions.Algebraic
             this;
 
         public IExpression Call(IReduceContext context, IExpression argument) =>
-            LogicalCalculator.Instance.Calculate(argument);
+            LogicalCalculator.Instance.Reduce(argument);
 
         protected override IEnumerable GetXmlValues(IXmlRenderContext context) =>
             Enumerable.Empty<object>();

@@ -18,10 +18,10 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using Favalet.Expressions;
+using Favalet.Internal;
 using Favalet.Reactive.Linq;
 using Favalet.Tokens;
 using NUnit.Framework;
-using System.Linq;
 
 namespace Favalet
 {
@@ -29,7 +29,7 @@ namespace Favalet
     public sealed class ParserTest
     {
         private static IExpression[] Parse(params Token[] tokens) =>
-            CLRParser.Create().Parse(tokens).ToEnumerable().ToArray();
+            CLRParser.Create().Parse(tokens).ToEnumerable().Memoize();
 
         [Test]
         public void EnumerableIdentityToken()

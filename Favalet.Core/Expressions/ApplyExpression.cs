@@ -19,14 +19,13 @@
 
 using Favalet.Contexts;
 using Favalet.Expressions.Specialized;
+using Favalet.Internal;
 using Favalet.Ranges;
 using System;
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
 
 namespace Favalet.Expressions
 {
@@ -243,8 +242,8 @@ namespace Favalet.Expressions
         protected override IExpression Transpose(ITransposeContext context)
         {
 #if DEBUG
-            var seq = this.EnumerateRecursively(context).ToArray();
-            var tiseq = TransposeInfix(seq).ToArray();
+            var seq = this.EnumerateRecursively(context).Memoize();
+            var tiseq = TransposeInfix(seq).Memoize();
             var result = TransposeRtl(tiseq);
             return result;
 #else

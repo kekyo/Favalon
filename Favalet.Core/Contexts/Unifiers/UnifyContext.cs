@@ -95,7 +95,7 @@ namespace Favalet.Contexts.Unifiers
         public bool IsAssignable(IExpression expression1, IExpression expression2)
         {
             // expression1 <:> expression2
-            var or = this.TypeCalculator.Calculate(
+            var or = this.TypeCalculator.Reduce(
                 OrExpression.Create(expression1, expression2, TextRange.Unknown));
             return this.TypeCalculator.Equals(expression1, or) ||
                    this.TypeCalculator.Equals(or, expression2);
@@ -104,7 +104,7 @@ namespace Favalet.Contexts.Unifiers
         public bool IsAssignableFrom(IExpression to, IExpression from)
         {
             // to <: from
-            var or = this.TypeCalculator.Calculate(
+            var or = this.TypeCalculator.Reduce(
                 OrExpression.Create(to, from, TextRange.Unknown));
             return this.TypeCalculator.Equals(or, from);
         }
