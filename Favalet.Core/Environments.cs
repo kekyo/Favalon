@@ -61,9 +61,9 @@ namespace Favalet
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         [DebuggerStepThrough]
-        protected Environments(
+        public Environments(
             ITypeCalculator typeCalculator, bool saveLastTopology) :
-            base(null)
+            base((ScopeContext?)null)
         {
             this.TypeCalculator = typeCalculator;            
             this.saveLastTopology = saveLastTopology;

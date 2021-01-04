@@ -17,6 +17,8 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+using System;
+using System.ComponentModel;
 using Favalet.Expressions;
 using Favalet.Expressions.Specialized;
 using Favalet.Internal;
@@ -64,6 +66,26 @@ namespace Favalet.Contexts
         [DebuggerStepThrough]
         private protected ScopeContext(ScopeContext? parentScope) =>
             this.parentScope = parentScope;
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        protected VariableInformationRegistry? Registry
+        {
+            [DebuggerStepThrough]
+            get => this.registry;
+        }
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        protected void CopyInRegistry(VariableInformationRegistry originateFrom)
+        {
+            if (this.registry == null)
+            {
+                this.registry = originateFrom.Clone();
+            }
+            else
+            {
+                this.registry.CopyIn(originateFrom);
+            }
+        }
 
         public abstract ITypeCalculator TypeCalculator { get; }
 

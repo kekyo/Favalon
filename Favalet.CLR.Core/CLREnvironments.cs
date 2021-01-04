@@ -17,6 +17,7 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+using Favalet.Contexts;
 using Favalet.Expressions;
 using Favalet.Expressions.Specialized;
 using Favalet.Internal;
@@ -31,11 +32,33 @@ namespace Favalet
 {
     public sealed class CLREnvironments : Environments
     {
+        private static readonly LazySlim<VariableInformationRegistry> cachedRegistry =
+            new(() =>
+            {
+                var environments = new CLREnvironments(false);
+                environments.MutableBindDefaults();
+
+                foreach (var assembly in new[] {
+                    typeof(object), typeof(Uri), typeof(Enumerable) }.
+                    Select(type => type.GetAssembly()).
+                    Distinct())
+                {
+                    environments.MutableBindMembers(assembly);
+                }
+
+                Debug.Assert(environments.Registry != null);
+                return environments.Registry!;
+            });
+        
         [EditorBrowsable(EditorBrowsableState.Never)]
         [DebuggerStepThrough]
         public CLREnvironments(bool saveLastTopology) :
             base(CLRTypeCalculator.Instance, saveLastTopology)
         { }
+
+        [DebuggerStepThrough]
+        public void MutableBindCLRDefaults() =>
+            this.CopyInRegistry(cachedRegistry.Value);
 
         [DebuggerStepThrough]
         public new static CLREnvironments Create(
@@ -47,7 +70,6 @@ namespace Favalet
         )
         {
             var environments = new CLREnvironments(saveLastTopology);
-            environments.MutableBindDefaults();
             environments.MutableBindCLRDefaults();
             return environments;
         }
@@ -231,21 +253,6 @@ namespace Favalet
                 Where(type => type.IsPublic() && !type.IsNestedPublic() && !type.IsGenericType()))
             {
                 MutableBindMembers(environments, type, range);
-            }
-        }
-        
-        [DebuggerStepThrough]
-        public static void MutableBindCLRDefaults(
-            this IEnvironments environments)
-        {
-            // Bind default assemblies.
-            foreach (var assembly in new[] {
-                    typeof(object), typeof(Uri), typeof(Enumerable)
-                }.
-                Select(type => type.GetAssembly()).
-                Distinct())
-            {
-                MutableBindMembers(environments, assembly);
             }
         }
     }
