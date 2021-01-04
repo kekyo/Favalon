@@ -32,5 +32,8 @@ namespace Favalet
         public static LambdaExpression Lambda(
             IExpression parameter, IExpression body, ILambdaExpression higherOrder) =>
             LambdaExpression.UnsafeCreate(parameter, body, higherOrder, TextRange.Unknown);
+        public static ApplyExpression Apply(
+            IExpression function, IExpression argument, IExpression higherOrder) =>
+            ApplyExpression.UnsafeCreate(function, argument, higherOrder, TextRange.Unknown);
     }
 }

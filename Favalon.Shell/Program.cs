@@ -65,6 +65,9 @@ namespace Favalon
                         // Step 7: Render result.
                         switch (reduced)
                         {
+                            case IVariableTerm("reset"):
+                                environments.Reset();
+                                break;
                             case IVariableTerm("clear"):
                                 consoleHost.ClearScreen();
                                 break;

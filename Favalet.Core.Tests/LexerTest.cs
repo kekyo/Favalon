@@ -17,15 +17,14 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+using Favalet.Internal;
+using Favalet.Reactive.Linq;
 using Favalet.Tokens;
 using NUnit.Framework;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Favalet.Ranges;
-using Favalet.Reactive.Linq;
 
 namespace Favalet
 {
@@ -36,9 +35,9 @@ namespace Favalet
         private static readonly Func<string, Token[]>[] LexerRunners =
             new[]
             {
-                new Func<string, Token[]>(text => lexer.Analyze(text).ToEnumerable().ToArray()),
-                new Func<string, Token[]>(text => lexer.Analyze(text.AsEnumerable()).ToEnumerable().ToArray()),
-                new Func<string, Token[]>(text => lexer.Analyze(new StringReader(text)).ToEnumerable().ToArray()),
+                new Func<string, Token[]>(text => lexer.Analyze(text).ToEnumerable().Memoize()),
+                new Func<string, Token[]>(text => lexer.Analyze(text.AsEnumerable()).ToEnumerable().Memoize()),
+                new Func<string, Token[]>(text => lexer.Analyze(new StringReader(text)).ToEnumerable().Memoize()),
             };
 
         ////////////////////////////////////////////////////

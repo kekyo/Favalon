@@ -23,6 +23,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Favalet.Internal;
 
 namespace Favalet.Tokens
 {
@@ -47,7 +48,7 @@ namespace Favalet.Tokens
                         (CharUnicodeInfo.GetUnicodeCategory((char)value) == UnicodeCategory.OpenPunctuation) &&
                         (CharUnicodeInfo.GetUnicodeCategory((char)(value + 1)) == UnicodeCategory.ClosePunctuation)).
                     Select(value => (char)value).
-                    ToArray();
+                    Memoize();
 
             openParenthesis = parenthesis.ToDictionary(
                 ch => ch,

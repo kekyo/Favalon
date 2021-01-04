@@ -69,7 +69,7 @@ namespace Favalet
                     Type<int>(),
                     Type<string>());
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // int && string
             var expected =
@@ -89,7 +89,7 @@ namespace Favalet
                     Type<string>(),
                     Type<int>());
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // int && string
             var expected =
@@ -109,7 +109,7 @@ namespace Favalet
                     Type<object>(),
                     Type<int>());
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // int
             var expected =
@@ -127,7 +127,7 @@ namespace Favalet
                     Type<int>(),
                     Type<object>());
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // int
             var expected =
@@ -145,7 +145,7 @@ namespace Favalet
                     Type<object>(),
                     Type<string>());
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // string
             var expected =
@@ -163,7 +163,7 @@ namespace Favalet
                     Type<string>(),
                     Type<object>());
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // string
             var expected =
@@ -181,7 +181,7 @@ namespace Favalet
                     Type<IFormattable>(),
                     Type<int>());
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // int
             var expected =
@@ -199,7 +199,7 @@ namespace Favalet
                     Type<int>(),
                     Type<IFormattable>());
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // int
             var expected =
@@ -219,7 +219,7 @@ namespace Favalet
                         Type<IFormattable>(),
                         Type<int>()));
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // double && int
             var expected =
@@ -241,7 +241,7 @@ namespace Favalet
                         Type<int>(),
                         Type<IFormattable>()));
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // double && int
             var expected =
@@ -263,7 +263,7 @@ namespace Favalet
                         Type<int>(),
                         Type<double>()));
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // double && int
             var expected =
@@ -285,7 +285,7 @@ namespace Favalet
                         Type<ITest1>(),
                         Type<ITest2>()));
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // TestClass
             var expected =
@@ -305,7 +305,7 @@ namespace Favalet
                         Type<TestClass>(),
                         Type<ITest2>()));
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // TestClass
             var expected =
@@ -325,7 +325,7 @@ namespace Favalet
                         Type<ITest1>(),
                         Type<TestClass>()));
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // TestClass
             var expected =
@@ -345,7 +345,7 @@ namespace Favalet
                     Type<int>(),
                     Type<string>());
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // int || string
             var expected =
@@ -365,7 +365,7 @@ namespace Favalet
                     Type<string>(),
                     Type<int>());
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // int || string
             var expected =
@@ -385,7 +385,7 @@ namespace Favalet
                     Type<object>(),
                     Type<int>());
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // object
             var expected =
@@ -403,7 +403,7 @@ namespace Favalet
                     Type<int>(),
                     Type<object>());
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // object
             var expected =
@@ -421,7 +421,7 @@ namespace Favalet
                     Type<object>(),
                     Type<string>());
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // object
             var expected =
@@ -439,7 +439,7 @@ namespace Favalet
                     Type<string>(),
                     Type<object>());
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // object
             var expected =
@@ -457,7 +457,7 @@ namespace Favalet
                     Type<IFormattable>(),
                     Type<int>());
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // IFormattable
             var expected =
@@ -475,7 +475,7 @@ namespace Favalet
                     Type<int>(),
                     Type<IFormattable>());
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // IFormattable
             var expected =
@@ -495,7 +495,7 @@ namespace Favalet
                         Type<IFormattable>(),
                         Type<int>()));
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // IFormattable
             var expected =
@@ -515,7 +515,7 @@ namespace Favalet
                         Type<int>(),
                         Type<IFormattable>()));
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // IFormattable
             var expected =
@@ -535,7 +535,7 @@ namespace Favalet
                         Type<int>(),
                         Type<double>()));
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // IFormattable
             var expected =
@@ -555,7 +555,7 @@ namespace Favalet
                         Type<ITest1>(),
                         Type<ITest2>()));
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // ITest1 || ITest2
             var expected =
@@ -577,7 +577,7 @@ namespace Favalet
                         Type<TestClass>(),
                         Type<ITest2>()));
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // ITest1 || ITest2
             var expected =
@@ -599,7 +599,7 @@ namespace Favalet
                         Type<ITest1>(),
                         Type<TestClass>()));
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // ITest1 || ITest2
             var expected =
@@ -623,7 +623,7 @@ namespace Favalet
                         Type<int>(),
                         Type<string>()));
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // double && (int || string)
             var expected =
@@ -647,7 +647,7 @@ namespace Favalet
                         Type<int>(),
                         Type<string>()));
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // double || (int && string)
             var expected =
@@ -671,7 +671,7 @@ namespace Favalet
                         Type<int>(),
                         Type<string>()));
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // Int32
             var expected =
@@ -691,7 +691,7 @@ namespace Favalet
                         Type<int>(),
                         Type<string>()));
 
-            var actual = calculator.Calculate(expression);
+            var actual = calculator.Reduce(expression);
 
             // IFormattable
             var expected =

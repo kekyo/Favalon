@@ -56,15 +56,28 @@ namespace Favalet.Contexts
             new VariableInformation(symbol, symbolHigherOrder, expression);
     }
     
-    internal sealed class VariableInformationRegistry
+    [DebuggerStepThrough]
+    public sealed class VariableInformationRegistry
     {
-        private readonly Dictionary<string, (BoundAttributes attributes, List<VariableInformation> list)> variables =
-            new Dictionary<string, (BoundAttributes attributes, List<VariableInformation> list)>();
+        private readonly Dictionary<string, (BoundAttributes attributes, List<VariableInformation> list)> variables;
 
-        private VariableInformationRegistry()
-        { }
+        private VariableInformationRegistry(
+            Dictionary<string, (BoundAttributes attributes, List<VariableInformation> list)> variables) =>
+            this.variables = variables;
 
-        public void Register(
+        public VariableInformationRegistry Clone() =>
+            new VariableInformationRegistry(
+                new Dictionary<string, (BoundAttributes attributes, List<VariableInformation> list)>(this.variables));
+
+        internal void CopyIn(VariableInformationRegistry originateFrom)
+        {
+            foreach (var entry in originateFrom.variables)
+            {
+                this.variables[entry.Key] = entry.Value;
+            }
+        }
+        
+        internal void Register(
             BoundAttributes attributes,
             IBoundVariableTerm variable,
             IExpression expression,
@@ -101,12 +114,13 @@ namespace Favalet.Contexts
             }
         }
 
-        public (BoundAttributes attributes, List<VariableInformation> vis)? Lookup(string symbol) =>
+        internal (BoundAttributes attributes, List<VariableInformation> vis)? Lookup(string symbol) =>
             this.variables.TryGetValue(symbol, out var entry) ?
                 entry :
                 default((BoundAttributes attributes, List<VariableInformation> vis)?);
         
-        public static VariableInformationRegistry Create() =>
-            new VariableInformationRegistry();
+        internal static VariableInformationRegistry Create() =>
+            new VariableInformationRegistry(
+                new Dictionary<string, (BoundAttributes attributes, List<VariableInformation> list)>());
     }
 }

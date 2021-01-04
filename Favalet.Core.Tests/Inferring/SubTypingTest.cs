@@ -58,7 +58,7 @@ namespace Favalet.Inferring
                     Type<bool>(),
                     Type<IConvertible>());
 
-            var actual = environment.TypeCalculator.Calculate(expression);
+            var actual = environment.TypeCalculator.Reduce(expression);
 
             // IConvertible
             var expected =
@@ -80,7 +80,7 @@ namespace Favalet.Inferring
                         Type<IConvertible>(),
                         Type<int>()));
 
-            var actual = environment.TypeCalculator.Calculate(expression);
+            var actual = environment.TypeCalculator.Reduce(expression);
 
             // IConvertible
             var expected =
@@ -102,7 +102,7 @@ namespace Favalet.Inferring
                         Type<bool>(),
                         Type<int>()));
 
-            var actual = environment.TypeCalculator.Calculate(expression);
+            var actual = environment.TypeCalculator.Reduce(expression);
 
             // IConvertible
             var expected =
@@ -124,7 +124,7 @@ namespace Favalet.Inferring
                         Type<IConvertible>()),
                     Type<int>());
 
-            var actual = environment.TypeCalculator.Calculate(expression);
+            var actual = environment.TypeCalculator.Reduce(expression);
 
             // IConvertible
             var expected =
@@ -146,7 +146,7 @@ namespace Favalet.Inferring
                         Type<int>()),
                     Type<IConvertible>());
 
-            var actual = environment.TypeCalculator.Calculate(expression);
+            var actual = environment.TypeCalculator.Reduce(expression);
 
             // IConvertible
             var expected =
@@ -168,7 +168,7 @@ namespace Favalet.Inferring
                     Type<bool>(),
                     Type<IConvertible>());
 
-            var actual = environment.TypeCalculator.Calculate(expression);
+            var actual = environment.TypeCalculator.Reduce(expression);
 
             // bool
             var expected =
@@ -190,7 +190,7 @@ namespace Favalet.Inferring
                         Type<IConvertible>(),
                         Type<int>()));
 
-            var actual = environment.TypeCalculator.Calculate(expression);
+            var actual = environment.TypeCalculator.Reduce(expression);
 
             // bool && int
             var expected =
@@ -214,7 +214,7 @@ namespace Favalet.Inferring
                         Type<bool>(),
                         Type<int>()));
 
-            var actual = environment.TypeCalculator.Calculate(expression);
+            var actual = environment.TypeCalculator.Reduce(expression);
 
             // bool && int
             var expected =
@@ -238,7 +238,7 @@ namespace Favalet.Inferring
                         Type<IConvertible>()),
                     Type<int>());
 
-            var actual = environment.TypeCalculator.Calculate(expression);
+            var actual = environment.TypeCalculator.Reduce(expression);
 
             // bool && int
             var expected =
@@ -262,7 +262,7 @@ namespace Favalet.Inferring
                         Type<int>()),
                     Type<IConvertible>());
 
-            var actual = environment.TypeCalculator.Calculate(expression);
+            var actual = environment.TypeCalculator.Reduce(expression);
 
             // bool && int
             var expected =

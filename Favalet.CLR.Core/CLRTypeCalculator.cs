@@ -42,8 +42,8 @@ namespace Favalet
                 IExpression left, IExpression right)
             {
                 // Narrowing
-                if (left is ITypeTerm(Type lt) &&
-                    right is ITypeTerm(Type rt))
+                if (left is ITypeTerm({ } lt) &&
+                    right is ITypeTerm({ } rt))
                 {
                     var rtl = lt.IsAssignableFrom(rt);
                     var ltr = rt.IsAssignableFrom(lt);
@@ -68,8 +68,8 @@ namespace Favalet
                 IExpression left, IExpression right)
             {
                 // Widening
-                if (left is ITypeTerm(Type lt) &&
-                    right is ITypeTerm(Type rt))
+                if (left is ITypeTerm({ } lt) &&
+                    right is ITypeTerm({ } rt))
                 {
                     var rtl = lt.IsAssignableFrom(rt);
                     var ltr = rt.IsAssignableFrom(lt);

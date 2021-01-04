@@ -120,7 +120,7 @@ namespace Favalet.Expressions
                 if (method.IsDefined(typeof(ExtensionAttribute), false))
                 {
                     var index = arguments.Length - 1;
-                    var args = arguments.Take(index).Prepend(arguments[index]).ToArray();
+                    var args = arguments.Take(index).Prepend(arguments[index]).Memoize();
                     var result = method.Invoke(null, args);
                     return result;
                 }
@@ -134,7 +134,7 @@ namespace Favalet.Expressions
             {
                 var method = (MethodInfo) this.RuntimeMethod;
                 var index = arguments.Length - 1;
-                var args = arguments.Take(index).ToArray();
+                var args = arguments.Take(index).Memoize();
                 var result = method.Invoke(arguments[index], args);
                 return result;
             }
@@ -147,7 +147,7 @@ namespace Favalet.Expressions
                 case IConstantTerm constant:
                     return ConstantTerm.From(this.Call(new[] {constant.Value}), this.Range);
                 case MethodPartialClosureExpression closure:
-                    return ConstantTerm.From(this.Call(closure.Arguments.ToArray()), this.Range);
+                    return ConstantTerm.From(this.Call(closure.Arguments.Memoize()), this.Range);
                 default:
                     throw new ArgumentException(argument.GetPrettyString(PrettyStringTypes.Readable));
             }
@@ -194,7 +194,7 @@ namespace Favalet.Expressions
         {
             var parameters = GetNormalizedParameters(method).
                 Reverse().
-                ToArray();
+                Memoize();
             var result = parameters.
                 Skip(1).
                 Aggregate(

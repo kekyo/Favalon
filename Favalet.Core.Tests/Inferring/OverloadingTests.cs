@@ -319,6 +319,33 @@ namespace Favalet.Inferring
 
             AssertLogicalEqual(expression, expected, actual);
         }
+        
+        //[Test]
+        public void ApplyComplexOverloadingMatch1()
+        {
+            var environments = CLREnvironments();
+
+            // System.Convert.ToInt32 "123"
+            var expression =
+                Apply(
+                    Variable("System.Convert.ToInt32"),
+                    Constant("123"));
+
+            var actual = environments.Infer(expression);
+
+            // (System.Convert.ToInt32:((string -> int) || (string -> IFormatProvider -> int)) "123":string):(int || (IFormatProvider -> int))
+            var expected =
+                Apply(
+                    Variable(
+                        "System.Convert.ToInt32",
+                        Or(
+                            Lambda(Type<string>(), Type<int>()),
+                            Lambda(Type<string>(), Lambda(Type<IFormatProvider>(), Type<int>())))),
+                    Constant("123"),
+                    Type<int>());
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
         #endregion
     }
 }

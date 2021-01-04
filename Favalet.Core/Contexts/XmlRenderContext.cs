@@ -56,14 +56,14 @@ namespace Favalet.Contexts
                         expr.Type,
                         expr.InternalGetXmlValues(this).
                         Cast<object>().
-                        ToArray()),
+                        Memoize()),
                 (Expression expr, _) =>
                     new XElement(
                         expr.Type,
                         expr.InternalGetXmlValues(this).
                         Cast<object>().
                         Append(this.GetXmlHigherOrder(expr.HigherOrder)).
-                        ToArray()),
+                        Memoize()),
                 _ => new XElement(expression.Type)
             };
 

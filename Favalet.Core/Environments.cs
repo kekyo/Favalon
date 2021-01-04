@@ -23,6 +23,7 @@ using Favalet.Expressions.Operators;
 using Favalet.Expressions.Specialized;
 using Favalet.Contexts.Unifiers;
 using Favalet.Ranges;
+using Favalet.Internal;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -58,18 +59,37 @@ namespace Favalet
         private int placeholderIndex = -1;
         private readonly bool saveLastTopology;
 
+        [EditorBrowsable(EditorBrowsableState.Never)]
         [DebuggerStepThrough]
-        protected Environments(ITypeCalculator typeCalculator, bool saveLastTopology) :
+        public Environments(
+            ITypeCalculator typeCalculator, bool saveLastTopology) :
             base(null)
         {
             this.TypeCalculator = typeCalculator;            
             this.saveLastTopology = saveLastTopology;
         }
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [DebuggerStepThrough]
+        public Environments(bool saveLastTopology) :
+            this(Favalet.TypeCalculator.Instance, saveLastTopology)
+        {
+        }
         
         public override ITypeCalculator TypeCalculator { get; }
 
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public ITopology? LastTopology =>
             this.lastContext;
+
+        protected virtual void OnReset() =>
+            this.MutableBindDefaults();
+        
+        public void Reset()
+        {
+            this.CopyInRegistry(null, true);
+            this.placeholderIndex = -1;
+        }
 
         [DebuggerStepThrough]
         internal IExpression CreatePlaceholder(
@@ -85,7 +105,7 @@ namespace Favalet
             var indexList =
                 Enumerable.Range(0, count).
                 Select(_ => Interlocked.Increment(ref this.placeholderIndex)).
-                ToArray();
+                Memoize();
             
             return indexList.
                 Reverse().
