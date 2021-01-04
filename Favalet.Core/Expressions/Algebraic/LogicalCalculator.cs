@@ -213,7 +213,8 @@ namespace Favalet.Expressions.Algebraic
                     while (current != null)
                     {
                         // Idempotence / Commutative / Associative
-                        if (origin.Value.Equals(current.Value))
+                        if (object.ReferenceEquals(origin.Value, current.Value) ||  // Include DeadEndTerm
+                            origin.Value.Equals(current.Value))
                         {
                             candidates.Remove(current);
                             requiredRecompute = true;
