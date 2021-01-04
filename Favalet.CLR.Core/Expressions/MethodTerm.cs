@@ -133,8 +133,9 @@ namespace Favalet.Expressions
             else
             {
                 var method = (MethodInfo) this.RuntimeMethod;
-                var args = arguments.Skip(1).ToArray();
-                var result = method.Invoke(arguments[0], args);
+                var index = arguments.Length - 1;
+                var args = arguments.Take(index).ToArray();
+                var result = method.Invoke(arguments[index], args);
                 return result;
             }
         }

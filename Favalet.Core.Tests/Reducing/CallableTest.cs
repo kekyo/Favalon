@@ -321,8 +321,9 @@ namespace Favalet.Reducing
             AssertLogicalEqual(expression, expected, actual);
         }
 
+        #region Methods
         [Test]
-        public void ApplyMethod()
+        public void ApplyStaticMethod()
         {
             var environment = CLREnvironments();
 
@@ -342,6 +343,116 @@ namespace Favalet.Reducing
         }
 
         [Test]
+        public void ApplyExtensionMethod()
+        {
+            var environments = CLREnvironments();
+            var typeTerm = environments.MutableBindMembers(typeof(ExtensionMethodTest));
+            
+            // 1.Method(2, 3)
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable("Favalet.Reducing.ExtensionMethodTest.Method"),
+                            Constant(2)),
+                        Constant(3)),
+                    Constant(1));
+
+            var actual = environments.Reduce(expression);
+
+            // 321
+            var expected =
+                Constant(321);
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
+
+        public sealed class InstanceMethodTest
+        {
+            private readonly string fv;
+            public InstanceMethodTest(string fv) =>
+                this.fv = fv;
+            public string Overload() =>
+                this.fv;
+            public string Overload(int value) =>
+                this.fv + value.ToString();
+            public string Overload(int value1, double value2) =>
+                this.fv + value1.ToString() + "_" + value2.ToString();
+        }
+
+        [Test]
+        public void ApplyInstanceMethod1()
+        {
+            var environments = CLREnvironments();
+            var typeTerm = environments.MutableBindMembers(typeof(InstanceMethodTest));
+            
+            // InstanceMethodTest.Overload()
+            var instance = new InstanceMethodTest("aaa");
+            var expression =
+                Apply(
+                    Variable("Overload"),
+                    Constant(instance));
+
+            var actual = environments.Reduce(expression);
+
+            // "aaa"
+            var expected =
+                Constant("aaa");
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
+
+        [Test]
+        public void ApplyInstanceMethod2()
+        {
+            var environments = CLREnvironments();
+            var typeTerm = environments.MutableBindMembers(typeof(InstanceMethodTest));
+            
+            // InstanceMethodTest.Overload(123)
+            var instance = new InstanceMethodTest("aaa");
+            var expression =
+                Apply(
+                    Apply(
+                        Variable("Overload"),
+                        Constant(123)),
+                    Constant(instance));
+
+            var actual = environments.Reduce(expression);
+
+            // "aaa123"
+            var expected =
+                Constant("aaa123");
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
+   
+        [Test]
+        public void ApplyInstanceMethod3()
+        {
+            var environments = CLREnvironments();
+            var typeTerm = environments.MutableBindMembers(typeof(InstanceMethodTest));
+            
+            // InstanceMethodTest.Overload(123, 123.456)
+            var instance = new InstanceMethodTest("aaa");
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable("Overload"),
+                            Constant(123)),
+                        Constant(123.456)),
+                    Constant(instance));
+
+            var actual = environments.Reduce(expression);
+
+            // "aaa123_123.456"
+            var expected =
+                Constant("aaa123_123.456");
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
+     
+        [Test]
         public void ApplyConstructor()
         {
             var environment = CLREnvironments();
@@ -360,40 +471,9 @@ namespace Favalet.Reducing
 
             AssertLogicalEqual(expression, expected, actual);
         }
+        #endregion
 
-        public sealed class TypeConstructorTest<T>
-        {
-            private readonly T value;
-
-            public TypeConstructorTest(T value) =>
-                this.value = value;
-            
-            public string Foo(T value2) =>
-                $"{this.value}_{value2}";
-        }
-
-        [Test]
-        public void ApplyTypeConstructor1()
-        {
-            var environments = CLREnvironments();
-            var typeTerm = environments.MutableBindMembers(typeof(TypeConstructorTest<>));
-
-            // TypeConstructorTest int
-            var expression =
-                Apply(
-                    Variable("Favalet.Reducing.TypeConstructorTest"),
-                    Type<int>());
-
-            var actual = environments.Reduce(expression);
-
-            // TypeConstructorTest<int>
-            var expected =
-                Type<TypeConstructorTest<int>>();
-
-            AssertLogicalEqual(expression, expected, actual);
-        }
-
-        #region Overloads
+        #region Method overloads
         public static class OverloadTest1
         {
             public static string Overload(int value) =>
@@ -500,27 +580,34 @@ namespace Favalet.Reducing
         }
         #endregion
 
+        public sealed class TypeConstructorTest<T>
+        {
+            private readonly T value;
+
+            public TypeConstructorTest(T value) =>
+                this.value = value;
+            
+            public string Foo(T value2) =>
+                $"{this.value}_{value2}";
+        }
+
         [Test]
-        public void ApplyExtensionMethod()
+        public void ApplyTypeConstructor1()
         {
             var environments = CLREnvironments();
-            var typeTerm = environments.MutableBindMembers(typeof(ExtensionMethodTest));
-            
-            // 1.Overload(2, 3)
+            var typeTerm = environments.MutableBindMembers(typeof(TypeConstructorTest<>));
+
+            // TypeConstructorTest int
             var expression =
                 Apply(
-                    Apply(
-                        Apply(
-                            Variable("Favalet.Reducing.ExtensionMethodTest.Overload"),
-                            Constant(2)),
-                        Constant(3)),
-                    Constant(1));
+                    Variable("Favalet.Reducing.TypeConstructorTest"),
+                    Type<int>());
 
             var actual = environments.Reduce(expression);
 
-            // 321
+            // TypeConstructorTest<int>
             var expected =
-                Constant(321);
+                Type<TypeConstructorTest<int>>();
 
             AssertLogicalEqual(expression, expected, actual);
         }
@@ -564,7 +651,7 @@ namespace Favalet.Reducing
         
     public static class ExtensionMethodTest
     {
-        public static int Overload(this int a, int b, int c) =>
+        public static int Method(this int a, int b, int c) =>
             a + b * 10 + c * 100;
     }
 }

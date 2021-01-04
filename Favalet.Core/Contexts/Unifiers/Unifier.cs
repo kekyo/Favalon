@@ -22,6 +22,7 @@ using Favalet.Expressions.Algebraic;
 using Favalet.Expressions.Specialized;
 using System;
 using System.Diagnostics;
+using Favalet.Ranges;
 
 namespace Favalet.Contexts.Unifiers
 {
@@ -32,6 +33,12 @@ namespace Favalet.Contexts.Unifiers
         BiDirectional
     }
     
+    internal enum ErrorCollections
+    {
+        JustRaise,
+        MakeResultAndCombine,
+    }
+        
     internal sealed partial class Unifier
     {
         [DebuggerStepThrough]
@@ -45,7 +52,7 @@ namespace Favalet.Contexts.Unifiers
             IPlaceholderTerm placeholder,
             IExpression expression,
             UnifyDirections direction,
-            bool raiseCouldNotUnify)
+            ErrorCollections errorCollection)
         {
             if (!context.TryLookup(placeholder, out var unification))
             {
@@ -71,8 +78,18 @@ namespace Favalet.Contexts.Unifiers
                 //         context, unification.Expression, expression, direction, raiseCouldNotUnify);
                 default:
                     context.Set(placeholder, expression, direction);
-                    return this.InternalUnify(
-                        context, unification.Expression, expression, direction, raiseCouldNotUnify);
+                    
+                    // Result is soft failure:
+                    if (!this.InternalUnify(
+                        context, unification.Expression, expression, direction, errorCollection))
+                    {
+                        // Combine both expressions by the or.
+                        context.Set(
+                            placeholder,
+                            OrExpression.Create(expression, unification.Expression, TextRange.Unknown), // TODO: range
+                            direction);
+                    }
+                    return true;
             }
         }
 
@@ -81,7 +98,7 @@ namespace Favalet.Contexts.Unifiers
             IPlaceholderTerm placeholder1,
             IPlaceholderTerm placeholder2,
             UnifyDirections direction,
-            bool raiseCouldNotUnify)
+            ErrorCollections errorCollection)
         {
             var r1 = context.TryLookup(placeholder1, out var unification1);
             var r2 = context.TryLookup(placeholder2, out var unification2);
@@ -97,16 +114,16 @@ namespace Favalet.Contexts.Unifiers
                     else
                     {
                         return this.InternalUnify(
-                            context, unification1.Expression, unification2.Expression, direction, raiseCouldNotUnify);
+                            context, unification1.Expression, unification2.Expression, direction, errorCollection);
                     }
                 case (true, false):
                     Debug.WriteLine($"Substitute2: {placeholder1.GetPrettyString(PrettyStringTypes.Minimum)} [{unification1}] --> {placeholder2.GetPrettyString(PrettyStringTypes.Minimum)}");
                     return this.InternalUnify(
-                        context, unification1.Expression, placeholder2, direction, raiseCouldNotUnify);
+                        context, unification1.Expression, placeholder2, direction, errorCollection);
                 case (false, true):
                     Debug.WriteLine($"Substitute2: {placeholder1.GetPrettyString(PrettyStringTypes.Minimum)} --> {placeholder2.GetPrettyString(PrettyStringTypes.Minimum)} [{unification2}]");
                     return this.InternalUnify(
-                        context, placeholder1, unification2.Expression, direction, raiseCouldNotUnify);
+                        context, placeholder1, unification2.Expression, direction, errorCollection);
                 default:
                     Debug.WriteLine($"Substitute2: {placeholder1.GetPrettyString(PrettyStringTypes.Minimum)} --> {placeholder2.GetPrettyString(PrettyStringTypes.Minimum)}");
                     context.Set(placeholder1, placeholder2, direction);
@@ -115,13 +132,13 @@ namespace Favalet.Contexts.Unifiers
         }
 
         ///////////////////////////////////////////////////////////////////////////////////
-        
+
         private bool InternalUnifyCore(
             UnifyContext context,
             IExpression expression1,
             IExpression expression2,
             UnifyDirections direction,
-            bool raiseCouldNotUnify)
+            ErrorCollections errorCollection)
         {
             Debug.Assert(!(expression1 is IIgnoreUnificationTerm));
             Debug.Assert(!(expression2 is IIgnoreUnificationTerm));
@@ -143,7 +160,7 @@ namespace Favalet.Contexts.Unifiers
                                 //UnifyDirections.BiDirectional => UnifyDirections.Backward,
                                 _ => UnifyDirections.Backward
                             },
-                            raiseCouldNotUnify);
+                            errorCollection);
                         // unify(B +> D)
                         var rr = this.InternalUnify(
                             context, fr, tr,
@@ -153,8 +170,8 @@ namespace Favalet.Contexts.Unifiers
                                 //UnifyDirections.BiDirectional => UnifyDirections.Forward,
                                 _ => UnifyDirections.Forward
                             },
-                            raiseCouldNotUnify);
-                        return context.Commit(rp && rr, raiseCouldNotUnify);
+                            errorCollection);
+                        return context.Commit(rp && rr, errorCollection);
                     }
                 
                 // TODO: IApplyExpression (applicable type functions)
@@ -162,62 +179,62 @@ namespace Favalet.Contexts.Unifiers
                 // Placeholder unification.
                 case (IPlaceholderTerm fph, IPlaceholderTerm tph, _):
                     return this.Substitute2(
-                        context, fph, tph, direction, raiseCouldNotUnify);
+                        context, fph, tph, direction, errorCollection);
                 case (IPlaceholderTerm fph, _, UnifyDirections.BiDirectional):
                     return this.Substitute(
-                        context, fph, expression2, UnifyDirections.BiDirectional, raiseCouldNotUnify);
+                        context, fph, expression2, UnifyDirections.BiDirectional, errorCollection);
                 case (_, IPlaceholderTerm tph, UnifyDirections.BiDirectional):
                     return this.Substitute(
-                        context, tph, expression1, UnifyDirections.BiDirectional, raiseCouldNotUnify);
+                        context, tph, expression1, UnifyDirections.BiDirectional, errorCollection);
                 case (IPlaceholderTerm fph, _, UnifyDirections.Forward):
                     return this.Substitute(
-                        context, fph, expression2, UnifyDirections.Forward, raiseCouldNotUnify);
+                        context, fph, expression2, UnifyDirections.Forward, errorCollection);
                 case (IPlaceholderTerm fph, _, UnifyDirections.Backward):
                     return this.Substitute(
-                        context, fph, expression2, UnifyDirections.Backward, raiseCouldNotUnify);
+                        context, fph, expression2, UnifyDirections.Backward, errorCollection);
                 case (_, IPlaceholderTerm tph, UnifyDirections.Forward):
                     return this.Substitute(
-                        context, tph, expression1, UnifyDirections.Backward, raiseCouldNotUnify);
+                        context, tph, expression1, UnifyDirections.Backward, errorCollection);
                 case (_, IPlaceholderTerm tph, UnifyDirections.Backward):
                     return this.Substitute(
-                        context, tph, expression1, UnifyDirections.Forward, raiseCouldNotUnify);
+                        context, tph, expression1, UnifyDirections.Forward, errorCollection);
                 
                 // Binary expression unification.
                 case (IAndExpression fa, _, _):
                     using (context.BeginScope())
                     {
                         var rfl = this.InternalUnify(
-                            context, fa.Left, expression2, direction, raiseCouldNotUnify);
+                            context, fa.Left, expression2, direction, errorCollection);
                         var rfr = this.InternalUnify(
-                            context, fa.Right, expression2, direction, raiseCouldNotUnify);
-                        return context.Commit(rfl && rfr, raiseCouldNotUnify);
+                            context, fa.Right, expression2, direction, errorCollection);
+                        return context.Commit(rfl && rfr, errorCollection);
                     }
                 case (_, IAndExpression ta, _):
                     using (context.BeginScope())
                     {
                         var rtl = this.InternalUnify(
-                            context, expression1, ta.Left, direction, raiseCouldNotUnify);
+                            context, expression1, ta.Left, direction, errorCollection);
                         var rtr = this.InternalUnify(
-                            context, expression1, ta.Right, direction, raiseCouldNotUnify);
-                        return context.Commit(rtl && rtr, raiseCouldNotUnify);
+                            context, expression1, ta.Right, direction, errorCollection);
+                        return context.Commit(rtl && rtr, errorCollection);
                     }
                 case (IOrExpression fo, _, _):
                     using (context.BeginScope())
                     {
                         var rfl = this.InternalUnify(
-                            context, fo.Left, expression2, direction, false);
+                            context, fo.Left, expression2, direction, ErrorCollections.MakeResultAndCombine);
                         var rfr = this.InternalUnify(
-                            context, fo.Right, expression2, direction, false);
-                        return context.Commit(rfl || rfr, raiseCouldNotUnify);
+                            context, fo.Right, expression2, direction, ErrorCollections.MakeResultAndCombine);
+                        return context.Commit(rfl || rfr, errorCollection);
                     }
                 case (_, IOrExpression to, _):
                     using (context.BeginScope())
                     {
                         var rtl = this.InternalUnify(
-                            context, expression1, to.Left, direction, false);
+                            context, expression1, to.Left, direction, ErrorCollections.MakeResultAndCombine);
                         var rtr = this.InternalUnify(
-                            context, expression1, to.Right, direction, false);
-                        return context.Commit(rtl || rtr, raiseCouldNotUnify);
+                            context, expression1, to.Right, direction, ErrorCollections.MakeResultAndCombine);
+                        return context.Commit(rtl || rtr, errorCollection);
                     }
 
                 // Validate polarity.
@@ -225,7 +242,7 @@ namespace Favalet.Contexts.Unifiers
                     // check(expression1 <: expression2)
                     if (!context.IsAssignableFrom(expression1, expression2))
                     {
-                        if (raiseCouldNotUnify)
+                        if (errorCollection == ErrorCollections.JustRaise)
                         {
                             throw new ArgumentException(
                                 $"Couldn't unify: {expression1.GetPrettyString(PrettyStringTypes.Minimum)} <: {expression2.GetPrettyString(PrettyStringTypes.Minimum)}");
@@ -240,7 +257,7 @@ namespace Favalet.Contexts.Unifiers
                     // check(expression1 :> expression2)
                     if (!context.IsAssignableFrom(expression2, expression1))
                     {
-                        if (raiseCouldNotUnify)
+                        if (errorCollection == ErrorCollections.JustRaise)
                         {
                             throw new ArgumentException(
                                 $"Couldn't unify: {expression1.GetPrettyString(PrettyStringTypes.Minimum)} :> {expression2.GetPrettyString(PrettyStringTypes.Minimum)}");
@@ -255,7 +272,7 @@ namespace Favalet.Contexts.Unifiers
                     // check(expression1 <:> expression2)
                     if (!context.IsAssignable(expression1, expression2))
                     {
-                        if (raiseCouldNotUnify)
+                        if (errorCollection == ErrorCollections.JustRaise)
                         {
                             throw new ArgumentException(
                                 $"Couldn't unify: {expression1.GetPrettyString(PrettyStringTypes.Minimum)} <:> {expression2.GetPrettyString(PrettyStringTypes.Minimum)}");
@@ -278,7 +295,7 @@ namespace Favalet.Contexts.Unifiers
             IExpression expression1,
             IExpression expression2,
             UnifyDirections direction,
-            bool raiseCouldNotUnify)
+            ErrorCollections errorCollection)
         {
             // Same as.
             if (context.TypeCalculator.ExactEquals(expression1, expression2))
@@ -302,9 +319,9 @@ namespace Favalet.Contexts.Unifiers
                     expression1.HigherOrder,
                     expression2.HigherOrder,
                     direction,
-                    raiseCouldNotUnify))
+                    errorCollection))
                 {
-                    return context.Commit(false, raiseCouldNotUnify);
+                    return context.Commit(false, errorCollection);
                 }
 
                 // Unify if succeeded higher order.
@@ -314,8 +331,8 @@ namespace Favalet.Contexts.Unifiers
                         expression1,
                         expression2,
                         direction,
-                        raiseCouldNotUnify),
-                    raiseCouldNotUnify);
+                        errorCollection),
+                    errorCollection);
             }
         }
 
@@ -330,7 +347,7 @@ namespace Favalet.Contexts.Unifiers
             this.InternalUnify(   // TODO: trap failure deeper unification.
                 context, expression1, expression2,
                 bidirectional ? UnifyDirections.BiDirectional : UnifyDirections.Forward,
-                true);
+                ErrorCollections.JustRaise);
         
         public static readonly Unifier Instance =
             new Unifier();
