@@ -75,13 +75,15 @@ namespace Favalet.Contexts
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
-        protected void CopyInRegistry(VariableInformationRegistry originateFrom)
+        protected void CopyInRegistry(
+            VariableInformationRegistry? originateFrom,
+            bool force)
         {
-            if (this.registry == null)
+            if (force || (this.registry == null))
             {
-                this.registry = originateFrom.Clone();
+                this.registry = originateFrom?.Clone();
             }
-            else
+            else if (originateFrom != null)
             {
                 this.registry.CopyIn(originateFrom);
             }

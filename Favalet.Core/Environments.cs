@@ -63,7 +63,7 @@ namespace Favalet
         [DebuggerStepThrough]
         public Environments(
             ITypeCalculator typeCalculator, bool saveLastTopology) :
-            base((ScopeContext?)null)
+            base(null)
         {
             this.TypeCalculator = typeCalculator;            
             this.saveLastTopology = saveLastTopology;
@@ -81,6 +81,15 @@ namespace Favalet
         [EditorBrowsable(EditorBrowsableState.Never)]
         public ITopology? LastTopology =>
             this.lastContext;
+
+        protected virtual void OnReset() =>
+            this.MutableBindDefaults();
+        
+        public void Reset()
+        {
+            this.CopyInRegistry(null, true);
+            this.placeholderIndex = -1;
+        }
 
         [DebuggerStepThrough]
         internal IExpression CreatePlaceholder(

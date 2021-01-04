@@ -58,7 +58,10 @@ namespace Favalet
 
         [DebuggerStepThrough]
         public void MutableBindCLRDefaults() =>
-            this.CopyInRegistry(cachedRegistry.Value);
+            this.CopyInRegistry(cachedRegistry.Value, false);
+        
+        protected override void OnReset() =>
+            this.CopyInRegistry(cachedRegistry.Value, true);
 
         [DebuggerStepThrough]
         public new static CLREnvironments Create(
