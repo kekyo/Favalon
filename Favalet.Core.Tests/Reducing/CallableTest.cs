@@ -66,6 +66,7 @@ namespace Favalet.Reducing
             AssertLogicalEqual(expression, expected, actual);
         }
 
+        #region Lambda
         [Test]
         public void PureLambda()
         {
@@ -263,7 +264,9 @@ namespace Favalet.Reducing
 
             AssertLogicalEqual(expression, expected, actual);
         }
+        #endregion
 
+        #region Logical operator
         [Test]
         public void ApplyLogicalOperator1()
         {
@@ -320,6 +323,7 @@ namespace Favalet.Reducing
 
             AssertLogicalEqual(expression, expected, actual);
         }
+        #endregion
 
         #region Methods
         [Test]
@@ -386,7 +390,7 @@ namespace Favalet.Reducing
             var environments = CLREnvironments();
             var typeTerm = environments.MutableBindMembers(typeof(InstanceMethodTest));
             
-            // InstanceMethodTest.Overload()
+            // Overload instance
             var instance = new InstanceMethodTest("aaa");
             var expression =
                 Apply(
@@ -408,7 +412,7 @@ namespace Favalet.Reducing
             var environments = CLREnvironments();
             var typeTerm = environments.MutableBindMembers(typeof(InstanceMethodTest));
             
-            // InstanceMethodTest.Overload(123)
+            // Overload 123 instance
             var instance = new InstanceMethodTest("aaa");
             var expression =
                 Apply(
@@ -432,7 +436,7 @@ namespace Favalet.Reducing
             var environments = CLREnvironments();
             var typeTerm = environments.MutableBindMembers(typeof(InstanceMethodTest));
             
-            // InstanceMethodTest.Overload(123, 123.456)
+            // Overload 123 123.456 instance
             var instance = new InstanceMethodTest("aaa");
             var expression =
                 Apply(
