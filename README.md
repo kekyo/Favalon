@@ -4,8 +4,8 @@
 
 | |build|
 |:----|:----|
-|main |[![Favalon CI build (main)](https://github.com/kekyo/Favalon/workflows/.NET%20Core/badge.svg?branch=main)](https://github.com/kekyo/Favalon/actions)|
-|devel|[![Favalon CI build (devel)](https://github.com/kekyo/Favalon/workflows/.NET%20Core/badge.svg?branch=devel)](https://github.com/kekyo/Favalon/actions)|
+|main |[![Favalon CI build (main)](https://github.com/kekyo/Favalon/workflows/.NET/badge.svg?branch=main)](https://github.com/kekyo/Favalon/actions)|
+|devel|[![Favalon CI build (devel)](https://github.com/kekyo/Favalon/workflows/.NET/badge.svg?branch=devel)](https://github.com/kekyo/Favalon/actions)|
 
 Still under construction.
 
