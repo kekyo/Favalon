@@ -56,9 +56,9 @@ namespace Favalon
             var environments = CLREnvironments.Create();
             
             // Step 5: Add some shell related commands.
-            environments.MutableBindMethod("reset", new Action(environments.Reset));
-            environments.MutableBindMethod("clear", new Action(consoleHost.ClearScreen));
-            environments.MutableBindMethod("exit", new Action(consoleHost.ShutdownAsynchronously));
+            environments.MutableBindMethod("reset", environments.Reset);
+            environments.MutableBindMethod("clear", consoleHost.ClearScreen);
+            environments.MutableBindMethod("exit", consoleHost.ShutdownAsynchronously);
 
             // TODO: test
             environments.MutableBindTypeAndMembers(typeof(Test));

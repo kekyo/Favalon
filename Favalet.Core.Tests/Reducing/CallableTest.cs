@@ -651,11 +651,79 @@ namespace Favalet.Reducing
             AssertLogicalEqual(expression, expected, actual);
         }
     */
-    }
+
+        #region From delegate
+        [Test]
+        public void StaticMethodDelegate()
+        {
+            var environments = CLREnvironments();
+
+            // Guid.Parse "<GUID>"
+            var guid = Guid.NewGuid();
+            var expression =
+                Apply(
+                    Method<string, Guid>(Guid.Parse),
+                    Constant(guid.ToString()));
+
+            var actual = environments.Reduce(expression);
+
+            // [Guid]
+            var expected =
+                Constant(guid);
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
         
-    public static class ExtensionMethodTest
+        [Test]
+        public void InstanceMethodDelegate()
+        {
+            var environments = CLREnvironments();
+
+            // DateTime.Now.Add timeSpan
+            var now = DateTime.Now;
+            var timeSpan = TimeSpan.FromSeconds(100);
+            var expression =
+                Apply(
+                    Method<TimeSpan, DateTime>(now.Add),
+                    Constant(timeSpan));
+
+            var actual = environments.Reduce(expression);
+
+            // [DateTime+timeSpan]
+            var expected =
+                Constant(now + timeSpan);
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
+        
+        [Test]
+        public void ExtensionMethodDelegate()
+        {
+            var environments = CLREnvironments();
+
+            // uri.UriMethod 123
+            var uri = new Uri("https://example.com/", UriKind.RelativeOrAbsolute);
+            var expression =
+                Apply(
+                    Method<int, string>(uri.UriMethod),
+                    Constant(123));
+
+            var actual = environments.Reduce(expression);
+
+            // "https://example.com/123"
+            var expected =
+                Constant("https://example.com/123");
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
+        #endregion
+    }
+
+    internal static class ExtensionMethodTest
     {
         public static int Method(this int a, int b, int c) =>
             a + b * 10 + c * 100;
+        public static string UriMethod(this Uri url, int number) =>
+            url.ToString() + number;
     }
 }

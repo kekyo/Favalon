@@ -48,15 +48,17 @@ namespace Favalet.Expressions
         Expression, IMethodTerm, IMethodExpression
     {
         private readonly LazySlim<IExpression> higherOrder;
+        private readonly bool ignoreThisOrder;
 
         public readonly MethodBase RuntimeMethod;
 
         [DebuggerStepThrough]
         private MethodTerm(
-            MethodBase runtimeMethod, Type parameterType, TextRange range) :
+            MethodBase runtimeMethod, Type parameterType, bool ignoreThisOrder, TextRange range) :
             base(range)
         {
             this.RuntimeMethod = runtimeMethod;
+            this.ignoreThisOrder = ignoreThisOrder;
             this.higherOrder = LazySlim.Create<IExpression>(() =>
                 LambdaExpression.Create(
                     TypeTerm.From(parameterType, this.Range),
@@ -103,40 +105,42 @@ namespace Favalet.Expressions
         protected override IExpression Reduce(IReduceContext context) =>
             this;
 
-        private object? Call(object?[] arguments)
+        private object? Call(object[] arguments)
         {
             Debug.Assert(arguments.Length >= 1);
 
             // TODO: no args (unit?)
 
-            if (this.RuntimeMethod is ConstructorInfo constructor)
+            switch (this.RuntimeMethod, this.RuntimeMethod.IsStatic, this.ignoreThisOrder)
             {
-                var result = constructor.Invoke(arguments);
-                return result;
-            }
-            else if (this.RuntimeMethod.IsStatic)
-            {
-                var method = (MethodInfo)this.RuntimeMethod;
-                if (method.IsDefined(typeof(ExtensionAttribute), false))
+                // Constructor
+                case (ConstructorInfo constructor, false, _):
+                    return constructor.Invoke(arguments);
+                // Instance method (Functional standard this order)
+                case (MethodInfo method, false, false):
+                {
+                    var index = arguments.Length - 1;
+                    var args = arguments.Take(index).Memoize();
+                    return method.Invoke(arguments[index], args);
+                }
+                // Instance method (.NET standard this order)
+                case (MethodInfo method, false, true):
+                {
+                    var args = arguments.Skip(1).Memoize();
+                    return method.Invoke(arguments[0], args);
+                }
+                // Extension method
+                case (MethodInfo method, true, false) when method.IsDefined(typeof(ExtensionAttribute), false):
                 {
                     var index = arguments.Length - 1;
                     var args = arguments.Take(index).Prepend(arguments[index]).Memoize();
-                    var result = method.Invoke(null, args);
-                    return result;
+                    return method.Invoke(null, args);
                 }
-                else
-                {
-                    var result = method.Invoke(null, arguments);
-                    return result;
-                }
-            }
-            else
-            {
-                var method = (MethodInfo) this.RuntimeMethod;
-                var index = arguments.Length - 1;
-                var args = arguments.Take(index).Memoize();
-                var result = method.Invoke(arguments[index], args);
-                return result;
+                // Static method
+                case (MethodInfo method, true, _):
+                    return method.Invoke(null, arguments);
+                default:
+                    throw new InvalidOperationException();
             }
         }
 
@@ -197,15 +201,15 @@ namespace Favalet.Expressions
         }
 
         private static IExpression From(
-            MethodBase method, TextRange range, bool ignoreExtension)
+            MethodBase method, TextRange range, bool ignoreThisOrder)
         {
-            var parameters = GetNormalizedParameters(method, ignoreExtension).
+            var parameters = GetNormalizedParameters(method, ignoreThisOrder).
                 Reverse().
                 Memoize();
             var result = parameters.
                 Skip(1).
                 Aggregate(
-                    (IMethodExpression)new MethodTerm(method, parameters[0].type, range),
+                    (IMethodExpression)new MethodTerm(method, parameters[0].type, ignoreThisOrder, range),
                     (agg, p) => new MethodBinderExpression(agg, p.name, p.type, CLRGenerator.TextRange(method)));
             return result;
         }

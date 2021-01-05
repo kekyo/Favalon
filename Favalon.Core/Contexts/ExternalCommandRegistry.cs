@@ -40,7 +40,7 @@ namespace Favalon.Contexts
             Distinct().
             Memoize();
        private static readonly IExpression executor =
-            CLRGenerator.Method(new Func<string, Stream, Stream>(Executor.Execute));
+            CLRGenerator.Method<string, Stream, Stream>(Executor.Execute);
         
         private ExternalCommandRegistry()
         { }

@@ -205,7 +205,8 @@ namespace Favalet
         public static IExpression MutableBindMethod(
             this ICLREnvironments environments, string symbol, Delegate d)
         {
-            var methodTerm = CLRGenerator.Method(d);
+            var method = d.GetMethodInfo();
+            var methodTerm = MethodTerm.From(d, CLRGenerator.TextRange(method));
             
             MutableBind(
                 environments,
@@ -215,9 +216,7 @@ namespace Favalet
                     methodTerm.Range),
                 false,
                 methodTerm);
-
-            var method = d.GetMethodInfo();
-                        
+                       
             if (SharpSymbols.OperatorSymbols.TryGetValue(method.Name, out var s))
             {
                 MutableBind(
@@ -231,7 +230,39 @@ namespace Favalet
 
             return methodTerm;
         }
-        
+
+        public static IExpression MutableBindMethod(
+            this ICLREnvironments environments, string symbol, Action d) =>
+            MutableBindMethod(environments, symbol, (Delegate) d);
+        public static IExpression MutableBindMethod<T1>(
+            this ICLREnvironments environments, string symbol, Action<T1> d) =>
+            MutableBindMethod(environments, symbol, (Delegate) d);
+        public static IExpression MutableBindMethod<T1, T2>(
+            this ICLREnvironments environments, string symbol, Action<T1, T2> d) =>
+            MutableBindMethod(environments, symbol, (Delegate) d);
+        public static IExpression MutableBindMethod<T1, T2, T3>(
+            this ICLREnvironments environments, string symbol, Action<T1, T2, T3> d) =>
+            MutableBindMethod(environments, symbol, (Delegate) d);
+        public static IExpression MutableBindMethod<T1, T2, T3, T4>(
+            this ICLREnvironments environments, string symbol, Action<T1, T2, T3, T4> d) =>
+            MutableBindMethod(environments, symbol, (Delegate) d);
+  
+        public static IExpression MutableBindMethod<TR>(
+            this ICLREnvironments environments, string symbol, Func<TR> d) =>
+            MutableBindMethod(environments, symbol, (Delegate) d);
+        public static IExpression MutableBindMethod<T1, TR>(
+            this ICLREnvironments environments, string symbol, Func<T1, TR> d) =>
+            MutableBindMethod(environments, symbol, (Delegate) d);
+        public static IExpression MutableBindMethod<T1, T2, TR>(
+            this ICLREnvironments environments, string symbol, Func<T1, T2, TR> d) =>
+            MutableBindMethod(environments, symbol, (Delegate) d);
+        public static IExpression MutableBindMethod<T1, T2, T3, TR>(
+            this ICLREnvironments environments, string symbol, Func<T1, T2, T3, TR> d) =>
+            MutableBindMethod(environments, symbol, (Delegate) d);
+        public static IExpression MutableBindMethod<T1, T2, T3, T4, TR>(
+            this ICLREnvironments environments, string symbol, Func<T1, T2, T3, T4, TR> d) =>
+            MutableBindMethod(environments, symbol, (Delegate) d);
+
         ////////////////////////////////////////////////////////////////////////////////
         // Types
 

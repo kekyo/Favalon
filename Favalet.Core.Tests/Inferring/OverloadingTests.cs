@@ -356,7 +356,7 @@ namespace Favalet.Inferring
 
             // Guid.Parse
             var expression =
-                Method(new Func<string, Guid>(Guid.Parse));
+                Method<string, Guid>(Guid.Parse);
 
             var actual = environments.Infer(expression);
 
@@ -377,7 +377,7 @@ namespace Favalet.Inferring
             // DateTime.Now.Add
             var now = DateTime.Now;
             var expression =
-                Method(new Func<TimeSpan, DateTime>(now.Add));
+                Method<TimeSpan, DateTime>(now.Add);
 
             var actual = environments.Infer(expression);
 
@@ -395,10 +395,10 @@ namespace Favalet.Inferring
         {
             var environments = CLREnvironments();
 
-            // uri.Method
+            // uri.UriMethod
             var uri = new Uri("https://example.com/", UriKind.RelativeOrAbsolute);
             var expression =
-                Method(new Func<int, string>(uri.Method));
+                Method<int, string>(uri.UriMethod);
 
             var actual = environments.Infer(expression);
 
@@ -415,7 +415,7 @@ namespace Favalet.Inferring
 
     internal static class ExtensionMethodDelegateTest
     {
-        public static string Method(this Uri url, int number) =>
+        public static string UriMethod(this Uri url, int number) =>
             url.ToString() + number;
     }
 }

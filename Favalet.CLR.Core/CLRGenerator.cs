@@ -56,7 +56,30 @@ namespace Favalet
 
         public static IExpression Method(MethodBase runtimeMethod) =>
             MethodTerm.From(runtimeMethod, TextRange(runtimeMethod));
+        
         public static IExpression Method(Delegate d) =>
+            MethodTerm.From(d, TextRange(d.GetMethodInfo()));
+        
+        public static IExpression Method(Action d) =>
+            MethodTerm.From(d, TextRange(d.GetMethodInfo()));
+        public static IExpression Method<T1>(Action<T1> d) =>
+            MethodTerm.From(d, TextRange(d.GetMethodInfo()));
+        public static IExpression Method<T1, T2>(Action<T1, T2> d) =>
+            MethodTerm.From(d, TextRange(d.GetMethodInfo()));
+        public static IExpression Method<T1, T2, T3>(Action<T1, T2, T3> d) =>
+            MethodTerm.From(d, TextRange(d.GetMethodInfo()));
+        public static IExpression Method<T1, T2, T3, T4>(Action<T1, T2, T3, T4> d) =>
+            MethodTerm.From(d, TextRange(d.GetMethodInfo()));
+        
+        public static IExpression Method<TR>(Func<TR> d) =>
+            MethodTerm.From(d, TextRange(d.GetMethodInfo()));
+        public static IExpression Method<T1, TR>(Func<T1, TR> d) =>
+            MethodTerm.From(d, TextRange(d.GetMethodInfo()));
+        public static IExpression Method<T1, T2, TR>(Func<T1, T2, TR> d) =>
+            MethodTerm.From(d, TextRange(d.GetMethodInfo()));
+        public static IExpression Method<T1, T2, T3, TR>(Func<T1, T2, T3, TR> d) =>
+            MethodTerm.From(d, TextRange(d.GetMethodInfo()));
+        public static IExpression Method<T1, T2, T3, T4, TR>(Func<T1, T2, T3, T4, TR> d) =>
             MethodTerm.From(d, TextRange(d.GetMethodInfo()));
 
         public static IExpression Property(PropertyInfo runtimeProperty) =>
