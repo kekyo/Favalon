@@ -347,5 +347,75 @@ namespace Favalet.Inferring
             AssertLogicalEqual(expression, expected, actual);
         }
         #endregion
+
+        #region From delegate
+        [Test]
+        public void StaticMethodDelegate()
+        {
+            var environments = CLREnvironments();
+
+            // Guid.Parse
+            var expression =
+                Method(new Func<string, Guid>(Guid.Parse));
+
+            var actual = environments.Infer(expression);
+
+            // Guid.Parse:(string -> Guid)
+            var expectedHigherOrder =
+                Lambda(
+                    Type<string>(),
+                    Type<Guid>());
+
+            AssertLogicalEqual(expression, expectedHigherOrder, actual.HigherOrder);
+        }
+        
+        [Test]
+        public void InstanceMethodDelegate()
+        {
+            var environments = CLREnvironments();
+
+            // DateTime.Now.Add
+            var now = DateTime.Now;
+            var expression =
+                Method(new Func<TimeSpan, DateTime>(now.Add));
+
+            var actual = environments.Infer(expression);
+
+            // DateTime.Add:(TimeSpan -> DateTime)
+            var expectedHigherOrder =
+                Lambda(
+                    Type<TimeSpan>(),
+                    Type<DateTime>());
+
+            AssertLogicalEqual(expression, expectedHigherOrder, actual.HigherOrder);
+        }
+        
+        [Test]
+        public void ExtensionMethodDelegate()
+        {
+            var environments = CLREnvironments();
+
+            // uri.Method
+            var uri = new Uri("https://example.com/", UriKind.RelativeOrAbsolute);
+            var expression =
+                Method(new Func<int, string>(uri.Method));
+
+            var actual = environments.Infer(expression);
+
+            // <closure>:(int -> string)
+            var expectedHigherOrder =
+                Lambda(
+                    Type<int>(),
+                    Type<string>());
+
+            AssertLogicalEqual(expression, expectedHigherOrder, actual.HigherOrder);
+        }
+        #endregion
+    }
+
+    internal static class ExtensionMethodDelegateTest
+    {
+        public static string Method(this Uri url, int number) =>
+            url.ToString() + number;
     }
 }

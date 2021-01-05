@@ -169,20 +169,28 @@ namespace Favalet.Expressions
             this.GetPrettyString(context);
 
         [DebuggerStepThrough]
-        private static IEnumerable<(string name, Type type)> GetNormalizedParameters(MethodBase method)
+        private static IEnumerable<(string name, Type type)> GetNormalizedParameters(
+            MethodBase method, bool ignoreThisOrder)
         {
             var parameters = method.GetParameters().
                 Select(p => (p.Name, p.ParameterType));
-            switch (method, method.IsStatic)
+            switch (method, method.IsStatic, ignoreThisOrder)
             {
-                case (ConstructorInfo _, false):
+                // Constructor
+                case (ConstructorInfo _, false, _):
                     return parameters!;
-                case (MethodInfo _, false):
+                // Instance method (Functional standard this order)
+                case (MethodInfo _, false, false):
                     return parameters!.Append(("this", method.DeclaringType))!;
-                case (MethodInfo _, true) when method.IsDefined(typeof(ExtensionAttribute), false):
+                // Instance method (.NET standard this order)
+                case (MethodInfo _, false, true):
+                    return parameters!.Prepend(("this", method.DeclaringType))!;
+                // Extension method
+                case (MethodInfo _, true, false) when method.IsDefined(typeof(ExtensionAttribute), false):
                     var ps = parameters!.Skip(1);
                     return ps.Append(parameters!.First())!;
-                case (MethodInfo _, true):
+                // Static method
+                case (MethodInfo _, true, _):
                     return parameters!;
                 default:
                     throw new InvalidOperationException();
@@ -190,9 +198,10 @@ namespace Favalet.Expressions
         }
 
         [DebuggerStepThrough]
-        public static IExpression From(MethodBase method, TextRange range)
+        private static IExpression From(
+            MethodBase method, TextRange range, bool ignoreExtension)
         {
-            var parameters = GetNormalizedParameters(method).
+            var parameters = GetNormalizedParameters(method, ignoreExtension).
                 Reverse().
                 Memoize();
             var result = parameters.
@@ -203,8 +212,17 @@ namespace Favalet.Expressions
             return result;
         }
 
+        [DebuggerStepThrough]
+        public static IExpression From(MethodBase method, TextRange range) =>
+            From(method, range, false);
+
         public static IExpression From(Delegate d, TextRange range) =>
-            From(d.GetMethodInfo(), range);
+            (d.Target != null) ?
+                ApplyExpression.Create(
+                    From(d.GetMethodInfo(), range, true),
+                    ConstantTerm.From(d.Target, TextRange.Unknown),
+                    range) :
+                From(d.GetMethodInfo(), range, false);
     }
 
     internal sealed class MethodBinderExpression :
