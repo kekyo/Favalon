@@ -56,29 +56,38 @@ namespace Favalon.Console
         {
             this.thread = new Thread(() =>
             {
-                while (!this.abort)
+                System.Console.TreatControlCAsInput = true;
+                
+                try
                 {
-                    var keyInfo = System.Console.ReadKey(true);
-                    lock (this.queue)
+                    while (!this.abort)
                     {
-                        while (true)
+                        var keyInfo = System.Console.ReadKey(true);
+                        lock (this.queue)
                         {
-                            this.ColumnPosition = System.Console.CursorLeft;
-                            
-                            this.queue.Enqueue(keyInfo);
-                            if (this.queue.Count == 1)
+                            while (true)
                             {
-                                this.gate.Set();
-                            }
+                                this.ColumnPosition = System.Console.CursorLeft;
+                            
+                                this.queue.Enqueue(keyInfo);
+                                if (this.queue.Count == 1)
+                                {
+                                    this.gate.Set();
+                                }
 
-                            if (!System.Console.KeyAvailable)
-                            {
-                                break;
-                            }
+                                if (!System.Console.KeyAvailable)
+                                {
+                                    break;
+                                }
                             
-                            keyInfo = System.Console.ReadKey(true);
+                                keyInfo = System.Console.ReadKey(true);
+                            }
                         }
                     }
+                }
+                finally
+                {
+                    System.Console.TreatControlCAsInput = false;
                 }
             });
             this.thread.IsBackground = true;
