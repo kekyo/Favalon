@@ -82,12 +82,15 @@ namespace Favalet
     public static class CLREnvironmentsExtension
     {
         private static void MutableBind(
-            IEnvironments environments, IBoundVariableTerm bound, IExpression expression)
+            IEnvironments environments,
+            IBoundVariableTerm bound,
+            bool isInfix,
+            IExpression expression)
         {
             if (environments is Environments re)
             {
                 re.MutableBind(
-                    BoundAttributes.PrefixLeftToRight,
+                    isInfix ? BoundAttributes.InfixLeftToRight : BoundAttributes.PrefixLeftToRight,
                     bound,
                     expression,
                     true);
@@ -95,7 +98,7 @@ namespace Favalet
             else
             {
                 environments.MutableBind(
-                    BoundAttributes.PrefixLeftToRight,
+                    isInfix ? BoundAttributes.InfixLeftToRight : BoundAttributes.PrefixLeftToRight,
                     bound,
                     expression);
             }
@@ -114,6 +117,7 @@ namespace Favalet
                     MutableBind(
                         environments,
                         BoundVariableTerm.Create(name.Name, expression.HigherOrder, range),
+                        false, // TODO: become attribute
                         expression);
                 }
             }
@@ -136,6 +140,7 @@ namespace Favalet
                     name,
                     propertyTerm.HigherOrder,
                     range),
+                false,
                 propertyTerm);
 
             MutableBindMembersByAliasNames(environments, property, propertyTerm, range);
@@ -163,13 +168,15 @@ namespace Favalet
                     name,
                     methodTerm.HigherOrder,
                     range),
+                    false,
                 methodTerm);
             
-            if (SharpSymbols.OperatorSymbols.TryGetValue(method.Name, out var symbol))
+            if (SharpSymbols.OperatorSymbols.TryGetValue(method.Name, out var s))
             {
                 MutableBind(
                     environments,
-                    BoundVariableTerm.Create(symbol, methodTerm.HigherOrder, range),
+                    BoundVariableTerm.Create(s.symbol, methodTerm.HigherOrder, range),
+                    s.isInfix,
                     methodTerm);
             }
 
@@ -189,6 +196,7 @@ namespace Favalet
             MutableBind(
                 environments,
                 BoundVariableTerm.Create(type.GetFullName(), typeTerm.HigherOrder, range),
+                false,
                 typeTerm);
 
             if (SharpSymbols.ReadableTypeNames.TryGetValue(type, out var name))
@@ -196,6 +204,7 @@ namespace Favalet
                 MutableBind(
                     environments,
                     BoundVariableTerm.Create(name, typeTerm.HigherOrder, range),
+                    false,
                     typeTerm);
             }
             
