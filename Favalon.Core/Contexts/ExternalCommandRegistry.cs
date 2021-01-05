@@ -66,13 +66,13 @@ namespace Favalon.Contexts
                     Parallel.ForEach(
                         pathVariable.
                             Split(pathSeparators, StringSplitOptions.RemoveEmptyEntries).
-                            Select((p, index) => (index, p)),
+                            Select((p, index) => (index, path: Path.GetFullPath(p))),
                         entry =>
                         {
-                            if (Directory.Exists(entry.p))
+                            if (Directory.Exists(entry.path))
                             {
                                 foreach (var ep in Directory.EnumerateFiles(
-                                    entry.p, pattern, SearchOption.TopDirectoryOnly))
+                                    entry.path, pattern, SearchOption.TopDirectoryOnly))
                                 {
                                     if (filter(ep))
                                     {
