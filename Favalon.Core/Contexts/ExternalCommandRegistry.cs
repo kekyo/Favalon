@@ -39,6 +39,8 @@ namespace Favalon.Contexts
             Concat(Path.GetInvalidFileNameChars()).
             Distinct().
             Memoize();
+       private static readonly IExpression executor =
+            CLRGenerator.Method(new Func<string, Stream, Stream>(Executor.Execute));
         
         private ExternalCommandRegistry()
         { }
@@ -85,26 +87,21 @@ namespace Favalon.Contexts
 
                     if (candidates.OrderBy(entry => entry.index).FirstOrDefault() is (_, { } path))
                     {
-                        // Enclosing path into a closure method at the runtime.
-                        var closure = new Func<Stream, Stream>(s => Executor(path, s));
-                        var executor = CLRGenerator.Method(closure);
-
+                        // Partial function application.
+                        var expression = Generator.Apply(
+                            executor,
+                            CLRGenerator.Constant(path));
+                        
                         return (BoundAttributes.PrefixLeftToRight,
                             new HashSet<VariableInformation>
                             {
-                                VariableInformation.Create(symbol, executor.HigherOrder, executor)
+                                VariableInformation.Create(symbol, executor.HigherOrder, expression)
                             });
                     }
                 }
             }
 
             return null;
-        }
-
-        private static Stream Executor(string path, Stream stdin)
-        {
-            // TODO:
-            return null!;
         }
 
         public static ExternalCommandRegistry Create() =>
