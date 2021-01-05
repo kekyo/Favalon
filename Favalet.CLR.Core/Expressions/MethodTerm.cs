@@ -168,7 +168,6 @@ namespace Favalet.Expressions
         string IMethodExpression.GetPrettyString(IPrettyStringContext context) =>
             this.GetPrettyString(context);
 
-        [DebuggerStepThrough]
         private static IEnumerable<(string name, Type type)> GetNormalizedParameters(
             MethodBase method, bool ignoreThisOrder)
         {
@@ -197,7 +196,6 @@ namespace Favalet.Expressions
             }
         }
 
-        [DebuggerStepThrough]
         private static IExpression From(
             MethodBase method, TextRange range, bool ignoreExtension)
         {

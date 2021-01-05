@@ -171,10 +171,9 @@ namespace Favalet
         {
             var methodTerm = MethodTerm.From(method, range);
 
-            var name =
-                method is ConstructorInfo ?
-                    method.DeclaringType!.GetFullName() :
-                    (method.IsStatic ? method.GetFullName() : method.Name);
+            var name = method is ConstructorInfo ?
+                method.DeclaringType!.GetFullName() :
+                (method.IsStatic ? method.GetFullName() : method.Name);
             
             MutableBind(
                 environments,
@@ -202,6 +201,36 @@ namespace Favalet
         public static IExpression MutableBindMethod(
             this ICLREnvironments environments, MethodBase method) =>
             MutableBindMethod(environments, method, CLRGenerator.TextRange(method));
+
+        public static IExpression MutableBindMethod(
+            this ICLREnvironments environments, string symbol, Delegate d)
+        {
+            var methodTerm = CLRGenerator.Method(d);
+            
+            MutableBind(
+                environments,
+                BoundVariableTerm.Create(
+                    symbol,
+                    methodTerm.HigherOrder,
+                    methodTerm.Range),
+                false,
+                methodTerm);
+
+            var method = d.GetMethodInfo();
+                        
+            if (SharpSymbols.OperatorSymbols.TryGetValue(method.Name, out var s))
+            {
+                MutableBind(
+                    environments,
+                    BoundVariableTerm.Create(s.symbol, methodTerm.HigherOrder, methodTerm.Range),
+                    s.isInfix,
+                    methodTerm);
+            }
+
+            MutableBindMembersByAliasNames(environments, method, methodTerm, methodTerm.Range);
+
+            return methodTerm;
+        }
         
         ////////////////////////////////////////////////////////////////////////////////
         // Types
