@@ -18,6 +18,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using Favalet.Lexers;
+using Favalet.Internal;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -85,7 +86,7 @@ namespace Favalon.Console
             var line = this.line.ToString();
             this.line.Clear();
 
-            if (!string.IsNullOrWhiteSpace(line))
+            if (!StringUtilities.IsNullOrWhiteSpace(line))
             {
                 this.history.Add(line);
 

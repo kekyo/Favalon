@@ -17,30 +17,10 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-using System;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
-namespace Favalet.Internal
-{
-    [DebuggerStepThrough]
-    internal static class ArrayEx
-    {
-#if NETSTANDARD2_0
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static T[] Empty<T>() =>
-            Array.Empty<T>();
-#else
-        private static class EmptyHolder<T>
-        {
-            public static readonly T[] Empty = new T[0];
-        }
+// These assemblies are only referring internal utilities. (Favalet.Internals.*)
+[assembly: InternalsVisibleTo("Favalon.Core")]
 
-#if !NET35 && !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public static T[] Empty<T>() =>
-            EmptyHolder<T>.Empty;
-#endif
-    }
-}
+// The test fixture.
+[assembly: InternalsVisibleTo("Favalet.Core.Tests")]

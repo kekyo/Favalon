@@ -139,6 +139,42 @@ namespace System
         public override string ToString() =>
             $"({this.Item1}, {this.Item2}, {this.Item3}, {this.Item4})";
     }
+
+    [DebuggerStepThrough]
+    public readonly struct ValueTuple<T1, T2, T3, T4, T5>
+    {
+        public readonly T1 Item1;
+        public readonly T2 Item2;
+        public readonly T3 Item3;
+        public readonly T4 Item4;
+        public readonly T5 Item5;
+
+        public ValueTuple(T1 item1, T2 item2, T3 item3, T4 item4, T5 item5)
+        {
+            this.Item1 = item1;
+            this.Item2 = item2;
+            this.Item3 = item3;
+            this.Item4 = item4;
+            this.Item5 = item5;
+        }
+
+        public bool Equals(ValueTuple<T1, T2, T3, T4, T5> rhs) =>
+            (this.Item1?.Equals(rhs.Item1) ?? false) &&
+            (this.Item2?.Equals(rhs.Item2) ?? false) &&
+            (this.Item3?.Equals(rhs.Item3) ?? false) &&
+            (this.Item4?.Equals(rhs.Item3) ?? false) &&
+            (this.Item5?.Equals(rhs.Item4) ?? false);
+        public override bool Equals(object? obj) =>
+            obj is ValueTuple<T1, T2, T3, T4, T5> rhs && this.Equals(rhs);
+        public override int GetHashCode() =>
+            (this.Item1?.GetHashCode() ?? 0) ^
+            (this.Item2?.GetHashCode() ?? 0) ^
+            (this.Item3?.GetHashCode() ?? 0) ^
+            (this.Item4?.GetHashCode() ?? 0) ^
+            (this.Item5?.GetHashCode() ?? 0);
+        public override string ToString() =>
+            $"({this.Item1}, {this.Item2}, {this.Item3}, {this.Item4}, {this.Item5})";
+    }
 }
 
 namespace System.Runtime.CompilerServices
@@ -162,6 +198,7 @@ using System.Runtime.CompilerServices;
 [assembly: TypeForwardedTo(typeof(System.ValueTuple<,>))]
 [assembly: TypeForwardedTo(typeof(System.ValueTuple<,,>))]
 [assembly: TypeForwardedTo(typeof(System.ValueTuple<,,,>))]
+[assembly: TypeForwardedTo(typeof(System.ValueTuple<,,,,>))]
 [assembly: TypeForwardedTo(typeof(System.Runtime.CompilerServices.TupleElementNamesAttribute))]
 
 #endif

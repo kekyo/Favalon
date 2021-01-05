@@ -658,18 +658,17 @@ namespace Favalet.Reducing
         {
             var environments = CLREnvironments();
 
-            // Guid.Parse "<GUID>"
-            var guid = Guid.NewGuid();
+            // int.Parse "123"
             var expression =
                 Apply(
-                    Method<string, Guid>(Guid.Parse),
-                    Constant(guid.ToString()));
+                    Method<string, int>(int.Parse),
+                    Constant("123"));
 
             var actual = environments.Reduce(expression);
 
-            // [Guid]
+            // 123
             var expected =
-                Constant(guid);
+                Constant(123);
 
             AssertLogicalEqual(expression, expected, actual);
         }

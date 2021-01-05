@@ -147,7 +147,7 @@ namespace Favalet.Internal
                 var name = type.Name.Substring(0, type.Name.IndexOf('`'));
                 if (includeGenericArguments)
                 {
-                    var ga = string.Join(
+                    var ga = StringUtilities.Join(
                         ".", type.GetGenericArguments().Select(gt => GetFullName(gt, includeGenericArguments)));
                     return $"{type.Namespace}.{name}<{ga}>";
                 }
@@ -166,7 +166,7 @@ namespace Favalet.Internal
         {
             switch (member)
             {
-#if !NET40
+#if !NET35 && !NET40
                 case TypeInfo typeInfo:
                     return GetFullName(typeInfo.AsType(), includeGenericArguments);
 #endif
@@ -182,7 +182,7 @@ namespace Favalet.Internal
                         var name = method.Name.Substring(0, method.Name.IndexOf('`'));
                         if (includeGenericArguments)
                         {
-                            var ga = string.Join(
+                            var ga = StringUtilities.Join(
                                 ".", method.GetGenericArguments().Select(gt => GetFullName(gt, includeGenericArguments)));
                             return method.DeclaringType is { } declaringType ?
                                 $"{GetFullName(declaringType, includeGenericArguments)}.{name}<{ga}>" :
@@ -231,7 +231,7 @@ namespace Favalet.Internal
             if (type.IsGenericType())
             {
                 var name = type.Name.Substring(0, type.Name.IndexOf('`'));
-                var ga = string.Join(".", type.GetGenericArguments().Select(GetReadableName));
+                var ga = StringUtilities.Join(".", type.GetGenericArguments().Select(GetReadableName));
                 return $"{type.Namespace}.{name}<{ga}>";
             }
             else
@@ -244,7 +244,7 @@ namespace Favalet.Internal
         {
             switch (member)
             {
-#if !NET40
+#if !NET35 && !NET40
                 case TypeInfo typeInfo:
                     return GetReadableName(typeInfo.AsType());
 #endif
@@ -258,7 +258,7 @@ namespace Favalet.Internal
                     if (member is MethodInfo method && method.IsGenericMethod)
                     {
                         var name = member.Name.Substring(0, member.Name.IndexOf('`'));
-                        var ga = string.Join(
+                        var ga = StringUtilities.Join(
                             ".", method.GetGenericArguments().Select(GetReadableName));
                         return member.DeclaringType is { } declaringType ?
                             (GetAliasName(member) is { } aliasName ?

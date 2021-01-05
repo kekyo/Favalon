@@ -32,7 +32,9 @@ namespace Favalon
                 ex switch
                 {
                     TargetInvocationException te when te.InnerException is { } ie => Format(ie),
+#if !NET35
                     AggregateException ae => ae.InnerExceptions.SelectMany(Format),
+#endif
                     _ => new[] {$"{ex.GetType().Name}: {ex.Message}"}
                 };
 

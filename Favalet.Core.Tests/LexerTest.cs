@@ -617,7 +617,7 @@ namespace Favalet
             Parallel.ForEach(
                 Token.OperatorChars.
                     SelectMany(ch1 => Token.OperatorChars.
-                        Select(ch2 => (ch1, ch2))),
+                        Select(ch2 => new {ch1, ch2})),
                 entry =>
                 {
                     var text = $"123 {entry.ch1}{entry.ch2} abc";
@@ -641,7 +641,7 @@ namespace Favalet
                 Token.OperatorChars.
                     SelectMany(ch1 => Token.OperatorChars.
                         SelectMany(ch2 => Token.OperatorChars.
-                            Select(ch3 => (ch1, ch2, ch3)))),
+                            Select(ch3 => new{ch1, ch2, ch3}))),
                 entry =>
                 {
                     var text = $"123 {entry.ch1}{entry.ch2}{entry.ch3} abc";

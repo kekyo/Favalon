@@ -50,7 +50,7 @@ namespace Favalon.Contexts
                 (PosixPermissions.UserExecute | PosixPermissions.GroupExecute | PosixPermissions.OtherExecute)) !=
                 default;
 
-        public (BoundAttributes attributes, ISet<VariableInformation> vis)? Lookup(string symbol)
+        public (BoundAttributes attributes, IEnumerable<VariableInformation> vis)? Lookup(string symbol)
         {
             if (symbol.IndexOfAny(invalidPathChars) == -1)
             {
@@ -71,7 +71,7 @@ namespace Favalon.Contexts
                         {
                             if (Directory.Exists(entry.path))
                             {
-                                foreach (var ep in Directory.EnumerateFiles(
+                                foreach (var ep in DirectoryEx.EnumerateFiles(
                                     entry.path, pattern, SearchOption.TopDirectoryOnly))
                                 {
                                     if (filter(ep))

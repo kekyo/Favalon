@@ -364,6 +364,7 @@ namespace Favalet.Expressions
         {
             if (argument is IConstantTerm constant)
             {
+                // TODO: insert better position directly with instance/static/extension method knowleges.
                 this.Arguments.Add(constant.Value);
                 if (this.Method is MethodBinderExpression binder)
                 {

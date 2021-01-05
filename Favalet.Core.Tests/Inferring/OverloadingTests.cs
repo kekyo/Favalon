@@ -354,17 +354,17 @@ namespace Favalet.Inferring
         {
             var environments = CLREnvironments();
 
-            // Guid.Parse
+            // int.Parse
             var expression =
-                Method<string, Guid>(Guid.Parse);
+                Method<string, int>(int.Parse);
 
             var actual = environments.Infer(expression);
 
-            // Guid.Parse:(string -> Guid)
+            // int.Parse:(string -> int)
             var expectedHigherOrder =
                 Lambda(
                     Type<string>(),
-                    Type<Guid>());
+                    Type<int>());
 
             AssertLogicalEqual(expression, expectedHigherOrder, actual.HigherOrder);
         }

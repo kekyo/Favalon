@@ -28,7 +28,7 @@ namespace Favalet.Contexts
 {
     public interface IVariableInformationRegistry
     {
-        (BoundAttributes attributes, ISet<VariableInformation> vis)? Lookup(string symbol);
+        (BoundAttributes attributes, IEnumerable<VariableInformation> vis)? Lookup(string symbol);
     }
     
     [DebuggerDisplay("{Readable}")]
@@ -85,10 +85,10 @@ namespace Favalet.Contexts
             }
         }
 
-        public (BoundAttributes attributes, ISet<VariableInformation> vis)? Lookup(string symbol) =>
+        public (BoundAttributes attributes, IEnumerable<VariableInformation> vis)? Lookup(string symbol) =>
             this.variables.TryGetValue(symbol, out var entry) ?
                 entry :
-                default((BoundAttributes attributes, ISet<VariableInformation> vis)?);
+                default((BoundAttributes attributes, IEnumerable<VariableInformation> vis)?);
 
         public string Readable =>
             $"StaticVariableInformationRegistry: Symbols={this.variables.Count}";

@@ -79,7 +79,7 @@ namespace Favalet.Internal
             }
         }
 
-#if NET40 || NET45 || NETSTANDARD1_1
+#if NET35 || NET40 || NET45 || NETSTANDARD1_1
         public static IEnumerable<T> Append<T>(
             this IEnumerable<T> enumerable,
             T value)

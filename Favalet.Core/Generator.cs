@@ -34,7 +34,7 @@ namespace Favalet
         public static Environments Environments() =>
             Favalet.Environments.Create();
 
-#if !NET40
+#if !NET35 && !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static TypeKindTerm Kind() =>
@@ -42,7 +42,7 @@ namespace Favalet
         public static VariableTerm Kind(string symbol) =>
             VariableTerm.Create(symbol, FourthTerm.Instance, TextRange.Unknown);
 
-#if !NET40
+#if !NET35 && !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static UnspecifiedTerm Unspecified() =>
@@ -60,7 +60,7 @@ namespace Favalet
 
         public static LogicalExpression Logical(IBinaryExpression operand) =>
             LogicalExpression.Create(operand, TextRange.Unknown);
-#if !NET40
+#if !NET35 && !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static LogicalOperator Logical() =>

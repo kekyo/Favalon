@@ -1,4 +1,4 @@
-﻿/////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Favalon - An Interactive Shell Based on a Typed Lambda Calculus.
 // Copyright (c) 2018-2020 Kouji Matsui (@kozy_kekyo, @kekyo2)
@@ -19,36 +19,23 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
+using System.IO;
 using System.Runtime.CompilerServices;
-using System.Text;
 
-namespace Favalet.Internal
+namespace Favalon.Internal
 {
     [DebuggerStepThrough]
-    internal static class StringUtilities
+    internal static class DirectoryEx
     {
 #if NET35
-        public static void Clear(this StringBuilder sb) =>
-            sb.Remove(0, sb.Length);
-        
-        public static string Join(string separator, IEnumerable<string> values) =>
-            string.Join(separator, values.Memoize());
-
-        public static bool IsNullOrWhiteSpace(string? str) =>
-            string.IsNullOrEmpty(str) || str!.All(char.IsWhiteSpace);
+        public static IEnumerable<string> EnumerateFiles(string path, string pattern, SearchOption option) =>
+            Directory.GetFiles(path, pattern, option);
 #else
 #if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static string Join(string separator, IEnumerable<string> values) =>
-            string.Join(separator, values);
-
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public static bool IsNullOrWhiteSpace(string? str) =>
-            string.IsNullOrEmpty(str);
+        public static IEnumerable<string> EnumerateFiles(string path, string pattern, SearchOption option) =>
+            Directory.EnumerateFiles(path, pattern, option);
 #endif
     }
 }

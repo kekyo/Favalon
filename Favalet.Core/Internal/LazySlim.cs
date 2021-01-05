@@ -27,14 +27,14 @@ namespace Favalet.Internal
 {
     internal static class LazySlim
     {
-#if !NET40
+#if !NET35 && !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         [DebuggerStepThrough]
         public static LazySlim<T> Create<T>(Func<T> generator) =>
             new LazySlim<T>(generator);
 
-#if !NET40
+#if !NET35 && !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         [DebuggerStepThrough]
@@ -48,7 +48,7 @@ namespace Favalet.Internal
         private volatile Func<T>? generator;
         private T value;
 
-#if !NET40
+#if !NET35 && !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         [DebuggerStepThrough]
@@ -58,7 +58,7 @@ namespace Favalet.Internal
             this.value = default!;
         }
 
-#if !NET40
+#if !NET35 && !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         [DebuggerStepThrough]

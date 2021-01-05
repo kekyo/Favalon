@@ -17,30 +17,23 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-using System;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
+#if NET35
 
-namespace Favalet.Internal
+using System.Diagnostics;
+
+namespace System.Threading
 {
     [DebuggerStepThrough]
-    internal static class ArrayEx
+    internal static class ThreadUtilities
     {
-#if NETSTANDARD2_0
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static T[] Empty<T>() =>
-            Array.Empty<T>();
-#else
-        private static class EmptyHolder<T>
+        public static void Wait(this WaitHandle handle, CancellationToken token)
         {
-            public static readonly T[] Empty = new T[0];
+            if (WaitHandle.WaitAny(new[] {token.Handle, handle}) == 0)
+            {
+                throw new OperationCanceledException();
+            }
         }
-
-#if !NET35 && !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public static T[] Empty<T>() =>
-            EmptyHolder<T>.Empty;
-#endif
     }
 }
+
+#endif
