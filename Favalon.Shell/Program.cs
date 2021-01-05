@@ -25,6 +25,8 @@ using Favalon.Console;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Favalon
 {
@@ -34,6 +36,10 @@ namespace Favalon
         {
             // Step 1: Building reactive console host.
             var console = CLRConsole.Create();
+
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+                console.WriteLine($"fash [{Thread.CurrentThread.ManagedThreadId}/{(Task.CurrentId?.ToString() ?? "?")}] : {e.ExceptionObject}");
+
             var consoleHost = InteractiveConsoleHost.Create(
                 console, "fash> ");
 
