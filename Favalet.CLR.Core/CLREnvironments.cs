@@ -32,7 +32,7 @@ namespace Favalet
 {
     public sealed class CLREnvironments : Environments
     {
-        private static readonly LazySlim<VariableInformationRegistry> cachedRegistry =
+        private static readonly LazySlim<IVariableInformationRegistry> cachedRegistry =
             new(() =>
             {
                 var environments = new CLREnvironments(false);

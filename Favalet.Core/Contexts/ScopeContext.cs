@@ -61,14 +61,14 @@ namespace Favalet.Contexts
         IScopeContext
     {
         private readonly ScopeContext? parentScope;
-        private VariableInformationRegistry? registry;
+        private IVariableInformationRegistry? registry;
 
         [DebuggerStepThrough]
         private protected ScopeContext(ScopeContext? parentScope) =>
             this.parentScope = parentScope;
 
         [EditorBrowsable(EditorBrowsableState.Never)]
-        protected VariableInformationRegistry? Registry
+        protected IVariableInformationRegistry? Registry
         {
             [DebuggerStepThrough]
             get => this.registry;
@@ -76,16 +76,23 @@ namespace Favalet.Contexts
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         protected void CopyInRegistry(
-            VariableInformationRegistry? originateFrom,
+            IVariableInformationRegistry? originateFrom,
             bool force)
         {
             if (force || (this.registry == null))
             {
                 this.registry = originateFrom?.Clone();
             }
-            else if (originateFrom != null)
+            else if (
+                this.registry is StaticVariableInformationRegistry r &&
+                originateFrom is StaticVariableInformationRegistry of)
             {
-                this.registry.CopyIn(originateFrom);
+                // Make faster than reconstruct large registry.
+                r.CopyIn(of);
+            }
+            else
+            {
+                throw new InvalidOperationException();
             }
         }
 
@@ -98,14 +105,15 @@ namespace Favalet.Contexts
             IExpression expression,
             bool ignoreDuplicate)
         {
-            this.registry ??= VariableInformationRegistry.Create();
-            this.registry.Register(attributes, symbol, expression, ignoreDuplicate);
+            this.registry ??= StaticVariableInformationRegistry.Create();
+            ((IInternalVariableInformationRegistry)this.registry).Register(
+                attributes, symbol, expression, ignoreDuplicate);
         }
 
         [DebuggerStepThrough]
         public BoundVariables? LookupVariables(string symbol)
         {
-            if (this.registry?.Lookup(symbol) is { } results)
+            if (((IInternalVariableInformationRegistry?)this.registry)?.Lookup(symbol) is { } results)
             {
                 return BoundVariables.Create(results.attributes, results.vis.Memoize());
             }
