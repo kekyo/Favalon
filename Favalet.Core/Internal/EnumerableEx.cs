@@ -58,7 +58,21 @@ namespace Favalet.Internal
         {
             foreach (var value in enumerable)
             {
-                if (predicate(value) is U v)
+                if (predicate(value) is { } v)
+                {
+                    yield return v;
+                }
+            }
+        }
+
+        public static IEnumerable<U> Collect<T, U>(
+            this IEnumerable<T> enumerable,
+            Func<T, U?> predicate)
+            where U : struct
+        {
+            foreach (var value in enumerable)
+            {
+                if (predicate(value) is { } v)
                 {
                     yield return v;
                 }

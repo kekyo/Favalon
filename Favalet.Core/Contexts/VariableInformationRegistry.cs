@@ -21,31 +21,21 @@ using Favalet.Expressions;
 using Favalet.Expressions.Specialized;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 
 namespace Favalet.Contexts
 {
     public interface IVariableInformationRegistry
     {
-        int Count { get; }
-        IVariableInformationRegistry Clone();
-    }
-    
-    internal interface IInternalVariableInformationRegistry :
-        IVariableInformationRegistry
-    {
-        void Register(
-            BoundAttributes attributes,
-            IBoundVariableTerm variable,
-            IExpression expression,
-            bool ignoreDuplicate);
-        (BoundAttributes attributes, HashSet<VariableInformation> vis)? Lookup(string symbol);
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        (BoundAttributes attributes, ISet<VariableInformation> vis)? Lookup(string symbol);
     }
     
     [DebuggerDisplay("{Readable}")]
     [DebuggerStepThrough]
-    internal sealed class StaticVariableInformationRegistry :
-        IInternalVariableInformationRegistry
+    public sealed class StaticVariableInformationRegistry :
+        IVariableInformationRegistry
     {
         private readonly Dictionary<string, (BoundAttributes attributes, HashSet<VariableInformation> vis)> variables;
 
@@ -53,14 +43,11 @@ namespace Favalet.Contexts
             Dictionary<string, (BoundAttributes attributes, HashSet<VariableInformation> vis)> variables) =>
             this.variables = variables;
 
-        public int Count =>
-            this.variables.Count;
-
-        public IVariableInformationRegistry Clone() =>
+        public StaticVariableInformationRegistry Clone() =>
             new StaticVariableInformationRegistry(
                 new Dictionary<string, (BoundAttributes attributes, HashSet<VariableInformation> vis)>(this.variables));
 
-        public void CopyIn(StaticVariableInformationRegistry originateFrom)
+        internal void CopyIn(StaticVariableInformationRegistry originateFrom)
         {
             foreach (var entry in originateFrom.variables)
             {
@@ -68,7 +55,7 @@ namespace Favalet.Contexts
             }
         }
         
-        public void Register(
+        internal void Register(
             BoundAttributes attributes,
             IBoundVariableTerm variable,
             IExpression expression,
@@ -99,18 +86,18 @@ namespace Favalet.Contexts
             }
         }
 
-        public (BoundAttributes attributes, HashSet<VariableInformation> vis)? Lookup(string symbol) =>
+        public (BoundAttributes attributes, ISet<VariableInformation> vis)? Lookup(string symbol) =>
             this.variables.TryGetValue(symbol, out var entry) ?
                 entry :
-                default((BoundAttributes attributes, HashSet<VariableInformation> vis)?);
+                default((BoundAttributes attributes, ISet<VariableInformation> vis)?);
 
         public string Readable =>
-            $"StaticVariableInformationRegistry: Symbols={this.Count}";
+            $"StaticVariableInformationRegistry: Symbols={this.variables.Count}";
 
         public override string ToString() =>
             this.Readable;
 
-        public static StaticVariableInformationRegistry Create() =>
+        internal static StaticVariableInformationRegistry Create() =>
             new StaticVariableInformationRegistry(
                 new Dictionary<string, (BoundAttributes attributes, HashSet<VariableInformation> vis)>());
     }

@@ -39,7 +39,7 @@ namespace Favalet
         Environments, ICLREnvironments
     {
         // Preload and cached bindings from default assemblies.
-        private static readonly LazySlim<IVariableInformationRegistry> cachedRegistry =
+        private static readonly LazySlim<StaticVariableInformationRegistry> cachedRegistry =
             new(() =>
             {
                 var environments = new CLREnvironments(false);
@@ -53,8 +53,8 @@ namespace Favalet
                     environments.MutableBindTypes(assembly);
                 }
 
-                Debug.Assert(environments.Registry != null);
-                return environments.Registry!;
+                Debug.Assert(environments.DefaultRegistry != null);
+                return environments.DefaultRegistry!;
             });
         
         [EditorBrowsable(EditorBrowsableState.Never)]
@@ -65,11 +65,11 @@ namespace Favalet
 
         [DebuggerStepThrough]
         public void MutableBindCLRDefaults() =>
-            this.CopyInRegistry(cachedRegistry.Value, false);
+            this.CopyInDefaultRegistry(cachedRegistry.Value, false);
         
         [DebuggerStepThrough]
         protected override void OnReset() =>
-            this.CopyInRegistry(cachedRegistry.Value, true);
+            this.CopyInDefaultRegistry(cachedRegistry.Value, true);
 
         [DebuggerStepThrough]
         public new static CLREnvironments Create(
