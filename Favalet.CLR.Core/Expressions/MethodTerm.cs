@@ -202,6 +202,9 @@ namespace Favalet.Expressions
                     (agg, p) => new MethodBinderExpression(agg, p.name, p.type, CLRGenerator.TextRange(method)));
             return result;
         }
+
+        public static IExpression From(Delegate d, TextRange range) =>
+            From(d.GetMethodInfo(), range);
     }
 
     internal sealed class MethodBinderExpression :

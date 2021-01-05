@@ -276,5 +276,10 @@ namespace Favalet.Internal
                     }
             }
         }
+
+#if NET35 || NET40
+        public static MethodInfo GetMethodInfo(this Delegate d) =>
+            d.Method;
+#endif
     }
 }

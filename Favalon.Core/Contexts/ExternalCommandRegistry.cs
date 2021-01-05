@@ -19,22 +19,92 @@
 
 using Favalet;
 using Favalet.Contexts;
+using Favalet.Expressions;
+using Favalet.Internal;
+using Favalon.Internal;
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Favalon.Contexts
 {
     public sealed class ExternalCommandRegistry :
         IVariableInformationRegistry
     {
+        private static readonly char[] pathSeparators = { Path.PathSeparator };
+        private static readonly char[] invalidPathChars =
+            Path.GetInvalidPathChars().
+            Concat(Path.GetInvalidFileNameChars()).
+            Distinct().
+            Memoize();
+        
         private ExternalCommandRegistry()
         { }
 
-        public IVariableInformationRegistry Clone() =>
-            this;
+        private static bool HasPosixExecutablePermissions(string path) =>
+            (NativeMethods.GetPosixPermissions(path) &
+                (PosixPermissions.UserExecute | PosixPermissions.GroupExecute | PosixPermissions.OtherExecute)) !=
+                default;
 
         public (BoundAttributes attributes, ISet<VariableInformation> vis)? Lookup(string symbol)
         {
+            if (symbol.IndexOfAny(invalidPathChars) == -1)
+            {
+                if (Environment.GetEnvironmentVariable("PATH") is { } pathVariable)
+                {
+                    var isWindows = NativeMethods.IsWindows;
+                
+                    var pattern = isWindows ? $"{symbol}.exe" : symbol;
+                    Func<string, bool> filter = isWindows ? _ => true : HasPosixExecutablePermissions;
+
+                    var candidates = new List<(int index, string path)>();
+                    
+                    Parallel.ForEach(
+                        pathVariable.
+                            Split(pathSeparators, StringSplitOptions.RemoveEmptyEntries).
+                            Select((p, index) => (index, p)),
+                        entry =>
+                        {
+                            if (Directory.Exists(entry.p))
+                            {
+                                foreach (var ep in Directory.EnumerateFiles(
+                                    entry.p, pattern, SearchOption.TopDirectoryOnly))
+                                {
+                                    if (filter(ep))
+                                    {
+                                        lock (candidates)
+                                        {
+                                            candidates.Add(entry);
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
+                    if (candidates.OrderBy(entry => entry.index).FirstOrDefault() is (_, { } path))
+                    {
+                        // Enclosing path into a closure method at the runtime.
+                        var closure = new Func<Stream, Stream>(s => Executor(path, s));
+                        var executor = CLRGenerator.Method(closure);
+
+                        return (BoundAttributes.PrefixLeftToRight,
+                            new HashSet<VariableInformation>
+                            {
+                                VariableInformation.Create(symbol, executor.HigherOrder, executor)
+                            });
+                    }
+                }
+            }
+
             return null;
+        }
+
+        private static Stream Executor(string path, Stream stdin)
+        {
+            // TODO:
+            return null!;
         }
 
         public static ExternalCommandRegistry Create() =>

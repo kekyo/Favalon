@@ -19,6 +19,7 @@
 
 using Favalet.Expressions;
 using Favalet.Ranges;
+using Favalet.Internal;
 using System;
 using System.Diagnostics;
 using System.Reflection;
@@ -55,6 +56,8 @@ namespace Favalet
 
         public static IExpression Method(MethodBase runtimeMethod) =>
             MethodTerm.From(runtimeMethod, TextRange(runtimeMethod));
+        public static IExpression Method(Delegate d) =>
+            MethodTerm.From(d, TextRange(d.GetMethodInfo()));
 
         public static IExpression Property(PropertyInfo runtimeProperty) =>
             PropertyTerm.From(runtimeProperty, TextRange(runtimeProperty));

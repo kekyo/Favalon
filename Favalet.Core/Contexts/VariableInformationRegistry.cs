@@ -28,7 +28,6 @@ namespace Favalet.Contexts
 {
     public interface IVariableInformationRegistry
     {
-        [EditorBrowsable(EditorBrowsableState.Never)]
         (BoundAttributes attributes, ISet<VariableInformation> vis)? Lookup(string symbol);
     }
     
