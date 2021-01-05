@@ -26,6 +26,7 @@ using System.Linq;
 
 namespace Favalet.Contexts
 {
+    [DebuggerDisplay("{Readable}")]
     [DebuggerStepThrough]
     public readonly struct VariableInformation
     {
@@ -44,30 +45,38 @@ namespace Favalet.Contexts
             this.SymbolHigherOrder = symbolHigherOrder;
             this.Expression = expression;
         }
-
-        public override string ToString() =>
+        
+        public string Readable =>
 #if DEBUG
             $"{this.Symbol}:{this.SymbolHigherOrder.GetPrettyString(PrettyStringTypes.Readable)} --> {this.Expression.GetPrettyString(PrettyStringTypes.Readable)}";
 #else
             $"{this.SymbolHigherOrder.GetPrettyString(PrettyStringTypes.Readable)} --> {this.Expression.GetPrettyString(PrettyStringTypes.Readable)}";
 #endif
+
+        public override string ToString() =>
+            this.Readable;
+        
         public static VariableInformation Create(
             string symbol, IExpression symbolHigherOrder, IExpression expression) =>
             new VariableInformation(symbol, symbolHigherOrder, expression);
     }
     
+    [DebuggerDisplay("{Readable}")]
     [DebuggerStepThrough]
     public sealed class VariableInformationRegistry
     {
-        private readonly Dictionary<string, (BoundAttributes attributes, List<VariableInformation> list)> variables;
+        private readonly Dictionary<string, (BoundAttributes attributes, HashSet<VariableInformation> vis)> variables;
 
         private VariableInformationRegistry(
-            Dictionary<string, (BoundAttributes attributes, List<VariableInformation> list)> variables) =>
+            Dictionary<string, (BoundAttributes attributes, HashSet<VariableInformation> vis)> variables) =>
             this.variables = variables;
+
+        public int Count =>
+            this.variables.Count;
 
         public VariableInformationRegistry Clone() =>
             new VariableInformationRegistry(
-                new Dictionary<string, (BoundAttributes attributes, List<VariableInformation> list)>(this.variables));
+                new Dictionary<string, (BoundAttributes attributes, HashSet<VariableInformation> vis)>(this.variables));
 
         internal void CopyIn(VariableInformationRegistry originateFrom)
         {
@@ -81,11 +90,11 @@ namespace Favalet.Contexts
             BoundAttributes attributes,
             IBoundVariableTerm variable,
             IExpression expression,
-            bool checkDuplicate)
+            bool ignoreDuplicate)
         {
             if (!this.variables.TryGetValue(variable.Symbol, out var entry))
             {
-                entry = (attributes, new List<VariableInformation>());
+                entry = (attributes, new HashSet<VariableInformation>());
                 this.variables.Add(variable.Symbol, entry);
             }
 
@@ -100,27 +109,27 @@ namespace Favalet.Contexts
                 variable.HigherOrder,
                 expression);
 
-            if (checkDuplicate)
+            var added = entry.vis.Add(vi);
+            if (!ignoreDuplicate && !added)
             {
-                if (!entry.list.Any(vi_ => vi_.Equals(vi)))
-                {
-                    entry.list.Add(vi);
-                }
-            }
-            else
-            {
-                Debug.Assert(!entry.list.Any(vi_ => vi_.Equals(vi)));
-                entry.list.Add(vi);
+                throw new InvalidOperationException(
+                    $"The symbol already bound: {variable.GetPrettyString(PrettyStringTypes.Minimum)}");
             }
         }
 
-        internal (BoundAttributes attributes, List<VariableInformation> vis)? Lookup(string symbol) =>
+        internal (BoundAttributes attributes, HashSet<VariableInformation> vis)? Lookup(string symbol) =>
             this.variables.TryGetValue(symbol, out var entry) ?
                 entry :
-                default((BoundAttributes attributes, List<VariableInformation> vis)?);
-        
+                default((BoundAttributes attributes, HashSet<VariableInformation> vis)?);
+
+        public string Readable =>
+            $"VariableInformationRegistry: Symbols={this.Count}";
+
+        public override string ToString() =>
+            this.Readable;
+
         internal static VariableInformationRegistry Create() =>
             new VariableInformationRegistry(
-                new Dictionary<string, (BoundAttributes attributes, List<VariableInformation> list)>());
+                new Dictionary<string, (BoundAttributes attributes, HashSet<VariableInformation> vis)>());
     }
 }

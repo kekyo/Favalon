@@ -193,7 +193,7 @@ namespace Favalet
             BoundAttributes attributes,
             IBoundVariableTerm symbol,
             IExpression expression) =>
-            base.MutableBind(attributes, symbol, expression, true);
+            base.MutableBind(attributes, symbol, expression, false);
 
         [DebuggerStepThrough]
         public static Environments Create(

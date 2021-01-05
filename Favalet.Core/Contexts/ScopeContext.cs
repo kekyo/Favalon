@@ -96,10 +96,10 @@ namespace Favalet.Contexts
             BoundAttributes attributes,
             IBoundVariableTerm symbol,
             IExpression expression,
-            bool checkDuplicate)
+            bool ignoreDuplicate)
         {
             this.registry ??= VariableInformationRegistry.Create();
-            this.registry.Register(attributes, symbol, expression, checkDuplicate);
+            this.registry.Register(attributes, symbol, expression, ignoreDuplicate);
         }
 
         [DebuggerStepThrough]

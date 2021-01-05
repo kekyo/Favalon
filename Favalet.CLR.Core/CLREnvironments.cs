@@ -90,7 +90,7 @@ namespace Favalet
                     BoundAttributes.PrefixLeftToRight,
                     bound,
                     expression,
-                    false);
+                    true);
             }
             else
             {
