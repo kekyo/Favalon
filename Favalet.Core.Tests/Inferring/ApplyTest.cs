@@ -706,7 +706,7 @@ namespace Favalet.Inferring
         public void ApplyExtensionMethod()
         {
             var environments = CLREnvironments();
-            var typeTerm = environments.MutableBindMembers(typeof(ExtensionMethodTest));
+            var typeTerm = environments.MutableBindTypeAndMembers(typeof(ExtensionMethodTest));
             
             // 1.Method(2, 3)
             var expression =
@@ -754,7 +754,7 @@ namespace Favalet.Inferring
         public void ApplyInstanceMethod1()
         {
             var environments = CLREnvironments();
-            var typeTerm = environments.MutableBindMembers(typeof(InstanceMethodTest));
+            var typeTerm = environments.MutableBindTypeAndMembers(typeof(InstanceMethodTest));
             
             // Overload instance
             var instance = new InstanceMethodTest("aaa");
@@ -781,7 +781,7 @@ namespace Favalet.Inferring
         public void ApplyInstanceMethod2()
         {
             var environments = CLREnvironments();
-            var typeTerm = environments.MutableBindMembers(typeof(InstanceMethodTest));
+            var typeTerm = environments.MutableBindTypeAndMembers(typeof(InstanceMethodTest));
             
             // Overload 123 instance
             var instance = new InstanceMethodTest("aaa");
@@ -813,7 +813,7 @@ namespace Favalet.Inferring
         public void ApplyInstanceMethod3()
         {
             var environments = CLREnvironments();
-            var typeTerm = environments.MutableBindMembers(typeof(InstanceMethodTest));
+            var typeTerm = environments.MutableBindTypeAndMembers(typeof(InstanceMethodTest));
             
             // Overload 123 123.456 instance
             var instance = new InstanceMethodTest("aaa");
@@ -887,7 +887,7 @@ namespace Favalet.Inferring
         public void ApplyOverloadedMethod1(object argument, object result)
         {
             var environments = CLREnvironments();
-            var typeTerm = environments.MutableBindMembers(typeof(OverloadTest1));
+            var typeTerm = environments.MutableBindTypeAndMembers(typeof(OverloadTest1));
             
             // OverloadTest1.Overload 123
             var expression =
@@ -925,7 +925,7 @@ namespace Favalet.Inferring
         public void ApplyOverloadedMethod2(object a, object b, object r)
         {
             var environments = CLREnvironments();
-            var typeTerm = environments.MutableBindMembers(typeof(OverloadTest2));
+            var typeTerm = environments.MutableBindTypeAndMembers(typeof(OverloadTest2));
             
             // OverloadTest2.Overload 1 2
             var expression =
@@ -968,7 +968,7 @@ namespace Favalet.Inferring
         public void ApplyOverloadedMethod3(object a, object b, object c, object r)
         {
             var environments = CLREnvironments();
-            var typeTerm = environments.MutableBindMembers(typeof(OverloadTest3));
+            var typeTerm = environments.MutableBindTypeAndMembers(typeof(OverloadTest3));
             
             // OverloadTest3.Overload 1 2 3
             var expression =

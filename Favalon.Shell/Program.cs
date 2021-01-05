@@ -56,7 +56,7 @@ namespace Favalon
             var environments = CLREnvironments.Create();
 
             // TODO: test
-            environments.MutableBindMembers(typeof(Test));
+            environments.MutableBindTypeAndMembers(typeof(Test));
 
             // Step 5: Building final receiver.
             using (parsed.Subscribe(

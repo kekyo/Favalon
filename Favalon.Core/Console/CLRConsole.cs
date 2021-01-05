@@ -52,7 +52,7 @@ namespace Favalon.Console
         private readonly Stack<ConsoleColor> colors = new();
         private volatile bool abort;
 
-        public CLRConsole()
+        private CLRConsole()
         {
             this.thread = new Thread(() =>
             {

@@ -30,8 +30,15 @@ using System.Reflection;
 
 namespace Favalet
 {
-    public sealed class CLREnvironments : Environments
+    public interface ICLREnvironments :
+        IEnvironments
     {
+    }
+    
+    public class CLREnvironments :
+        Environments, ICLREnvironments
+    {
+        // Preload and cached bindings from default assemblies.
         private static readonly LazySlim<IVariableInformationRegistry> cachedRegistry =
             new(() =>
             {
@@ -43,7 +50,7 @@ namespace Favalet
                     Select(type => type.GetAssembly()).
                     Distinct())
                 {
-                    environments.MutableBindMembers(assembly);
+                    environments.MutableBindTypes(assembly);
                 }
 
                 Debug.Assert(environments.Registry != null);
@@ -60,6 +67,7 @@ namespace Favalet
         public void MutableBindCLRDefaults() =>
             this.CopyInRegistry(cachedRegistry.Value, false);
         
+        [DebuggerStepThrough]
         protected override void OnReset() =>
             this.CopyInRegistry(cachedRegistry.Value, true);
 
@@ -82,7 +90,7 @@ namespace Favalet
     public static class CLREnvironmentsExtension
     {
         private static void MutableBind(
-            IEnvironments environments,
+            ICLREnvironments environments,
             IBoundVariableTerm bound,
             bool isInfix,
             IExpression expression)
@@ -105,7 +113,7 @@ namespace Favalet
         }
         
         private static void MutableBindMembersByAliasNames(
-            IEnvironments environments,
+            ICLREnvironments environments,
             MemberInfo member,
             IExpression expression,
             TextRange range)
@@ -122,9 +130,12 @@ namespace Favalet
                 }
             }
         }
-        
-        private static IExpression MutableBindMember(
-            IEnvironments environments, PropertyInfo property, TextRange range)
+                
+        ////////////////////////////////////////////////////////////////////////////////
+        // Properties
+
+        private static IExpression MutableBindProperty(
+            ICLREnvironments environments, PropertyInfo property, TextRange range)
         {
             var propertyTerm = PropertyTerm.From(property, range);
             
@@ -148,12 +159,15 @@ namespace Favalet
             return propertyTerm;
         }
         
-        public static IExpression MutableBindMember(
-            this IEnvironments environments, PropertyInfo property) =>
-            MutableBindMember(environments, property, CLRGenerator.TextRange(property));
+        public static IExpression MutableBindProperty(
+            this ICLREnvironments environments, PropertyInfo property) =>
+            MutableBindProperty(environments, property, CLRGenerator.TextRange(property));
+        
+        ////////////////////////////////////////////////////////////////////////////////
+        // Methods / Constructors
 
-        private static IExpression MutableBindMember(
-            IEnvironments environments, MethodBase method, TextRange range)
+        private static IExpression MutableBindMethod(
+            ICLREnvironments environments, MethodBase method, TextRange range)
         {
             var methodTerm = MethodTerm.From(method, range);
 
@@ -185,12 +199,15 @@ namespace Favalet
             return methodTerm;
         }
         
-        public static IExpression MutableBindMember(
-            this IEnvironments environments, MethodBase method) =>
-            MutableBindMember(environments, method, CLRGenerator.TextRange(method));
+        public static IExpression MutableBindMethod(
+            this ICLREnvironments environments, MethodBase method) =>
+            MutableBindMethod(environments, method, CLRGenerator.TextRange(method));
+        
+        ////////////////////////////////////////////////////////////////////////////////
+        // Types
 
-        private static ITerm MutableBindMember(
-            IEnvironments environments, Type type, TextRange range)
+        private static ITerm MutableBindType(
+            ICLREnvironments environments, Type type, TextRange range)
         {
             var typeTerm = TypeTerm.From(type, range);
             MutableBind(
@@ -211,21 +228,24 @@ namespace Favalet
             return typeTerm;
         }
 
-        public static ITerm MutableBindMember(
-            this IEnvironments environments, Type type) =>
-            MutableBindMember(environments, type, CLRGenerator.TextRange(type));
+        public static ITerm MutableBindType(
+            this ICLREnvironments environments, Type type) =>
+            MutableBindType(environments, type, CLRGenerator.TextRange(type));
+        
+        ////////////////////////////////////////////////////////////////////////////////
+        // Types and members
 
-        private static ITerm MutableBindMembers(
-            IEnvironments environments, Type type, TextRange range)
+        private static ITerm MutableBindTypeAndMembers(
+            ICLREnvironments environments, Type type, TextRange range)
         {
-            var typeTerm = MutableBindMember(environments, type, range);
+            var typeTerm = MutableBindType(environments, type, range);
 
             foreach (var constructor in type.GetDeclaredConstructors().
                 Where(constructor =>
                     constructor.IsPublic && !constructor.IsStatic &&
                     (constructor.GetParameters().Length >= 1)))  // TODO: unit
             {
-                MutableBindMember(environments, constructor, range);
+                MutableBindMethod(environments, constructor, range);
             }
 
             var properties = type.GetDeclaredProperties().
@@ -237,7 +257,7 @@ namespace Favalet
 
             foreach (var property in properties.Values)
             {
-                MutableBindMember(environments, property, range);
+                MutableBindProperty(environments, property, range);
             }
 
             foreach (var method in type.GetDeclaredMethods().
@@ -247,24 +267,27 @@ namespace Favalet
                     (method.GetParameters().Length >= (method.IsStatic ? 1 : 0)) &&   // TODO: unit
                     !properties.ContainsKey(method)))
             {
-                MutableBindMember(environments, method, range);
+                MutableBindMethod(environments, method, range);
             }
 
             return typeTerm;
         }
 
-        public static ITerm MutableBindMembers(
-            this IEnvironments environments, Type type) =>
-            MutableBindMembers(environments, type, CLRGenerator.TextRange(type));
+        public static ITerm MutableBindTypeAndMembers(
+            this ICLREnvironments environments, Type type) =>
+            MutableBindTypeAndMembers(environments, type, CLRGenerator.TextRange(type));
+        
+        ////////////////////////////////////////////////////////////////////////////////
+        // Assemblies
 
-        public static void MutableBindMembers(
-            this IEnvironments environments, Assembly assembly)
+        public static void MutableBindTypes(
+            this ICLREnvironments environments, Assembly assembly)
         {
             var range = CLRGenerator.TextRange(assembly);
             foreach (var type in assembly.GetTypes().
                 Where(type => type.IsPublic() && !type.IsNestedPublic() && !type.IsGenericType()))
             {
-                MutableBindMembers(environments, type, range);
+                MutableBindTypeAndMembers(environments, type, range);
             }
         }
     }
