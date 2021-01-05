@@ -289,15 +289,24 @@ namespace Favalet.Expressions
         }
 
         protected override IEnumerable GetXmlValues(IXmlRenderContext context) =>
-            new[] { new XAttribute("symbol", this.Symbol) };
+            new[] {
+                new XAttribute("symbol", this.Symbol),
+                this.Attributes is {} attributes ? new XAttribute("attributes", attributes) : null };
+
+        private static string ToString(PrettyStringTypes type, BoundAttributes? attributes) =>
+            (type >= PrettyStringTypes.Strict, type >= PrettyStringTypes.Readable, attributes) switch
+            {
+                (true, _, BoundAttributes.PrefixLeftToRight) => "@PL",
+                (_, true, BoundAttributes.PrefixRightToLeft) => "@PR",
+                (_, true, BoundAttributes.InfixLeftToRight) => "@IL",
+                (_, true, BoundAttributes.InfixRightToLeft) => "@IR",
+                _ => ""
+            };
 
         protected override string GetPrettyString(IPrettyStringContext context) =>
             context.FinalizePrettyString(
                 this,
-                ((context.Type >= PrettyStringTypes.Strict) &&
-                    this.Attributes is { }) ?
-                    $"{this.Symbol}@{this.Attributes}" :
-                    this.Symbol);
+                $"{this.Symbol}{ToString(context.Type, this.Attributes)}");
 
         [DebuggerStepThrough]
         public static VariableTerm Create(string symbol, IExpression higherOrder, TextRange range) =>
