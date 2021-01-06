@@ -26,7 +26,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Favalon
 {
@@ -38,7 +37,11 @@ namespace Favalon
             var console = CLRConsole.Create();
 
             AppDomain.CurrentDomain.UnhandledException += (s, e) =>
-                console.WriteLine($"fash [{Thread.CurrentThread.ManagedThreadId}/{(Task.CurrentId?.ToString() ?? "?")}] : {e.ExceptionObject}");
+#if NET35
+                console.WriteLine($"fash [{Thread.CurrentThread.ManagedThreadId}] : {e.ExceptionObject}");
+#else
+                console.WriteLine($"fash [{Thread.CurrentThread.ManagedThreadId}/{(System.Threading.Tasks.Task.CurrentId?.ToString() ?? "?")}] : {e.ExceptionObject}");
+#endif
 
             var consoleHost = InteractiveConsoleHost.Create(
                 console, "fash> ");

@@ -13,7 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net35'">
-    <PackageReference Include="jnm2.ReferenceAssemblies.net35" Version="1.0.0" PrivateAssets="All" />
+    <PackageReference Include="jnm2.ReferenceAssemblies.net35" Version="1.0.1" PrivateAssets="All" />
     <PackageReference Include="Rx-Main" Version="1.0.11226" />
   </ItemGroup>
 
