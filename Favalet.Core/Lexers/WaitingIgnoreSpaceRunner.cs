@@ -45,6 +45,13 @@ namespace Favalet.Lexers
                     WhiteSpaceToken.Create(range0),
                     DelimiterHintToken.Instance);
             }
+            else if (input.IsReset)
+            {
+                context.ResetAndNextLine();
+                return LexRunnerResult.Create(
+                    this,
+                    ResetToken.Instance);
+            }
             else if (char.IsWhiteSpace(input))
             {
                 context.ForwardOnly();
@@ -66,7 +73,7 @@ namespace Favalet.Lexers
                     NumericRunner.Instance,
                     WhiteSpaceToken.Create(range0));
             }
-            else if (TokenUtilities.IsOpenParenthesis(input) is ParenthesisPair openPair)
+            else if (TokenUtilities.IsOpenParenthesis(input) is { } openPair)
             {
                 var range0 = context.GetRangeAndClear();
                 context.ForwardOnly();
@@ -76,7 +83,7 @@ namespace Favalet.Lexers
                     WhiteSpaceToken.Create(range0),
                     OpenParenthesisToken.Create(openPair, range0));
             }
-            else if (TokenUtilities.IsCloseParenthesis(input) is ParenthesisPair closePair)
+            else if (TokenUtilities.IsCloseParenthesis(input) is { } closePair)
             {
                 var range0 = context.GetRangeAndClear();
                 context.ForwardOnly();

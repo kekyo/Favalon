@@ -17,21 +17,33 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+using System;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using Favalet.Ranges;
 
 namespace Favalet.Tokens
 {
     [DebuggerStepThrough]
-    public abstract class ValueToken :
-        Token
+    public sealed class ResetToken :
+        Token, IEquatable<ResetToken?>
     {
-#if !NET35 && !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        internal ValueToken(TextRange range) :
-            base(range)
+        private ResetToken() :
+            base(Ranges.TextRange.Unknown)
         { }
+
+        public override int GetHashCode() =>
+            0;
+
+        public bool Equals(ResetToken? other) =>
+            other != null;
+
+        public override bool Equals(object? obj) =>
+            this.Equals(obj as ResetToken);
+
+        public override string ToString() =>
+            "#RES";
+
+        public static readonly ResetToken Instance =
+            new ResetToken();
     }
 }

@@ -63,6 +63,13 @@ namespace Favalet.Lexers
                     token0,
                     DelimiterHintToken.Instance);
             }
+            else if (input.IsReset)
+            {
+                context.ResetAndNextLine();
+                return LexRunnerResult.Create(
+                    this,
+                    ResetToken.Instance);
+            }
             else if (char.IsWhiteSpace(input))
             {
                 var token0 = InternalFinish(context, true);

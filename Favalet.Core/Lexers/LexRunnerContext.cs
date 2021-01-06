@@ -43,6 +43,14 @@ namespace Favalet.Lexers
         public void SetStringLastInput(Input? input) =>
             this.StringLastInput = input;
 
+        public void ResetAndNextLine()
+        {
+            this.StringLastInput = null;
+            currentColumn = 0;
+            this.currentLine++;
+            this.tokenBuffer.Clear();
+        }
+        
         public void Append(char inch)
         {
             this.currentColumn++;

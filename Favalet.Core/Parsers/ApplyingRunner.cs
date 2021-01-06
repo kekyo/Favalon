@@ -39,6 +39,10 @@ namespace Favalet.Parsers
 
             switch (token)
             {
+                case ResetToken _:
+                    context.Reset();
+                    return ParseRunnerResult.Empty(factory.Waiting);
+                
                 case WhiteSpaceToken _:
                     return ParseRunnerResult.Empty(this);
                 

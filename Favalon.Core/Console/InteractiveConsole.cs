@@ -36,6 +36,7 @@ namespace Favalon.Console
     public interface IInteractiveConsole
     {
         void ClearScreen();
+        void ResetLine();
         
         void InputEnter();
         bool InputChar(char inch);
@@ -76,6 +77,16 @@ namespace Favalon.Console
         {
             this.console.ClearScreen();
             this.line.Clear();
+            this.currentColumn = 0;
+        }
+
+        public void ResetLine()
+        {
+            this.console.WriteLine();
+            this.line.Clear();
+            
+            this.OnArrivalInput(InputTypes.Reset);
+
             this.currentColumn = 0;
         }
 

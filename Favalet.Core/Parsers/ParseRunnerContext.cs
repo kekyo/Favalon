@@ -71,6 +71,13 @@ namespace Favalet.Parsers
 
         internal void Reset()
         {
+            this.LastToken = null;
+            this.Current = null;
+            this.scopes.Clear();
+        }
+        
+        internal void ClearCurrent()
+        {
             Debug.Assert(this.scopes.Count == 0);
             this.Current = null;
         }

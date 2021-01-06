@@ -18,6 +18,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Favalet.Ranges;
 
 namespace Favalet.Tokens
@@ -27,6 +28,9 @@ namespace Favalet.Tokens
     {
         public readonly TextRange Range;
 
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private protected Token(TextRange range) =>
             this.Range = range;
     }

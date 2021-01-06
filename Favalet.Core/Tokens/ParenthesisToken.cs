@@ -19,6 +19,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Favalet.Ranges;
 
 namespace Favalet.Tokens
@@ -29,6 +30,9 @@ namespace Favalet.Tokens
         public readonly char Open;
         public readonly char Close;
 
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         internal ParenthesisPair(char open, char close)
         {
             this.Open = open;
@@ -45,6 +49,9 @@ namespace Favalet.Tokens
     {
         public readonly ParenthesisPair Pair;
 
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private protected ParenthesisToken(ParenthesisPair parenthesis, TextRange range) :
             base(range) =>
             this.Pair = parenthesis;

@@ -18,6 +18,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Favalet.Ranges;
 
 namespace Favalet.Tokens
@@ -35,6 +36,9 @@ namespace Favalet.Tokens
     {
         public readonly NumericalSignes Sign;
 
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private NumericalSignToken(NumericalSignes sign, TextRange range) :
             base(range) =>
             this.Sign = sign;
@@ -64,11 +68,20 @@ namespace Favalet.Tokens
             range = this.Range;
         }
 
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static NumericalSignToken Create(NumericalSignes sign, TextRange range) =>
             new NumericalSignToken(sign, range);
 
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static NumericalSignToken Plus(TextRange range) =>
             new NumericalSignToken(NumericalSignes.Plus, range);
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static NumericalSignToken Minus(TextRange range) =>
             new NumericalSignToken(NumericalSignes.Minus, range);
     }

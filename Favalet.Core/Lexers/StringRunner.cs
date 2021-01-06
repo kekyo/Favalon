@@ -53,6 +53,13 @@ namespace Favalet.Lexers
                 context.SetStringLastInput(input);
                 return LexRunnerResult.Empty(this);
             }
+            else if (input.IsReset)
+            {
+                context.ResetAndNextLine();
+                return LexRunnerResult.Create(
+                    this,
+                    ResetToken.Instance);
+            }
             else if (context.StringLastInput?.Equals('\\') ?? false)
             {
                 switch ((char)input)
