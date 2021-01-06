@@ -34,7 +34,8 @@ namespace System.Threading.Tasks
         {
             using (var waiter = new ManualResetEvent(false))
             {
-                using (var semaphore = new Semaphore(0, Environment.ProcessorCount * 2))
+                var max = Environment.ProcessorCount * 2;
+                using (var semaphore = new Semaphore(max, max))
                 {
                     var count = 1;
                     foreach (var value in enumerable)
