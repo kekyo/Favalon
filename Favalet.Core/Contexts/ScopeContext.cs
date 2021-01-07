@@ -105,11 +105,7 @@ namespace Favalet.Contexts
         }
 
         [DebuggerStepThrough]
-        protected internal void MutableBind(
-            BoundAttributes attributes,
-            IBoundVariableTerm symbol,
-            IExpression expression,
-            bool ignoreDuplicate)
+        private StaticVariableInformationRegistry PrepareRegistry()
         {
             if (this.defaultRegistry == null)
             {
@@ -117,8 +113,27 @@ namespace Favalet.Contexts
                 this.defaultRegistry = StaticVariableInformationRegistry.Create();
                 this.registries = new List<IVariableInformationRegistry> {this.defaultRegistry};
             }
-            this.defaultRegistry.Register(
-                attributes, symbol, expression, ignoreDuplicate);
+            return this.defaultRegistry;
+        }
+
+        [DebuggerStepThrough]
+        public void MutableBind(IVariableInformationRegistry registry)
+        {
+            this.PrepareRegistry();
+            Debug.Assert(this.registries != null);
+            
+            this.registries!.Add(registry);
+        }
+
+        [DebuggerStepThrough]
+        protected internal void MutableBind(
+            BoundAttributes attributes,
+            IBoundVariableTerm symbol,
+            IExpression expression,
+            bool ignoreDuplicate)
+        {
+            this.PrepareRegistry().
+                Register(attributes, symbol, expression, ignoreDuplicate);
         }
 
         [DebuggerStepThrough]
@@ -151,7 +166,7 @@ namespace Favalet.Contexts
 #else
                         Select(g => (attr: g.Key, vis: g.SelectMany(result => result.vis))).
 #endif
-                        ToArray();
+                        Memoize();
                     if (combined.Length >= 1)
                     {
                         // TODO: The bound attributes can be applicable only one.

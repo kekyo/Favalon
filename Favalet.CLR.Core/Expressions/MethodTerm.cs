@@ -18,6 +18,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using Favalet.Contexts;
+using Favalet.Expressions.Specialized;
 using Favalet.Internal;
 using Favalet.Ranges;
 using System;
@@ -28,7 +29,6 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Xml.Linq;
-using Favalet.Expressions.Specialized;
 
 namespace Favalet.Expressions
 {
@@ -36,13 +36,6 @@ namespace Favalet.Expressions
         ITerm, ICallableExpression
     {
         MethodBase RuntimeMethod { get; }
-    }
-
-    internal interface IMethodExpression :
-        ICallableExpression
-    {
-        IEnumerable GetXmlValues(IXmlRenderContext context);
-        string GetPrettyString(IPrettyStringContext context);
     }
 
     public sealed class MethodTerm :
@@ -85,11 +78,11 @@ namespace Favalet.Expressions
         public override int GetHashCode() =>
             this.RuntimeMethod.GetHashCode();
 
-        public bool Equals(IMethodTerm rhs) =>
-            this.RuntimeMethod.Equals(rhs.RuntimeMethod);
+        public bool Equals(IMethodTerm? rhs) =>
+            rhs is IMethodTerm && this.RuntimeMethod.Equals(rhs.RuntimeMethod);
 
         public override bool Equals(IExpression? other) =>
-            other is IMethodTerm rhs && this.Equals(rhs);
+            this.Equals(other as IMethodTerm);
 
         protected override IExpression Transpose(ITransposeContext context) =>
             this;
@@ -150,8 +143,8 @@ namespace Favalet.Expressions
             object? result;
             switch (reducedArgument)
             {
-                case IConstantTerm constant:
-                    result = this.Call(new[] {constant.Value});
+                case IConstantTerm({ } value):
+                    result = this.Call(new[] { value });
                     break;
                 case MethodPartialClosureExpression closure:
                     result = this.Call(closure.Arguments.Memoize());
@@ -240,169 +233,6 @@ namespace Favalet.Expressions
                     ConstantTerm.From(d.Target, TextRange.Unknown),
                     range) :
                 From(d.GetMethodInfo(), range, false);
-    }
-
-    internal sealed class MethodBinderExpression :
-        Expression, IMethodExpression
-    {
-        private readonly LazySlim<IExpression> higherOrder;
-
-        public readonly string ParameterName;
-        public readonly IMethodExpression Method;
-
-        [DebuggerStepThrough]
-        public MethodBinderExpression(
-            IMethodExpression method,
-            string parameterName,
-            Type parameterType,
-            TextRange range) :
-            base(range)
-        {
-            this.ParameterName = parameterName;
-            this.Method = method;
-            this.higherOrder = LazySlim.Create<IExpression>(() =>
-                LambdaExpression.Create(
-                    TypeTerm.From(parameterType, this.Range),
-                    this.Method.HigherOrder,
-                    this.Range));
-        }
- 
-        public override IExpression HigherOrder
-        {
-            [DebuggerStepThrough]
-            get => this.higherOrder.Value;
-        }
-
-        public override int GetHashCode() =>
-            this.ParameterName.GetHashCode() ^ this.Method.GetHashCode();
-
-        public bool Equals(MethodBinderExpression rhs) =>
-            this.ParameterName.Equals(rhs.ParameterName) && 
-            this.Method.Equals(rhs.Method);
-
-        public override bool Equals(IExpression? other) =>
-            other is MethodBinderExpression rhs && this.Equals(rhs);
-                
-        protected override IExpression Transpose(ITransposeContext context) =>
-            this;
-
-        protected override IExpression MakeRewritable(IMakeRewritableContext context) =>
-            this;
-
-        protected override IExpression Infer(IInferContext context) =>
-            this;
-
-        protected override IExpression Fixup(IFixupContext context) =>
-            this;
-
-        protected override IExpression Reduce(IReduceContext context) =>
-            this;
-
-        public IExpression Call(IReduceContext context, IExpression reducedArgument)
-        {
-            if (reducedArgument is IConstantTerm constant)
-            {
-                var closure = new MethodPartialClosureExpression(this.Method);
-                closure.Arguments.Add(constant.Value);
-                return closure;
-            }
-            else
-            {
-                throw new ArgumentException(reducedArgument.GetPrettyString(PrettyStringTypes.Readable));
-            }
-        }
-
-        private static IMethodExpression GetMethod(IMethodExpression method) =>
-            method switch
-            {
-                MethodTerm m => m,
-                MethodBinderExpression mbe => GetMethod(mbe.Method),
-                _ => throw new InvalidOperationException()
-            };
-
-        protected override IEnumerable GetXmlValues(IXmlRenderContext context) =>
-            GetMethod(this.Method).GetXmlValues(context);
-
-        protected override string GetPrettyString(IPrettyStringContext context) =>
-            context.GetPrettyString(GetMethod(this.Method));
-        
-        [DebuggerStepThrough]
-        IEnumerable IMethodExpression.GetXmlValues(IXmlRenderContext context) =>
-            this.GetXmlValues(context);
-        [DebuggerStepThrough]
-        string IMethodExpression.GetPrettyString(IPrettyStringContext context) =>
-            this.GetPrettyString(context);
-    }
-
-    internal sealed class MethodPartialClosureExpression :
-        Expression, ICallableExpression
-    {
-        public readonly List<object> Arguments = new();
-        public IMethodExpression Method;
-
-        public MethodPartialClosureExpression(IMethodExpression method) :
-            base(TextRange.Unknown) =>
-            this.Method = method;
-
-        public override IExpression HigherOrder =>
-            this.Method.HigherOrder;
-
-        [DebuggerStepThrough]
-        protected override string GetTypeName() =>
-            "Closure";
-
-        public override int GetHashCode() =>
-            throw new InvalidOperationException();
-
-        public bool Equals(MethodBinderExpression rhs) =>
-            throw new InvalidOperationException();
-
-        public override bool Equals(IExpression? other) =>
-            throw new InvalidOperationException();
-                
-        protected override IExpression Transpose(ITransposeContext context) =>
-            throw new InvalidOperationException();
-
-        protected override IExpression MakeRewritable(IMakeRewritableContext context) =>
-            throw new InvalidOperationException();
-
-        protected override IExpression Infer(IInferContext context) =>
-            throw new InvalidOperationException();
-
-        protected override IExpression Fixup(IFixupContext context) =>
-            throw new InvalidOperationException();
-
-        protected override IExpression Reduce(IReduceContext context) =>
-            throw new InvalidOperationException();
-        
-        public IExpression Call(IReduceContext context, IExpression reducedArgument)
-        {
-            if (reducedArgument is IConstantTerm constant)
-            {
-                // TODO: insert better position directly with instance/static/extension method knowleges.
-                this.Arguments.Add(constant.Value);
-                if (this.Method is MethodBinderExpression binder)
-                {
-                    // Mutation because reduce costs.
-                    this.Method = binder.Method;
-                    return this;
-                }
-                else
-                {
-                    return this.Method.Call(context, this);
-                }
-            }
-            else
-            {
-                throw new ArgumentException(reducedArgument.GetPrettyString(PrettyStringTypes.Readable));
-            }
-        }
-
-        protected override IEnumerable GetXmlValues(IXmlRenderContext context) =>
-            this.Method.GetXmlValues(context);
-
-        protected override string GetPrettyString(IPrettyStringContext context) =>
-            this.Method.GetPrettyString(context);
     }
 
     public static class MethodTermExtension

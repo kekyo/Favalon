@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Favalet.Expressions.Specialized;
 
 namespace Favalon.Contexts
 {
@@ -40,7 +41,7 @@ namespace Favalon.Contexts
             Distinct().
             Memoize();
        private static readonly IExpression executor =
-            CLRGenerator.Delegate<string, Stream, Stream>(Executor.Execute);
+            CLRGenerator.Delegate<string, Stream, Stream>(ExternalCommandExecutor.Execute);
         
         private ExternalCommandRegistry()
         { }
@@ -63,11 +64,16 @@ namespace Favalon.Contexts
 
                     var candidates = new List<(int index, string path)>();
                     
-                    Parallel.ForEach(
-                        pathVariable.
-                            Split(pathSeparators, StringSplitOptions.RemoveEmptyEntries).
-                            Select((p, index) => (index, path: Path.GetFullPath(p))),
-                        entry =>
+                    var paths = pathVariable.
+                        Split(pathSeparators, StringSplitOptions.RemoveEmptyEntries).
+                        Select((p, index) => (index, path: Path.GetFullPath(p)))
+#if DEBUG
+                        .Append((index:1, path:@"C:\Program Files\Git\usr\bin"))
+                        .Memoize()
+#endif
+                        ;
+
+                    Parallel.ForEach(paths, entry =>
                         {
                             if (Directory.Exists(entry.path))
                             {
@@ -78,7 +84,7 @@ namespace Favalon.Contexts
                                     {
                                         lock (candidates)
                                         {
-                                            candidates.Add(entry);
+                                            candidates.Add((entry.index, ep));
                                         }
                                     }
                                 }
@@ -88,15 +94,12 @@ namespace Favalon.Contexts
                     if (candidates.OrderBy(entry => entry.index).FirstOrDefault() is (_, { } path))
                     {
                         // Partial function application.
-                        var expression = Generator.Apply(
-                            executor,
-                            CLRGenerator.Constant(path));
+                        var pathConstant = CLRGenerator.Constant(path);
+                        var expression = Generator.Apply(executor, pathConstant);
                         
                         return (BoundAttributes.PrefixLeftToRight,
-                            new HashSet<VariableInformation>
-                            {
-                                VariableInformation.Create(symbol, executor.HigherOrder, expression)
-                            });
+                            new[] { VariableInformation.Create(
+                                symbol, UnspecifiedTerm.Instance, expression) });
                     }
                 }
             }

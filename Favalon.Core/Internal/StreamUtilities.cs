@@ -1,4 +1,4 @@
-/////////////////////////////////////////////////////////////////////////////////////////////////
+﻿/////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Favalon - An Interactive Shell Based on a Typed Lambda Calculus.
 // Copyright (c) 2018-2020 Kouji Matsui (@kozy_kekyo, @kekyo2)
@@ -17,16 +17,29 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-using System.IO;
+#if NET35
 
-namespace Favalon.Contexts
+using System.Diagnostics;
+
+namespace System.IO
 {
-    internal static class Executor
+    [DebuggerStepThrough]
+    internal static class StreamUtilities
     {
-        public static Stream Execute(string path, Stream stdin)
+        public static void CopyTo(this Stream stream, Stream destination)
         {
-            // TODO:
-            return null!;
+            var buffer = new byte[81920];
+            while (true)
+            {
+                var read = stream.Read(buffer, 0, buffer.Length);
+                if (read == 0)
+                {
+                    break;
+                }
+                destination.Write(buffer, 0, read);
+            }
         }
     }
 }
+
+#endif

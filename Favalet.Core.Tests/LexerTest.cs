@@ -24,7 +24,6 @@ using NUnit.Framework;
 using System;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace Favalet
 {
@@ -614,48 +613,46 @@ namespace Favalet
         [TestCaseSource("LexerRunners")]
         public void Operator2Detection(Func<string, Token[]> run)
         {
-            Parallel.ForEach(
+            foreach (var entry in
                 Token.OperatorChars.
                     SelectMany(ch1 => Token.OperatorChars.
-                        Select(ch2 => new {ch1, ch2})),
-                entry =>
-                {
-                    var text = $"123 {entry.ch1}{entry.ch2} abc";
-                    var actual = run(text);
+                        Select(ch2 => new {ch1, ch2})))
+            {
+                var text = $"123 {entry.ch1}{entry.ch2} abc";
+                var actual = run(text);
 
-                    Assert.AreEqual(
-                        new Token[] {
-                            Token.Numeric("123"),
-                            Token.WhiteSpace(),
-                            Token.Identity($"{entry.ch1}{entry.ch2}"),
-                            Token.WhiteSpace(),
-                            Token.Identity("abc") },
-                        actual);
-                });
+                Assert.AreEqual(
+                    new Token[] {
+                        Token.Numeric("123"),
+                        Token.WhiteSpace(),
+                        Token.Identity($"{entry.ch1}{entry.ch2}"),
+                        Token.WhiteSpace(),
+                        Token.Identity("abc") },
+                    actual);
+            }
         }
 
         [TestCaseSource("LexerRunners")]
         public void Operator3Detection(Func<string, Token[]> run)
         {
-            Parallel.ForEach(
+            foreach (var entry in
                 Token.OperatorChars.
                     SelectMany(ch1 => Token.OperatorChars.
                         SelectMany(ch2 => Token.OperatorChars.
-                            Select(ch3 => new{ch1, ch2, ch3}))),
-                entry =>
-                {
-                    var text = $"123 {entry.ch1}{entry.ch2}{entry.ch3} abc";
-                    var actual = run(text);
+                            Select(ch3 => new{ch1, ch2, ch3}))))
+            {
+                var text = $"123 {entry.ch1}{entry.ch2}{entry.ch3} abc";
+                var actual = run(text);
 
-                    Assert.AreEqual(
-                        new Token[] {
-                            Token.Numeric("123"),
-                            Token.WhiteSpace(),
-                            Token.Identity($"{entry.ch1}{entry.ch2}{entry.ch3}"),
-                            Token.WhiteSpace(),
-                            Token.Identity("abc") },
-                        actual);
-                });
+                Assert.AreEqual(
+                    new Token[] {
+                        Token.Numeric("123"),
+                        Token.WhiteSpace(),
+                        Token.Identity($"{entry.ch1}{entry.ch2}{entry.ch3}"),
+                        Token.WhiteSpace(),
+                        Token.Identity("abc") },
+                    actual);
+            }
         }
     }
 }

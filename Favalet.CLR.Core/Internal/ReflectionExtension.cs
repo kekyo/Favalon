@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Favalet.Internal
 {
@@ -29,110 +30,177 @@ namespace Favalet.Internal
     internal static class ReflectionExtension
     {
 #if NETSTANDARD1_1
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Assembly GetAssembly(this Type type) =>
             type.GetTypeInfo().Assembly;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IEnumerable<Type> GetTypes(this Assembly assembly) =>
             assembly.DefinedTypes.Select(typeInfo => typeInfo.AsType());
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IEnumerable<ConstructorInfo> GetDeclaredConstructors(this Type type) =>
             type.GetTypeInfo().DeclaredConstructors;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IEnumerable<MethodInfo> GetDeclaredMethods(this Type type) =>
             type.GetTypeInfo().DeclaredMethods;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IEnumerable<PropertyInfo> GetDeclaredProperties(this Type type) =>
             type.GetTypeInfo().DeclaredProperties;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IEnumerable<Attribute> GetCustomAttributes(this Type type, Type attributeType, bool inherit) =>
             type.GetTypeInfo().GetCustomAttributes(attributeType, inherit);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static MethodInfo? GetGetMethod(this PropertyInfo property) =>
             property.GetMethod;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static MethodInfo? GetSetMethod(this PropertyInfo property) =>
             property.SetMethod;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsPublic(this Type type) =>
             type.GetTypeInfo().IsPublic;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsNestedPublic(this Type type) =>
             type.GetTypeInfo().IsNestedPublic;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsGenericType(this Type type) =>
             type.GetTypeInfo().IsGenericType;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsGenericTypeDefinition(this Type type) =>
             type.GetTypeInfo().IsGenericTypeDefinition;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsGenericParameter(this Type type) =>
             type.IsGenericParameter;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsPrimitive(this Type type) =>
             type.GetTypeInfo().IsPrimitive;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsEnum(this Type type) =>
             type.GetTypeInfo().IsEnum;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsClass(this Type type) =>
             type.GetTypeInfo().IsClass;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsValueType(this Type type) =>
             type.GetTypeInfo().IsValueType;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsInterface(this Type type) =>
             type.GetTypeInfo().IsInterface;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IEnumerable<Type> GetGenericArguments(this Type type) =>
             type.GenericTypeArguments;
         
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsAssignableFrom(this Type lhs, Type rhs) =>
             lhs.GetTypeInfo().IsAssignableFrom(rhs.GetTypeInfo());
 #else
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static Assembly GetAssembly(this Type type) =>
             type.Assembly;
 
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static IEnumerable<ConstructorInfo> GetDeclaredConstructors(this Type type) =>
             type.GetConstructors(
                 BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly);
 
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static IEnumerable<MethodInfo> GetDeclaredMethods(this Type type) =>
             type.GetMethods(
                 BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly);
 
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static IEnumerable<PropertyInfo> GetDeclaredProperties(this Type type) =>
             type.GetProperties(
                 BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly);
 
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static bool IsPublic(this Type type) =>
             type.IsPublic;
 
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static bool IsNestedPublic(this Type type) =>
             type.IsNestedPublic;
 
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static bool IsGenericType(this Type type) =>
             type.IsGenericType;
         
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static bool IsGenericTypeDefinition(this Type type) =>
             type.IsGenericTypeDefinition;
 
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static bool IsGenericParameter(this Type type) =>
             type.IsGenericParameter;
 
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static bool IsPrimitive(this Type type) =>
             type.IsPrimitive;
 
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static bool IsEnum(this Type type) =>
             type.IsEnum;
 
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static bool IsClass(this Type type) =>
             type.IsClass;
 
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static bool IsValueType(this Type type) =>
             type.IsValueType;
 
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static bool IsInterface(this Type type) =>
             type.IsInterface;
+#endif
+
+#if NET35 || NET40
+        public static MethodInfo GetMethodInfo(this Delegate d) =>
+            d.Method;
 #endif
 
         public static string GetFullName(this Type type, bool includeGenericArguments = false)
@@ -148,8 +216,8 @@ namespace Favalet.Internal
                 if (includeGenericArguments)
                 {
                     var ga = StringUtilities.Join(
-                        ".", type.GetGenericArguments().Select(gt => GetFullName(gt, includeGenericArguments)));
-                    return $"{type.Namespace}.{name}<{ga}>";
+                        " ", type.GetGenericArguments().Select(gt => GetFullName(gt, includeGenericArguments)));
+                    return $"{type.Namespace}.{name} {ga}";
                 }
                 else
                 {
@@ -183,9 +251,9 @@ namespace Favalet.Internal
                         if (includeGenericArguments)
                         {
                             var ga = StringUtilities.Join(
-                                ".", method.GetGenericArguments().Select(gt => GetFullName(gt, includeGenericArguments)));
+                                " ", method.GetGenericArguments().Select(gt => GetFullName(gt, includeGenericArguments)));
                             return method.DeclaringType is { } declaringType ?
-                                $"{GetFullName(declaringType, includeGenericArguments)}.{name}<{ga}>" :
+                                $"{GetFullName(declaringType, includeGenericArguments)}.{name} {ga}" :
                                 name;
                         }
                         else
@@ -231,8 +299,8 @@ namespace Favalet.Internal
             if (type.IsGenericType())
             {
                 var name = type.Name.Substring(0, type.Name.IndexOf('`'));
-                var ga = StringUtilities.Join(".", type.GetGenericArguments().Select(GetReadableName));
-                return $"{type.Namespace}.{name}<{ga}>";
+                var ga = StringUtilities.Join(" ", type.GetGenericArguments().Select(GetReadableName));
+                return $"{type.Namespace}.{name} {ga}";
             }
             else
             {
@@ -259,11 +327,11 @@ namespace Favalet.Internal
                     {
                         var name = member.Name.Substring(0, member.Name.IndexOf('`'));
                         var ga = StringUtilities.Join(
-                            ".", method.GetGenericArguments().Select(GetReadableName));
+                            " ", method.GetGenericArguments().Select(GetReadableName));
                         return member.DeclaringType is { } declaringType ?
                             (GetAliasName(member) is { } aliasName ?
                                 aliasName :
-                                $"{GetReadableName(declaringType)}.{name}<{ga}>") :
+                                $"{GetReadableName(declaringType)}.{name} {ga}") :
                             name;
                     }
                     else
@@ -276,10 +344,5 @@ namespace Favalet.Internal
                     }
             }
         }
-
-#if NET35 || NET40
-        public static MethodInfo GetMethodInfo(this Delegate d) =>
-            d.Method;
-#endif
     }
 }

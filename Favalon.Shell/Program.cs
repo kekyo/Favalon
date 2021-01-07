@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using Favalon.Contexts;
 
 namespace Favalon
 {
@@ -73,21 +74,24 @@ namespace Favalon
                         console.WriteLine($"{entry.index,5:D}  {entry.line}");
                     }
                 });
+            
+            // Step 6: Pseudo bind external commands.
+            environments.MutableBind(ExternalCommandRegistry.Create());
 
             // TODO: test
             environments.MutableBindTypeAndMembers(typeof(Test));
 
-            // Step 6: Building final receiver.
+            // Step 7: Building final receiver.
             using (parsed.Subscribe(
                 // We will get something parsed expression.
                 Observer.Create<IExpression>(expression =>
                 {
                     try
                     {
-                        // Step 7: Reduce the expression.
+                        // Step 8: Reduce the expression.
                         var reduced = environments.Reduce(expression);
                         
-                        // Step 8: Render result.
+                        // Step 9: Render result.
                         switch (reduced)
                         {
                             case IConstantTerm({ } value)
@@ -102,7 +106,11 @@ namespace Favalon
                                 break;
                             case UnitTerm _:
                                 break;
+                            
                             default:
+                                
+                                
+                                
                                 console.WriteLine(reduced.GetPrettyString(PrettyStringTypes.Readable));
                                 break;
                         }
