@@ -356,7 +356,7 @@ namespace Favalet.Inferring
 
             // int.Parse
             var expression =
-                Method<string, int>(int.Parse);
+                Delegate<string, int>(int.Parse);
 
             var actual = environments.Infer(expression);
 
@@ -377,7 +377,7 @@ namespace Favalet.Inferring
             // DateTime.Now.Add
             var now = DateTime.Now;
             var expression =
-                Method<TimeSpan, DateTime>(now.Add);
+                Delegate<TimeSpan, DateTime>(now.Add);
 
             var actual = environments.Infer(expression);
 
@@ -398,7 +398,7 @@ namespace Favalet.Inferring
             // uri.UriMethod
             var uri = new Uri("https://example.com/", UriKind.RelativeOrAbsolute);
             var expression =
-                Method<int, string>(uri.UriMethod);
+                Delegate<int, string>(uri.UriMethod);
 
             var actual = environments.Infer(expression);
 

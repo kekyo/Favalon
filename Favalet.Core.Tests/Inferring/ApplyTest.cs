@@ -21,7 +21,8 @@ using Favalet.Contexts;
 using Favalet.Expressions;
 using NUnit.Framework;
 using System;
-
+using System.Text;
+using Favalet.Expressions.Specialized;
 using static Favalet.CLRGenerator;
 using static Favalet.Generator;
 using static Favalet.TestUtiltiies;
@@ -679,25 +680,68 @@ namespace Favalet.Inferring
         #endregion
 
         #region Methods
-        [Test]
-        public void ApplyStaticMethod()
+        public sealed class StaticMethodTest
         {
-            var environment = CLREnvironments();
+            public static double Method(string value) =>
+                throw new InvalidOperationException();
+            public static void VoidMethod(StringBuilder sb, int value) =>
+                throw new InvalidOperationException();
+        }
 
-            // Math.Sqrt pi
+        [Test]
+        public void ApplyStaticMethod1()
+        {
+            var environments = CLREnvironments();
+            var typeTerm = environments.MutableBindTypeAndMembers<StaticMethodTest>();
+
+            // StaticMethodTest.Method "123.456"
             var expression =
                 Apply(
-                    Method(typeof(Math).GetMethod("Sqrt")!),
-                    Constant(Math.PI));
+                    Variable("Favalet.Inferring.StaticMethodTest.Method"),
+                    Constant("123.456"));
 
-            var actual = environment.Infer(expression);
+            var actual = environments.Infer(expression);
 
-            // (Math.Sqrt:(double -> double) pi:double):double
+            // ((StaticMethodTest.Method:(string -> double) "123.456"):double
             var expected =
                 Apply(
-                    Method(typeof(Math).GetMethod("Sqrt")!),
-                    Constant(Math.PI),
+                    Variable(
+                        "Favalet.Inferring.StaticMethodTest.Method",
+                        Lambda(Type<string>(), Type<double>())),
+                    Constant("123.456"),
                     Type<double>());
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
+
+        [Test]
+        public void ApplyStaticMethod2()
+        {
+            var environments = CLREnvironments();
+            var typeTerm = environments.MutableBindTypeAndMembers<StaticMethodTest>();
+
+            // StaticMethodTest.VoidMethod sb 123
+            var sb = new StringBuilder();
+            var expression =
+                Apply(
+                    Apply(
+                        Variable("Favalet.Inferring.StaticMethodTest.VoidMethod"),
+                        Constant(sb)),
+                    Constant(123));
+
+            var actual = environments.Infer(expression);
+
+            // ((StaticMethodTest.VoidMethod:(StringBuilder -> int -> unit) sb:StringBuilder 123:int):unit
+            var expected =
+                Apply(
+                    Apply(
+                        Variable(
+                            "Favalet.Inferring.StaticMethodTest.VoidMethod",
+                            Lambda(Type<StringBuilder>(), Lambda(Type<int>(), UnitType()))),
+                        Constant(sb),
+                        Lambda(Type<int>(), UnitType())),
+                    Constant(123),
+                    UnitType());
 
             AssertLogicalEqual(expression, expected, actual);
         }
@@ -739,15 +783,16 @@ namespace Favalet.Inferring
 
         public sealed class InstanceMethodTest
         {
-            private readonly string fv;
-            public InstanceMethodTest(string fv) =>
-                this.fv = fv;
+            public InstanceMethodTest()
+            {
+            }
+
             public string Overload() =>
-                this.fv;
+                throw new InvalidOperationException();
             public string Overload(int value) =>
-                this.fv + value.ToString();
+                throw new InvalidOperationException();
             public string Overload(int value1, double value2) =>
-                this.fv + value1.ToString() + "_" + value2.ToString();
+                throw new InvalidOperationException();
         }
 
         [Test]
@@ -757,7 +802,7 @@ namespace Favalet.Inferring
             var typeTerm = environments.MutableBindTypeAndMembers(typeof(InstanceMethodTest));
             
             // Overload instance
-            var instance = new InstanceMethodTest("aaa");
+            var instance = new InstanceMethodTest();
             var expression =
                 Apply(
                     Variable("Overload"),
@@ -784,7 +829,7 @@ namespace Favalet.Inferring
             var typeTerm = environments.MutableBindTypeAndMembers(typeof(InstanceMethodTest));
             
             // Overload 123 instance
-            var instance = new InstanceMethodTest("aaa");
+            var instance = new InstanceMethodTest();
             var expression =
                 Apply(
                     Apply(
@@ -816,7 +861,7 @@ namespace Favalet.Inferring
             var typeTerm = environments.MutableBindTypeAndMembers(typeof(InstanceMethodTest));
             
             // Overload 123 123.456 instance
-            var instance = new InstanceMethodTest("aaa");
+            var instance = new InstanceMethodTest();
             var expression =
                 Apply(
                     Apply(
@@ -874,11 +919,11 @@ namespace Favalet.Inferring
         public static class OverloadTest1
         {
             public static string Overload(int value) =>
-                value.ToString();
+                throw new InvalidOperationException();
             public static string Overload(double value) =>
-                value.ToString();
+                throw new InvalidOperationException();
             public static string Overload(string value) =>
-                value.ToString();
+                throw new InvalidOperationException();
         }
 
         [TestCase(123, "123")]
@@ -912,11 +957,11 @@ namespace Favalet.Inferring
         public static class OverloadTest2
         {
             public static int Overload(int a, int b) =>
-                a + b;
+                throw new InvalidOperationException();
             public static double Overload(double a, double b) =>
-                a + b;
+                throw new InvalidOperationException();
             public static string Overload(string a, string b) =>
-                a + b;
+                throw new InvalidOperationException();
         }
 
         [TestCase(1, 2, 3)]
@@ -955,11 +1000,11 @@ namespace Favalet.Inferring
         public static class OverloadTest3
         {
             public static int Overload(int a, int b, int c) =>
-                a + b + c;
+                throw new InvalidOperationException();
             public static double Overload(double a, double b, double c) =>
-                a + b + c;
+                throw new InvalidOperationException();
             public static string Overload(string a, string b, string c) =>
-                a + b + c;
+                throw new InvalidOperationException();
         }
 
         [TestCase(1, 2, 3, 6)]
@@ -1005,6 +1050,6 @@ namespace Favalet.Inferring
     public static class ExtensionMethodTest
     {
         public static int Method(this int a, int b, int c) =>
-            a + b * 10 + c * 100;
+            throw new InvalidOperationException();
     }
 }

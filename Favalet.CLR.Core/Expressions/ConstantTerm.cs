@@ -19,10 +19,10 @@
 
 using Favalet.Contexts;
 using Favalet.Internal;
+using Favalet.Ranges;
 using System.Collections;
 using System.Diagnostics;
 using System.Xml.Linq;
-using Favalet.Ranges;
 
 namespace Favalet.Expressions
 {

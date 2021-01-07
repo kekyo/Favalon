@@ -99,8 +99,8 @@ namespace Favalet.Expressions.Specialized
         public override int GetHashCode() =>
             this.Symbol.GetHashCode();
 
-        public bool Equals(IBoundVariableTerm rhs) =>
-            this.Symbol.Equals(rhs.Symbol);
+        public bool Equals(IBoundVariableTerm? rhs) =>
+            rhs?.Symbol is { } symbol && this.Symbol.Equals(symbol);
 
         public override bool Equals(IExpression? other) =>
             other is IBoundVariableTerm rhs && this.Equals(rhs);

@@ -88,9 +88,13 @@ namespace Favalet.Expressions
         [DebuggerStepThrough]
         public static ITerm From(Type type, TextRange range)
         {
-            if (type.Equals(runtimeType))
+            if (type == runtimeType)
             {
-                return Generator.Kind();
+                return TypeKindTerm.Instance;
+            }
+            else if (type == typeof(void))
+            {
+                return UnitTypeTerm.Instance;
             }
             else if (type.IsGenericType() && type.IsGenericTypeDefinition())
             {

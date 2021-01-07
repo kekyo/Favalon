@@ -28,6 +28,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Xml.Linq;
+using Favalet.Expressions.Specialized;
 
 namespace Favalet.Expressions
 {
@@ -146,14 +147,28 @@ namespace Favalet.Expressions
 
         public IExpression Call(IReduceContext context, IExpression argument)
         {
+            object? result;
             switch (argument)
             {
                 case IConstantTerm constant:
-                    return ConstantTerm.From(this.Call(new[] {constant.Value}), this.Range);
+                    result = this.Call(new[] {constant.Value});
+                    break;
                 case MethodPartialClosureExpression closure:
-                    return ConstantTerm.From(this.Call(closure.Arguments.Memoize()), this.Range);
+                    result = this.Call(closure.Arguments.Memoize());
+                    break;
                 default:
                     throw new ArgumentException(argument.GetPrettyString(PrettyStringTypes.Readable));
+            }
+
+            if (this.RuntimeMethod is MethodInfo method &&
+                method.ReturnType == typeof(void))
+            {
+                Debug.Assert(result == null);
+                return UnitTerm.Instance;
+            }
+            else
+            {
+                return ConstantTerm.From(result, this.Range);
             }
         }
 

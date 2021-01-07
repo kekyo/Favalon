@@ -26,6 +26,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
+using Favalet.Expressions.Specialized;
 
 namespace Favalon
 {
@@ -59,9 +60,9 @@ namespace Favalon
             var environments = CLREnvironments.Create();
             
             // Step 5: Add some shell related commands.
-            environments.MutableBindMethod("reset", environments.Reset);
-            environments.MutableBindMethod("clear", consoleHost.ClearScreen);
-            environments.MutableBindMethod("exit", consoleHost.ShutdownAsynchronously);
+            environments.MutableBindDelegate("reset", environments.Reset);
+            environments.MutableBindDelegate("clear", consoleHost.ClearScreen);
+            environments.MutableBindDelegate("exit", consoleHost.ShutdownAsynchronously);
 
             // TODO: test
             environments.MutableBindTypeAndMembers(typeof(Test));
@@ -88,6 +89,8 @@ namespace Favalon
                                 {
                                     console.WriteLine(line);
                                 }
+                                break;
+                            case UnitTerm _:
                                 break;
                             default:
                                 console.WriteLine(reduced.GetPrettyString(PrettyStringTypes.Readable));

@@ -21,7 +21,7 @@ using Favalet.Contexts;
 using Favalet.Expressions;
 using NUnit.Framework;
 using System;
-
+using System.Text;
 using static Favalet.CLRGenerator;
 using static Favalet.Generator;
 
@@ -326,24 +326,58 @@ namespace Favalet.Reducing
         #endregion
 
         #region Methods
-        [Test]
-        public void ApplyStaticMethod()
+        public sealed class StaticMethodTest
         {
-            var environment = CLREnvironments();
+            public static double Method(string value) =>
+                double.Parse(value);
+            public static void VoidMethod(StringBuilder sb, int value) =>
+                sb.Append($"abc{value}");
+        }
 
-            // Math.Sqrt pi
+        [Test]
+        public void ApplyStaticMethod1()
+        {
+            var environments = CLREnvironments();
+            var typeTerm = environments.MutableBindTypeAndMembers<StaticMethodTest>();
+
+            // StaticMethodTest.Method "123.456"
             var expression =
                 Apply(
-                    Method(typeof(Math).GetMethod("Sqrt")!),
-                    Constant(Math.PI));
+                    Variable("Favalet.Reducing.StaticMethodTest.Method"),
+                    Constant("123.456"));
 
-            var actual = environment.Reduce(expression);
+            var actual = environments.Reduce(expression);
 
-            // [sqrt(pi)]
+            // 123.456
             var expected =
-                Constant(Math.Sqrt(Math.PI));
+                Constant(123.456);
 
             AssertLogicalEqual(expression, expected, actual);
+        }
+
+        [Test]
+        public void ApplyStaticMethod2()
+        {
+            var environments = CLREnvironments();
+            var typeTerm = environments.MutableBindTypeAndMembers<StaticMethodTest>();
+
+            // StaticMethodTest.VoidMethod sb 123
+            var sb = new StringBuilder();
+            var expression =
+                Apply(
+                    Apply(
+                        Variable("Favalet.Reducing.StaticMethodTest.VoidMethod"),
+                        Constant(sb)),
+                    Constant(123));
+
+            var actual = environments.Reduce(expression);
+
+            // ()
+            var expected =
+                Unit();
+
+            AssertLogicalEqual(expression, expected, actual);
+            Assert.AreEqual(sb.ToString(), "abc123");
         }
 
         [Test]
@@ -388,7 +422,7 @@ namespace Favalet.Reducing
         public void ApplyInstanceMethod1()
         {
             var environments = CLREnvironments();
-            var typeTerm = environments.MutableBindTypeAndMembers(typeof(InstanceMethodTest));
+            var typeTerm = environments.MutableBindTypeAndMembers<InstanceMethodTest>();
             
             // Overload instance
             var instance = new InstanceMethodTest("aaa");
@@ -410,7 +444,7 @@ namespace Favalet.Reducing
         public void ApplyInstanceMethod2()
         {
             var environments = CLREnvironments();
-            var typeTerm = environments.MutableBindTypeAndMembers(typeof(InstanceMethodTest));
+            var typeTerm = environments.MutableBindTypeAndMembers<InstanceMethodTest>();
             
             // Overload 123 instance
             var instance = new InstanceMethodTest("aaa");
@@ -434,7 +468,7 @@ namespace Favalet.Reducing
         public void ApplyInstanceMethod3()
         {
             var environments = CLREnvironments();
-            var typeTerm = environments.MutableBindTypeAndMembers(typeof(InstanceMethodTest));
+            var typeTerm = environments.MutableBindTypeAndMembers<InstanceMethodTest>();
             
             // Overload 123 123.456 instance
             var instance = new InstanceMethodTest("aaa");
@@ -661,7 +695,7 @@ namespace Favalet.Reducing
             // int.Parse "123"
             var expression =
                 Apply(
-                    Method<string, int>(int.Parse),
+                    Delegate<string, int>(int.Parse),
                     Constant("123"));
 
             var actual = environments.Reduce(expression);
@@ -683,7 +717,7 @@ namespace Favalet.Reducing
             var timeSpan = TimeSpan.FromSeconds(100);
             var expression =
                 Apply(
-                    Method<TimeSpan, DateTime>(now.Add),
+                    Delegate<TimeSpan, DateTime>(now.Add),
                     Constant(timeSpan));
 
             var actual = environments.Reduce(expression);
@@ -704,7 +738,7 @@ namespace Favalet.Reducing
             var uri = new Uri("https://example.com/", UriKind.RelativeOrAbsolute);
             var expression =
                 Apply(
-                    Method<int, string>(uri.UriMethod),
+                    Delegate<int, string>(uri.UriMethod),
                     Constant(123));
 
             var actual = environments.Reduce(expression);

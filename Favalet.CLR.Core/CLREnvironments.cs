@@ -202,7 +202,10 @@ namespace Favalet
             this ICLREnvironments environments, MethodBase method) =>
             MutableBindMethod(environments, method, CLRGenerator.TextRange(method));
 
-        public static IExpression MutableBindMethod(
+        ////////////////////////////////////////////////////////////////////////////////
+        // Delegates
+
+        public static IExpression MutableBindDelegate(
             this ICLREnvironments environments, string symbol, Delegate d)
         {
             var method = d.GetMethodInfo();
@@ -231,37 +234,37 @@ namespace Favalet
             return methodTerm;
         }
 
-        public static IExpression MutableBindMethod(
+        public static IExpression MutableBindDelegate(
             this ICLREnvironments environments, string symbol, Action d) =>
-            MutableBindMethod(environments, symbol, (Delegate) d);
-        public static IExpression MutableBindMethod<T1>(
+            MutableBindDelegate(environments, symbol, (Delegate) d);
+        public static IExpression MutableBindDelegate<T1>(
             this ICLREnvironments environments, string symbol, Action<T1> d) =>
-            MutableBindMethod(environments, symbol, (Delegate) d);
-        public static IExpression MutableBindMethod<T1, T2>(
+            MutableBindDelegate(environments, symbol, (Delegate) d);
+        public static IExpression MutableBindDelegate<T1, T2>(
             this ICLREnvironments environments, string symbol, Action<T1, T2> d) =>
-            MutableBindMethod(environments, symbol, (Delegate) d);
-        public static IExpression MutableBindMethod<T1, T2, T3>(
+            MutableBindDelegate(environments, symbol, (Delegate) d);
+        public static IExpression MutableBindDelegate<T1, T2, T3>(
             this ICLREnvironments environments, string symbol, Action<T1, T2, T3> d) =>
-            MutableBindMethod(environments, symbol, (Delegate) d);
-        public static IExpression MutableBindMethod<T1, T2, T3, T4>(
+            MutableBindDelegate(environments, symbol, (Delegate) d);
+        public static IExpression MutableBindDelegate<T1, T2, T3, T4>(
             this ICLREnvironments environments, string symbol, Action<T1, T2, T3, T4> d) =>
-            MutableBindMethod(environments, symbol, (Delegate) d);
+            MutableBindDelegate(environments, symbol, (Delegate) d);
   
-        public static IExpression MutableBindMethod<TR>(
+        public static IExpression MutableBindDelegate<TR>(
             this ICLREnvironments environments, string symbol, Func<TR> d) =>
-            MutableBindMethod(environments, symbol, (Delegate) d);
-        public static IExpression MutableBindMethod<T1, TR>(
+            MutableBindDelegate(environments, symbol, (Delegate) d);
+        public static IExpression MutableBindDelegate<T1, TR>(
             this ICLREnvironments environments, string symbol, Func<T1, TR> d) =>
-            MutableBindMethod(environments, symbol, (Delegate) d);
-        public static IExpression MutableBindMethod<T1, T2, TR>(
+            MutableBindDelegate(environments, symbol, (Delegate) d);
+        public static IExpression MutableBindDelegate<T1, T2, TR>(
             this ICLREnvironments environments, string symbol, Func<T1, T2, TR> d) =>
-            MutableBindMethod(environments, symbol, (Delegate) d);
-        public static IExpression MutableBindMethod<T1, T2, T3, TR>(
+            MutableBindDelegate(environments, symbol, (Delegate) d);
+        public static IExpression MutableBindDelegate<T1, T2, T3, TR>(
             this ICLREnvironments environments, string symbol, Func<T1, T2, T3, TR> d) =>
-            MutableBindMethod(environments, symbol, (Delegate) d);
-        public static IExpression MutableBindMethod<T1, T2, T3, T4, TR>(
+            MutableBindDelegate(environments, symbol, (Delegate) d);
+        public static IExpression MutableBindDelegate<T1, T2, T3, T4, TR>(
             this ICLREnvironments environments, string symbol, Func<T1, T2, T3, T4, TR> d) =>
-            MutableBindMethod(environments, symbol, (Delegate) d);
+            MutableBindDelegate(environments, symbol, (Delegate) d);
 
         ////////////////////////////////////////////////////////////////////////////////
         // Types
@@ -291,6 +294,10 @@ namespace Favalet
         public static ITerm MutableBindType(
             this ICLREnvironments environments, Type type) =>
             MutableBindType(environments, type, CLRGenerator.TextRange(type));
+
+        public static ITerm MutableBindType<T>(
+            this ICLREnvironments environments) =>
+            MutableBindType(environments, typeof(T));
         
         ////////////////////////////////////////////////////////////////////////////////
         // Types and members
@@ -303,16 +310,15 @@ namespace Favalet
             foreach (var constructor in type.GetDeclaredConstructors().
                 Where(constructor =>
                     constructor.IsPublic && !constructor.IsStatic &&
-                    (constructor.GetParameters().Length >= 1)))  // TODO: unit
+                    (constructor.GetParameters().Length >= 1)))  // TODO: unit?
             {
                 MutableBindMethod(environments, constructor, range);
             }
 
             var properties = type.GetDeclaredProperties().
                 Where(property =>
-                    property.CanRead &&   // TODO: readonly
-                    property.GetGetMethod() is { } method &&
-                    property.GetIndexParameters().Length == 0).
+                    property.CanRead && property.GetGetMethod() is MethodInfo &&  // TODO: readonly
+                    property.GetIndexParameters().Length == 0).   // TODO: indexer
                 ToDictionary(property => property.GetGetMethod()!);
 
             foreach (var property in properties.Values)
@@ -323,8 +329,7 @@ namespace Favalet
             foreach (var method in type.GetDeclaredMethods().
                 Where(method =>
                     method.IsPublic && !method.IsGenericMethod &&
-                    (method.ReturnType != typeof(void)) &&    // TODO: void
-                    (method.GetParameters().Length >= (method.IsStatic ? 1 : 0)) &&   // TODO: unit
+                    (method.GetParameters().Length >= (method.IsStatic ? 1 : 0)) &&   // TODO: unit?
                     !properties.ContainsKey(method)))
             {
                 MutableBindMethod(environments, method, range);
@@ -336,6 +341,10 @@ namespace Favalet
         public static ITerm MutableBindTypeAndMembers(
             this ICLREnvironments environments, Type type) =>
             MutableBindTypeAndMembers(environments, type, CLRGenerator.TextRange(type));
+
+        public static ITerm MutableBindTypeAndMembers<T>(
+            this ICLREnvironments environments) =>
+            MutableBindTypeAndMembers(environments, typeof(T));
         
         ////////////////////////////////////////////////////////////////////////////////
         // Assemblies

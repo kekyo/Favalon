@@ -26,23 +26,23 @@ using System.Linq;
 namespace Favalet.Expressions.Specialized
 {
     [DebuggerStepThrough]
-    public sealed class UnspecifiedTerm :
-        Expression, IIgnoreUnificationTerm
+    public sealed class UnitTerm :
+        Expression, ITerm
     {
-        private UnspecifiedTerm(TextRange range) :
-            base(range)
+        private UnitTerm() :
+            base(TextRange.Internal)
         {
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         public override IExpression HigherOrder =>
-            DeadEndTerm.Instance;
+            UnitTypeTerm.Instance;
 
-        public bool Equals(UnspecifiedTerm? rhs) =>
+        public bool Equals(UnitTerm? rhs) =>
             rhs != null;
 
         public override bool Equals(IExpression? other) =>
-            other is UnspecifiedTerm;
+            other is UnitTerm;
 
         protected override IExpression Transpose(ITransposeContext context) =>
             this;
@@ -63,9 +63,9 @@ namespace Favalet.Expressions.Specialized
             Enumerable.Empty<object>();
 
         protected override string GetPrettyString(IPrettyStringContext context) =>
-            "_";
+            "()";
 
-        public static readonly UnspecifiedTerm Instance =
-            new UnspecifiedTerm(TextRange.Unknown);   // TODO: range
+        public static readonly UnitTerm Instance =
+            new UnitTerm();
     }
 }
