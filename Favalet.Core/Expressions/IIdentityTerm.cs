@@ -42,20 +42,21 @@ namespace Favalet.Expressions
     }
     
     [DebuggerStepThrough]
-    public sealed class IdentityTermComparer :
-        IEqualityComparer<IIdentityTerm>,
-        IComparer<IIdentityTerm>
+    public sealed class IdentityTermComparer<TIdentityTerm> :
+        IEqualityComparer<TIdentityTerm>,
+        IComparer<TIdentityTerm>
+        where TIdentityTerm : IIdentityTerm
     {
         private IdentityTermComparer()
         { }
 
-        public bool Equals(IIdentityTerm? x, IIdentityTerm? y) =>
+        public bool Equals(TIdentityTerm? x, TIdentityTerm? y) =>
             x!.Identity.Equals(y!.Identity);
 
-        public int GetHashCode(IIdentityTerm? obj) =>
+        public int GetHashCode(TIdentityTerm? obj) =>
             obj!.Identity.GetHashCode();
 
-        public int Compare(IIdentityTerm? x, IIdentityTerm? y) =>
+        public int Compare(TIdentityTerm? x, TIdentityTerm? y) =>
             (x!.Identity, y!.Identity) switch
             {
                 (int x_, int y_) => x_.CompareTo(y_),
@@ -68,7 +69,7 @@ namespace Favalet.Expressions
                     StringComparison.Ordinal)
             };
 
-        public static readonly IdentityTermComparer Instance =
-            new IdentityTermComparer();
+        public static readonly IdentityTermComparer<TIdentityTerm> Instance =
+            new IdentityTermComparer<TIdentityTerm>();
     }
 }

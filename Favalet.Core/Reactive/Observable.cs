@@ -17,13 +17,17 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+using Favalet.Reactive.Disposables;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using Favalet.Reactive.Disposables;
+
+#if NET35
+using ManualResetEventSlim = System.Threading.ManualResetEvent;
+#endif
 
 namespace Favalet.Reactive
 {
@@ -72,12 +76,11 @@ namespace Favalet.Reactive.Linq
     [DebuggerStepThrough]
     public static class Observable
     {
-        [DebuggerStepThrough]
         public static IEnumerable<T> ToEnumerable<T>(this IObservable<T> observable)
         {
-#if NET40
+#if NET35 || NET40
             // TODO: Improvement
-            using (var ev = new ManualResetEventSlim())
+            using (var ev = new ManualResetEventSlim(false))
             {
                 var list = new List<T>();
                 Exception? ex = null;

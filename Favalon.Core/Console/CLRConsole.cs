@@ -21,6 +21,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 
+#if NET35
+using ManualResetEventSlim = System.Threading.ManualResetEvent;
+#endif
+
 namespace Favalon.Console
 {
     public interface IConsole :
@@ -47,12 +51,12 @@ namespace Favalon.Console
     public sealed class CLRConsole : IConsole
     {
         private readonly Queue<ConsoleKeyInfo> queue = new();
-        private readonly ManualResetEventSlim gate = new();
+        private readonly ManualResetEventSlim gate = new(false);
         private readonly Thread thread;
         private readonly Stack<ConsoleColor> colors = new();
         private volatile bool abort;
 
-        public CLRConsole()
+        private CLRConsole()
         {
             this.thread = new Thread(() =>
             {

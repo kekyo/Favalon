@@ -18,11 +18,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using Favalet.Expressions;
-using Favalet.Expressions.Specialized;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 namespace Favalet.Contexts
 {
@@ -59,77 +55,5 @@ namespace Favalet.Contexts
         public static VariableInformation Create(
             string symbol, IExpression symbolHigherOrder, IExpression expression) =>
             new VariableInformation(symbol, symbolHigherOrder, expression);
-    }
-    
-    [DebuggerDisplay("{Readable}")]
-    [DebuggerStepThrough]
-    public sealed class VariableInformationRegistry
-    {
-        private readonly Dictionary<string, (BoundAttributes attributes, HashSet<VariableInformation> vis)> variables;
-
-        private VariableInformationRegistry(
-            Dictionary<string, (BoundAttributes attributes, HashSet<VariableInformation> vis)> variables) =>
-            this.variables = variables;
-
-        public int Count =>
-            this.variables.Count;
-
-        public VariableInformationRegistry Clone() =>
-            new VariableInformationRegistry(
-                new Dictionary<string, (BoundAttributes attributes, HashSet<VariableInformation> vis)>(this.variables));
-
-        internal void CopyIn(VariableInformationRegistry originateFrom)
-        {
-            foreach (var entry in originateFrom.variables)
-            {
-                this.variables[entry.Key] = entry.Value;
-            }
-        }
-        
-        internal void Register(
-            BoundAttributes attributes,
-            IBoundVariableTerm variable,
-            IExpression expression,
-            bool ignoreDuplicate)
-        {
-            if (!this.variables.TryGetValue(variable.Symbol, out var entry))
-            {
-                entry = (attributes, new HashSet<VariableInformation>());
-                this.variables.Add(variable.Symbol, entry);
-            }
-
-            if (entry.attributes != attributes)
-            {
-                throw new ArgumentException(
-                    $"Couldn't change bound attributes: {entry.attributes} --> {attributes}");
-            }
-
-            var vi = VariableInformation.Create(
-                variable.Symbol,
-                variable.HigherOrder,
-                expression);
-
-            var added = entry.vis.Add(vi);
-            if (!ignoreDuplicate && !added)
-            {
-                throw new InvalidOperationException(
-                    $"The symbol already bound: {variable.GetPrettyString(PrettyStringTypes.Minimum)}");
-            }
-        }
-
-        internal (BoundAttributes attributes, HashSet<VariableInformation> vis)? Lookup(string symbol) =>
-            this.variables.TryGetValue(symbol, out var entry) ?
-                entry :
-                default((BoundAttributes attributes, HashSet<VariableInformation> vis)?);
-
-        public string Readable =>
-            $"VariableInformationRegistry: Symbols={this.Count}";
-
-        public override string ToString() =>
-            this.Readable;
-
-        internal static VariableInformationRegistry Create() =>
-            new VariableInformationRegistry(
-                new Dictionary<string, (BoundAttributes attributes, HashSet<VariableInformation> vis)>());
     }
 }

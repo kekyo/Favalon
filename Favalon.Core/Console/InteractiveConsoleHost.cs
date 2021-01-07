@@ -91,6 +91,14 @@ namespace Favalon.Console
                                 this.WritePrompt();
                             }
                             break;
+                        case ConsoleKey.C when key.Modifiers == ConsoleModifiers.Control:
+                        case (ConsoleKey)3:   // VK_CANCEL
+                            this.ResetLine();
+                            if (!this.cts.IsCancellationRequested)
+                            {
+                                this.WritePrompt();
+                            }
+                            break;
 
                         default:
                             this.InputChar(key.KeyChar);

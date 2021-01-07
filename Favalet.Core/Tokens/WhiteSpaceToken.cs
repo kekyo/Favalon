@@ -19,6 +19,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Favalet.Ranges;
 
 namespace Favalet.Tokens
@@ -27,6 +28,9 @@ namespace Favalet.Tokens
     public sealed class WhiteSpaceToken :
         Token, IEquatable<WhiteSpaceToken?>
     {
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private WhiteSpaceToken(TextRange range) :
             base(range)
         { }
@@ -43,6 +47,9 @@ namespace Favalet.Tokens
         public override string ToString() =>
             string.Empty;
 
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static WhiteSpaceToken Create(TextRange range) =>
             new WhiteSpaceToken(range);
     }

@@ -28,7 +28,7 @@ namespace Favalet.Internal
     {
         public static readonly Dictionary<Type, string> ReadableTypeNames = new()
         {
-            { typeof(void), "void" },
+            { typeof(void), "unit" },
             { typeof(bool), "bool" },
             { typeof(byte), "byte" },
             { typeof(sbyte), "sbyte" },
@@ -47,7 +47,6 @@ namespace Favalet.Internal
             { typeof(IntPtr), "nint" },
             { typeof(UIntPtr), "nuint" },
             { typeof(IEnumerable<>), "seq" },
-            { typeof(ValueTuple), "unit" },
         };
         
         public static readonly Dictionary<string, (string symbol, bool isInfix)> OperatorSymbols = new()

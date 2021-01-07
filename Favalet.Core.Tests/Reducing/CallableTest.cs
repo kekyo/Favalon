@@ -21,7 +21,9 @@ using Favalet.Contexts;
 using Favalet.Expressions;
 using NUnit.Framework;
 using System;
-
+using System.Text;
+using Favalet.Expressions.Specialized;
+using NUnit.Framework.Interfaces;
 using static Favalet.CLRGenerator;
 using static Favalet.Generator;
 
@@ -326,31 +328,65 @@ namespace Favalet.Reducing
         #endregion
 
         #region Methods
-        [Test]
-        public void ApplyStaticMethod()
+        public sealed class StaticMethodTest
         {
-            var environment = CLREnvironments();
+            public static double Method(string value) =>
+                double.Parse(value);
+            public static void VoidMethod(StringBuilder sb, int value) =>
+                sb.Append($"abc{value}");
+        }
 
-            // Math.Sqrt pi
+        [Test]
+        public void ApplyStaticMethod1()
+        {
+            var environments = CLREnvironments();
+            var typeTerm = environments.MutableBindTypeAndMembers<StaticMethodTest>();
+
+            // StaticMethodTest.Method "123.456"
             var expression =
                 Apply(
-                    Method(typeof(Math).GetMethod("Sqrt")!),
-                    Constant(Math.PI));
+                    Variable("Favalet.Reducing.StaticMethodTest.Method"),
+                    Constant("123.456"));
 
-            var actual = environment.Reduce(expression);
+            var actual = environments.Reduce(expression);
 
-            // [sqrt(pi)]
+            // 123.456
             var expected =
-                Constant(Math.Sqrt(Math.PI));
+                Constant(123.456);
 
             AssertLogicalEqual(expression, expected, actual);
         }
 
         [Test]
-        public void ApplyExtensionMethod()
+        public void ApplyStaticMethod2()
         {
             var environments = CLREnvironments();
-            var typeTerm = environments.MutableBindMembers(typeof(ExtensionMethodTest));
+            var typeTerm = environments.MutableBindTypeAndMembers<StaticMethodTest>();
+
+            // StaticMethodTest.VoidMethod sb 123
+            var sb = new StringBuilder();
+            var expression =
+                Apply(
+                    Apply(
+                        Variable("Favalet.Reducing.StaticMethodTest.VoidMethod"),
+                        Constant(sb)),
+                    Constant(123));
+
+            var actual = environments.Reduce(expression);
+
+            // ()
+            var expected =
+                Unit();
+
+            AssertLogicalEqual(expression, expected, actual);
+            Assert.AreEqual(sb.ToString(), "abc123");
+        }
+
+        [Test]
+        public void ApplyExtensionMethod1()
+        {
+            var environments = CLREnvironments();
+            var typeTerm = environments.MutableBindTypeAndMembers(typeof(ExtensionMethodTest));
             
             // 1.Method(2, 3)
             var expression =
@@ -371,24 +407,57 @@ namespace Favalet.Reducing
             AssertLogicalEqual(expression, expected, actual);
         }
 
+        [Test]
+        public void ApplyExtensionMethod2()
+        {
+            var environments = CLREnvironments();
+            var typeTerm = environments.MutableBindTypeAndMembers(typeof(ExtensionMethodTest));
+            
+            // sb.VoidMethod(2, 3)
+            var sb = new StringBuilder();
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable("Favalet.Reducing.ExtensionMethodTest.VoidMethod"),
+                            Constant(2)),
+                        Constant(3)),
+                    Constant(sb));
+
+            var actual = environments.Reduce(expression);
+
+            // ()
+            var expected =
+                Unit();
+
+            AssertLogicalEqual(expression, expected, actual);
+            Assert.AreEqual("23", sb.ToString());
+        }
+
         public sealed class InstanceMethodTest
         {
-            private readonly string fv;
+            public readonly StringBuilder fv;
             public InstanceMethodTest(string fv) =>
-                this.fv = fv;
+                this.fv = new StringBuilder(fv);
             public string Overload() =>
-                this.fv;
+                this.fv.ToString();
             public string Overload(int value) =>
-                this.fv + value.ToString();
+                this.fv.ToString() + value.ToString();
             public string Overload(int value1, double value2) =>
-                this.fv + value1.ToString() + "_" + value2.ToString();
+                this.fv.ToString() + value1.ToString() + "_" + value2.ToString();
+            public void VoidOverload() =>
+                this.fv.Append("abc");
+            public void VoidOverload(int value) =>
+                this.fv.Append("abc" + value.ToString());
+            public void VoidOverload(int value1, double value2) =>
+                this.fv.Append("abc" + value1.ToString() + "_" + value2.ToString());
         }
 
         [Test]
         public void ApplyInstanceMethod1()
         {
             var environments = CLREnvironments();
-            var typeTerm = environments.MutableBindMembers(typeof(InstanceMethodTest));
+            var typeTerm = environments.MutableBindTypeAndMembers<InstanceMethodTest>();
             
             // Overload instance
             var instance = new InstanceMethodTest("aaa");
@@ -410,7 +479,7 @@ namespace Favalet.Reducing
         public void ApplyInstanceMethod2()
         {
             var environments = CLREnvironments();
-            var typeTerm = environments.MutableBindMembers(typeof(InstanceMethodTest));
+            var typeTerm = environments.MutableBindTypeAndMembers<InstanceMethodTest>();
             
             // Overload 123 instance
             var instance = new InstanceMethodTest("aaa");
@@ -434,7 +503,7 @@ namespace Favalet.Reducing
         public void ApplyInstanceMethod3()
         {
             var environments = CLREnvironments();
-            var typeTerm = environments.MutableBindMembers(typeof(InstanceMethodTest));
+            var typeTerm = environments.MutableBindTypeAndMembers<InstanceMethodTest>();
             
             // Overload 123 123.456 instance
             var instance = new InstanceMethodTest("aaa");
@@ -454,6 +523,81 @@ namespace Favalet.Reducing
                 Constant("aaa123_123.456");
 
             AssertLogicalEqual(expression, expected, actual);
+        }
+
+        [Test]
+        public void ApplyInstanceMethod4()
+        {
+            var environments = CLREnvironments();
+            var typeTerm = environments.MutableBindTypeAndMembers<InstanceMethodTest>();
+            
+            // VoidOverload instance
+            var instance = new InstanceMethodTest("aaa");
+            var expression =
+                Apply(
+                    Variable("VoidOverload"),
+                    Constant(instance));
+
+            var actual = environments.Reduce(expression);
+
+            // ()
+            var expected =
+                Unit();
+
+            AssertLogicalEqual(expression, expected, actual);
+            Assert.AreEqual("aaaabc", instance.fv.ToString());
+        }
+
+        [Test]
+        public void ApplyInstanceMethod5()
+        {
+            var environments = CLREnvironments();
+            var typeTerm = environments.MutableBindTypeAndMembers<InstanceMethodTest>();
+            
+            // VoidOverload 123 instance
+            var instance = new InstanceMethodTest("aaa");
+            var expression =
+                Apply(
+                    Apply(
+                        Variable("VoidOverload"),
+                        Constant(123)),
+                    Constant(instance));
+
+            var actual = environments.Reduce(expression);
+
+            // ()
+            var expected =
+                Unit();
+
+            AssertLogicalEqual(expression, expected, actual);
+            Assert.AreEqual("aaaabc123", instance.fv.ToString());
+        }
+   
+        [Test]
+        public void ApplyInstanceMethod6()
+        {
+            var environments = CLREnvironments();
+            var typeTerm = environments.MutableBindTypeAndMembers<InstanceMethodTest>();
+            
+            // VoidOverload 123 123.456 instance
+            var instance = new InstanceMethodTest("aaa");
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable("VoidOverload"),
+                            Constant(123)),
+                        Constant(123.456)),
+                    Constant(instance));
+
+            var actual = environments.Reduce(expression);
+
+            // ()
+            var expected =
+                Unit();
+
+            AssertLogicalEqual(expression, expected, actual);
+            Assert.AreEqual("aaaabc123_123.456", instance.fv.ToString());
         }
      
         [Test]
@@ -494,7 +638,7 @@ namespace Favalet.Reducing
         public void ApplyOverloadedMethod1(object argument, object result)
         {
             var environments = CLREnvironments();
-            var typeTerm = environments.MutableBindMembers(typeof(OverloadTest1));
+            var typeTerm = environments.MutableBindTypeAndMembers(typeof(OverloadTest1));
             
             // OverloadTest1.Overload(123)
             var expression =
@@ -527,7 +671,7 @@ namespace Favalet.Reducing
         public void ApplyOverloadedMethod2(object a, object b, object r)
         {
             var environments = CLREnvironments();
-            var typeTerm = environments.MutableBindMembers(typeof(OverloadTest2));
+            var typeTerm = environments.MutableBindTypeAndMembers(typeof(OverloadTest2));
             
             // OverloadTest2.Overload(1, 2)
             var expression =
@@ -562,7 +706,7 @@ namespace Favalet.Reducing
         public void ApplyOverloadedMethod3(object a, object b, object c, object r)
         {
             var environments = CLREnvironments();
-            var typeTerm = environments.MutableBindMembers(typeof(OverloadTest3));
+            var typeTerm = environments.MutableBindTypeAndMembers(typeof(OverloadTest3));
             
             // OverloadTest3.Overload(1, 2, 3)
             var expression =
@@ -599,7 +743,7 @@ namespace Favalet.Reducing
         public void ApplyTypeConstructor1()
         {
             var environments = CLREnvironments();
-            var typeTerm = environments.MutableBindMembers(typeof(TypeConstructorTest<>));
+            var typeTerm = environments.MutableBindTypeAndMembers(typeof(TypeConstructorTest<>));
 
             // TypeConstructorTest int
             var expression =
@@ -651,11 +795,165 @@ namespace Favalet.Reducing
             AssertLogicalEqual(expression, expected, actual);
         }
     */
-    }
+
+        #region From delegate
+        [Test]
+        public void StaticMethodDelegate1()
+        {
+            var environments = CLREnvironments();
+
+            // int.Parse "123"
+            var expression =
+                Apply(
+                    Delegate<string, int>(int.Parse),
+                    Constant("123"));
+
+            var actual = environments.Reduce(expression);
+
+            // 123
+            var expected =
+                Constant(123);
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
+
+        public static void VoidMethod(StringBuilder sb, int value) =>
+            sb.Append(value);
         
-    public static class ExtensionMethodTest
+        [Test]
+        public void StaticMethodDelegate2()
+        {
+            var environments = CLREnvironments();
+
+            // VoidMethod sb "123"
+            var sb = new StringBuilder();
+            var expression =
+                Apply(
+                    Apply(
+                        Delegate<StringBuilder, int>(VoidMethod),
+                        Constant(sb)),
+                    Constant(123));
+
+            var actual = environments.Reduce(expression);
+
+            // ()
+            var expected =
+                Unit();
+
+            AssertLogicalEqual(expression, expected, actual);
+            Assert.AreEqual("123", sb.ToString());
+        }
+        
+        [Test]
+        public void InstanceMethodDelegate1()
+        {
+            var environments = CLREnvironments();
+
+            // DateTime.Now.Add timeSpan
+            var now = DateTime.Now;
+            var timeSpan = TimeSpan.FromSeconds(100);
+            var expression =
+                Apply(
+                    Delegate<TimeSpan, DateTime>(now.Add),
+                    Constant(timeSpan));
+
+            var actual = environments.Reduce(expression);
+
+            // [DateTime+timeSpan]
+            var expected =
+                Constant(now + timeSpan);
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
+        
+        public sealed class InstanceMethodDelegateTest
+        {
+            public readonly StringBuilder sb = new StringBuilder();
+            
+            public InstanceMethodDelegateTest()
+            {
+            }
+
+            public void VoidMethod(int value) =>
+                sb.Append(value);
+        }
+        
+        [Test]
+        public void InstanceMethodDelegate2()
+        {
+            var environments = CLREnvironments();
+
+            // instance.VoidMethod 123
+            var instance = new InstanceMethodDelegateTest();
+            var expression =
+                Apply(
+                    Delegate<int>(instance.VoidMethod),
+                    Constant(123));
+
+            var actual = environments.Reduce(expression);
+
+            // ()
+            var expected =
+                Unit();
+
+            AssertLogicalEqual(expression, expected, actual);
+            Assert.AreEqual("123", instance.sb.ToString());
+        }
+
+        [Test]
+        public void ExtensionMethodDelegate1()
+        {
+            var environments = CLREnvironments();
+
+            // uri.UriMethod 123
+            var uri = new Uri("https://example.com/", UriKind.RelativeOrAbsolute);
+            var expression =
+                Apply(
+                    Delegate<int, string>(uri.UriMethod),
+                    Constant(123));
+
+            var actual = environments.Reduce(expression);
+
+            // "https://example.com/123"
+            var expected =
+                Constant("https://example.com/123");
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
+        
+        [Test]
+        public void ExtensionMethodDelegate2()
+        {
+            var environments = CLREnvironments();
+
+            // sb.VoidMethod 1 2
+            var sb = new StringBuilder();
+            var expression =
+                Apply(
+                    Apply(
+                        Delegate<int, int>(sb.VoidMethod),
+                        Constant(1)),
+                    Constant(2));
+
+            var actual = environments.Reduce(expression);
+
+            // ()
+            var expected =
+                Unit();
+
+            AssertLogicalEqual(expression, expected, actual);
+            Assert.AreEqual("12", sb.ToString());
+        }
+        #endregion
+    }
+
+    internal static class ExtensionMethodTest
     {
         public static int Method(this int a, int b, int c) =>
             a + b * 10 + c * 100;
+        public static void VoidMethod(this StringBuilder a, int b, int c) =>
+            a.Append(b * 10 + c);
+        public static string UriMethod(this Uri url, int number) =>
+            url.ToString() + number;
     }
 }

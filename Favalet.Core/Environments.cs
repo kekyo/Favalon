@@ -87,7 +87,7 @@ namespace Favalet
         
         public void Reset()
         {
-            this.CopyInRegistry(null, true);
+            this.CopyInDefaultRegistry(null, true);
             this.placeholderIndex = -1;
         }
 

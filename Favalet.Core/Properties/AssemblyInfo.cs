@@ -19,5 +19,9 @@
 
 using System.Runtime.CompilerServices;
 
+// These assemblies are only referring internal utilities. (Favalet.Internals.*)
 [assembly: InternalsVisibleTo("Favalet.CLR.Core")]
+[assembly: InternalsVisibleTo("Favalon.Core")]
+
+// The test fixture.
 [assembly: InternalsVisibleTo("Favalet.Core.Tests")]

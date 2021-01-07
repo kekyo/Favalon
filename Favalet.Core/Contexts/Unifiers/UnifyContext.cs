@@ -67,9 +67,9 @@ namespace Favalet.Contexts.Unifiers
         private string targetRootString;
 #endif
         private readonly Stack<Dictionary<IPlaceholderTerm, Unification>> scopes =
-            new Stack<Dictionary<IPlaceholderTerm, Unification>>();
+            new();
         private Dictionary<IPlaceholderTerm, Unification> topology =
-            new Dictionary<IPlaceholderTerm, Unification>(IdentityTermComparer.Instance);
+            new(IdentityTermComparer<IPlaceholderTerm>.Instance);
 
         public readonly ITypeCalculator TypeCalculator;
 
@@ -194,7 +194,7 @@ namespace Favalet.Contexts.Unifiers
             StringUtilities.Join(
                 System.Environment.NewLine,
                 (this.topology ?? this.scopes.Peek()).
-                    OrderBy(entry => entry.Key, IdentityTermComparer.Instance).
+                    OrderBy(entry => entry.Key, IdentityTermComparer<IPlaceholderTerm>.Instance).
                     Select(entry =>
                         $"{entry.Key.Symbol} {entry.Value}"));
 
@@ -218,6 +218,9 @@ namespace Favalet.Contexts.Unifiers
             
             sb.AppendLine("    #nodes");
             foreach (var expression in this.topology.Keys.
+#if NET35
+                Cast<IExpression>().
+#endif
                 Concat(this.topology.Values.Select(unification => unification.Expression)).
                 Distinct().
                 OrderBy(expression => expression, OrderedExpressionComparer.Instance))

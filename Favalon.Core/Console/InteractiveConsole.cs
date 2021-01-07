@@ -18,6 +18,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using Favalet.Lexers;
+using Favalet.Internal;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -35,6 +36,7 @@ namespace Favalon.Console
     public interface IInteractiveConsole
     {
         void ClearScreen();
+        void ResetLine();
         
         void InputEnter();
         bool InputChar(char inch);
@@ -78,6 +80,16 @@ namespace Favalon.Console
             this.currentColumn = 0;
         }
 
+        public void ResetLine()
+        {
+            this.console.WriteLine();
+            this.line.Clear();
+            
+            this.OnArrivalInput(InputTypes.Reset);
+
+            this.currentColumn = 0;
+        }
+
         public void InputEnter()
         {
             this.console.WriteLine();
@@ -85,7 +97,7 @@ namespace Favalon.Console
             var line = this.line.ToString();
             this.line.Clear();
 
-            if (!string.IsNullOrWhiteSpace(line))
+            if (!StringUtilities.IsNullOrWhiteSpace(line))
             {
                 this.history.Add(line);
 

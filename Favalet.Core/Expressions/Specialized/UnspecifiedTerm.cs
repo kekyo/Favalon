@@ -18,10 +18,10 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using Favalet.Contexts;
+using Favalet.Ranges;
 using System.Collections;
 using System.Diagnostics;
 using System.Linq;
-using Favalet.Ranges;
 
 namespace Favalet.Expressions.Specialized
 {
@@ -38,7 +38,7 @@ namespace Favalet.Expressions.Specialized
         public override IExpression HigherOrder =>
             DeadEndTerm.Instance;
 
-        public bool Equals(UnspecifiedTerm rhs) =>
+        public bool Equals(UnspecifiedTerm? rhs) =>
             rhs != null;
 
         public override bool Equals(IExpression? other) =>

@@ -108,7 +108,6 @@ namespace Favalet.Ranges
         public static TextRange Create(Uri uri, TextPosition first, TextPosition last) =>
             new TextRange(uri, first, last);
 
-#if !NET40
         public static implicit operator TextRange((int line, int column) position) =>
             Create(UnknownUri, TextPosition.Create(position.line, position.column));
         public static implicit operator TextRange((int lineFirst, int columnFirst, int lineLast, int columnLast) range) =>
@@ -121,6 +120,5 @@ namespace Favalet.Ranges
             Create(new Uri(position.uri, UriKind.RelativeOrAbsolute), TextPosition.Create(position.line, position.column));
         public static implicit operator TextRange((string uri, int lineFirst, int columnFirst, int lineLast, int columnLast) range) =>
             Create(new Uri(range.uri, UriKind.RelativeOrAbsolute), TextPosition.Create(range.lineFirst, range.columnFirst), TextPosition.Create(range.lineLast, range.columnLast));
-#endif
     }
 }

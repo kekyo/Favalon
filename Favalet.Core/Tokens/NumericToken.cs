@@ -19,6 +19,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Favalet.Ranges;
 
 namespace Favalet.Tokens
@@ -29,6 +30,9 @@ namespace Favalet.Tokens
     {
         public readonly string Value;
 
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         internal NumericToken(string value, TextRange range) :
             base(range) =>
             this.Value = value;
@@ -53,6 +57,9 @@ namespace Favalet.Tokens
             range = this.Range;
         }
  
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static NumericToken Create(string value, TextRange range) =>
             new NumericToken(value, range);
     }
