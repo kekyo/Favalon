@@ -747,7 +747,7 @@ namespace Favalet.Inferring
         }
 
         [Test]
-        public void ApplyExtensionMethod()
+        public void ApplyExtensionMethod1()
         {
             var environments = CLREnvironments();
             var typeTerm = environments.MutableBindTypeAndMembers(typeof(ExtensionMethodTest));
@@ -781,11 +781,46 @@ namespace Favalet.Inferring
             AssertLogicalEqual(expression, expected, actual);
         }
 
+        [Test]
+        public void ApplyExtensionMethod2()
+        {
+            var environments = CLREnvironments();
+            var typeTerm = environments.MutableBindTypeAndMembers(typeof(ExtensionMethodTest));
+            
+            // sb.VoidMethod(2, 3)
+            var sb = new StringBuilder();
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable("Favalet.Inferring.ExtensionMethodTest.VoidMethod"),
+                            Constant(2)),
+                        Constant(3)),
+                    Constant(sb));
+
+            var actual = environments.Infer(expression);
+
+            // (((VoidMethod:(int -> int -> StringBuilder -> unit) 2:int):(int -> StringBuilder -> unit) 3:int):(StringBuilder -> unit) sb:StringBuilder):unit
+            var expected =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable(
+                                "Favalet.Inferring.ExtensionMethodTest.VoidMethod",
+                                Lambda(Type<int>(), Lambda(Type<int>(), Lambda(Type<StringBuilder>(), UnitType())))),
+                            Constant(2),
+                            Lambda(Type<int>(), Lambda(Type<StringBuilder>(), UnitType()))),
+                        Constant(3)),
+                    Constant(sb),
+                    UnitType());
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
+
         public sealed class InstanceMethodTest
         {
             public InstanceMethodTest()
-            {
-            }
+            { }
 
             public string Overload() =>
                 throw new InvalidOperationException();
@@ -793,13 +828,19 @@ namespace Favalet.Inferring
                 throw new InvalidOperationException();
             public string Overload(int value1, double value2) =>
                 throw new InvalidOperationException();
+            public void VoidOverload() =>
+                throw new InvalidOperationException();
+            public void VoidOverload(int value) =>
+                throw new InvalidOperationException();
+            public void VoidOverload(int value1, double value2) =>
+                throw new InvalidOperationException();
         }
 
         [Test]
         public void ApplyInstanceMethod1()
         {
             var environments = CLREnvironments();
-            var typeTerm = environments.MutableBindTypeAndMembers(typeof(InstanceMethodTest));
+            var typeTerm = environments.MutableBindTypeAndMembers<InstanceMethodTest>();
             
             // Overload instance
             var instance = new InstanceMethodTest();
@@ -826,7 +867,7 @@ namespace Favalet.Inferring
         public void ApplyInstanceMethod2()
         {
             var environments = CLREnvironments();
-            var typeTerm = environments.MutableBindTypeAndMembers(typeof(InstanceMethodTest));
+            var typeTerm = environments.MutableBindTypeAndMembers<InstanceMethodTest>();
             
             // Overload 123 instance
             var instance = new InstanceMethodTest();
@@ -858,7 +899,7 @@ namespace Favalet.Inferring
         public void ApplyInstanceMethod3()
         {
             var environments = CLREnvironments();
-            var typeTerm = environments.MutableBindTypeAndMembers(typeof(InstanceMethodTest));
+            var typeTerm = environments.MutableBindTypeAndMembers<InstanceMethodTest>();
             
             // Overload 123 123.456 instance
             var instance = new InstanceMethodTest();
@@ -891,6 +932,102 @@ namespace Favalet.Inferring
             AssertLogicalEqual(expression, expected, actual);
         }
      
+        [Test]
+        public void ApplyInstanceMethod4()
+        {
+            var environments = CLREnvironments();
+            var typeTerm = environments.MutableBindTypeAndMembers<InstanceMethodTest>();
+            
+            // VoidOverload instance
+            var instance = new InstanceMethodTest();
+            var expression =
+                Apply(
+                    Variable("VoidOverload"),
+                    Constant(instance));
+
+            var actual = environments.Infer(expression);
+
+            // (VoidOverload:(InstanceMethodTest -> unit) instance:InstanceMethodTest)):unit
+            var expected =
+                Apply(
+                    Variable(
+                        "VoidOverload",
+                        Lambda(Type<InstanceMethodTest>(), UnitType())),
+                    Constant(instance),
+                    UnitType());
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
+
+        [Test]
+        public void ApplyInstanceMethod5()
+        {
+            var environments = CLREnvironments();
+            var typeTerm = environments.MutableBindTypeAndMembers<InstanceMethodTest>();
+            
+            // VoidOverload 123 instance
+            var instance = new InstanceMethodTest();
+            var expression =
+                Apply(
+                    Apply(
+                        Variable("VoidOverload"),
+                        Constant(123)),
+                    Constant(instance));
+
+            var actual = environments.Infer(expression);
+
+            // ((VoidOverload:(int -> InstanceMethodTest -> unit) 123:int):(InstanceMethodTest -> unit) instance:InstanceMethodTest)):unit
+            var expected =
+                Apply(
+                    Apply(
+                        Variable(
+                            "VoidOverload",
+                            Lambda(Type<int>(), Lambda(Type<InstanceMethodTest>(), UnitType()))),
+                        Constant(123),
+                        Lambda(Type<InstanceMethodTest>(), UnitType())),
+                    Constant(instance),
+                    UnitType());
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
+   
+        [Test]
+        public void ApplyInstanceMethod6()
+        {
+            var environments = CLREnvironments();
+            var typeTerm = environments.MutableBindTypeAndMembers<InstanceMethodTest>();
+            
+            // VoidOverload 123 123.456 instance
+            var instance = new InstanceMethodTest();
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable("VoidOverload"),
+                            Constant(123)),
+                        Constant(123.456)),
+                    Constant(instance));
+
+            var actual = environments.Infer(expression);
+
+            // (((VoidOverload:(int -> double -> InstanceMethodTest -> unit) 123:int):(double -> InstanceMethodTest -> unit) 123.456:double) instance:InstanceMethodTest)):unit
+            var expected =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable(
+                                "VoidOverload",
+                                Lambda(Type<int>(), Lambda(Type<double>(), Lambda(Type<InstanceMethodTest>(), UnitType())))),
+                            Constant(123),
+                            Lambda(Type<double>(), Lambda(Type<InstanceMethodTest>(), UnitType()))),
+                        Constant(123.456),
+                        Lambda(Type<InstanceMethodTest>(), UnitType())),
+                    Constant(instance),
+                    UnitType());
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
+
         [Test]
         public void ApplyConstructor()
         {
@@ -1050,6 +1187,8 @@ namespace Favalet.Inferring
     public static class ExtensionMethodTest
     {
         public static int Method(this int a, int b, int c) =>
+            throw new InvalidOperationException();
+        public static void VoidMethod(this StringBuilder a, int b, int c) =>
             throw new InvalidOperationException();
     }
 }

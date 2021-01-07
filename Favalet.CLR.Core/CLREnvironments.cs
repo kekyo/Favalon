@@ -45,6 +45,18 @@ namespace Favalet
                 var environments = new CLREnvironments(false);
                 environments.MutableBindDefaults();
 
+                // Always typeof(void) makes result with UnitTypeTerm.
+                // So it makes registering "void" symbol manually.
+                environments.MutableBind(
+                    BoundAttributes.PrefixLeftToRight,
+                    BoundVariableTerm.Create(
+                        "void",
+                        UnitTypeTerm.Instance.HigherOrder,
+                        UnitTypeTerm.Instance.Range),
+                    UnitTypeTerm.Instance,
+                    true);
+
+                // mscorlib / System.Runtime related assemblies.
                 foreach (var assembly in new[] {
                     typeof(object), typeof(Uri), typeof(Enumerable) }.
                     Select(type => type.GetAssembly()).

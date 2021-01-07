@@ -18,8 +18,10 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using System;
+using System.Text;
 using Favalet.Contexts;
 using Favalet.Expressions;
+using Favalet.Expressions.Specialized;
 using NUnit.Framework;
 
 using static Favalet.CLRGenerator;
@@ -350,7 +352,7 @@ namespace Favalet.Inferring
 
         #region From delegate
         [Test]
-        public void StaticMethodDelegate()
+        public void StaticMethodDelegate1()
         {
             var environments = CLREnvironments();
 
@@ -368,9 +370,34 @@ namespace Favalet.Inferring
 
             AssertLogicalEqual(expression, expectedHigherOrder, actual.HigherOrder);
         }
+
+        public static void VoidMethod(StringBuilder sb, int value) =>
+            throw new InvalidOperationException();
         
         [Test]
-        public void InstanceMethodDelegate()
+        public void StaticMethodDelegate2()
+        {
+            var environments = CLREnvironments();
+
+            // VoidMethod
+            var expression =
+                Delegate<StringBuilder, int>(VoidMethod);
+
+            var actual = environments.Infer(expression);
+
+            // VoidMethod:(StringBuilder -> int -> unit)
+            var expectedHigherOrder =
+                Lambda(
+                    Type<StringBuilder>(),
+                    Lambda(
+                        Type<int>(),
+                        UnitType()));
+
+            AssertLogicalEqual(expression, expectedHigherOrder, actual.HigherOrder);
+        }
+        
+        [Test]
+        public void InstanceMethodDelegate1()
         {
             var environments = CLREnvironments();
 
@@ -389,9 +416,40 @@ namespace Favalet.Inferring
 
             AssertLogicalEqual(expression, expectedHigherOrder, actual.HigherOrder);
         }
-        
+
+        public sealed class InstanceMethodDelegateTest
+        {
+            public InstanceMethodDelegateTest()
+            {
+            }
+
+            public void VoidMethod(int value) =>
+                throw new InvalidOperationException();
+        }
+          
         [Test]
-        public void ExtensionMethodDelegate()
+        public void InstanceMethodDelegate2()
+        {
+            var environments = CLREnvironments();
+
+            // instance.VoidMethod
+            var instance = new InstanceMethodDelegateTest();
+            var expression =
+                Delegate<int>(instance.VoidMethod);
+
+            var actual = environments.Infer(expression);
+
+            // InstanceMethodDelegateTest.VoidMethod:(int -> unit)
+            var expectedHigherOrder =
+                Lambda(
+                    Type<int>(),
+                    UnitType());
+
+            AssertLogicalEqual(expression, expectedHigherOrder, actual.HigherOrder);
+        }
+      
+        [Test]
+        public void ExtensionMethodDelegate1()
         {
             var environments = CLREnvironments();
 
@@ -410,12 +468,35 @@ namespace Favalet.Inferring
 
             AssertLogicalEqual(expression, expectedHigherOrder, actual.HigherOrder);
         }
+      
+        [Test]
+        public void ExtensionMethodDelegate2()
+        {
+            var environments = CLREnvironments();
+
+            // uri.VoidMethod
+            var uri = new Uri("https://example.com/", UriKind.RelativeOrAbsolute);
+            var expression =
+                Delegate<int>(uri.VoidMethod);
+
+            var actual = environments.Infer(expression);
+
+            // <closure>:(int -> unit)
+            var expectedHigherOrder =
+                Lambda(
+                    Type<int>(),
+                    UnitType());
+
+            AssertLogicalEqual(expression, expectedHigherOrder, actual.HigherOrder);
+        }
         #endregion
     }
 
     internal static class ExtensionMethodDelegateTest
     {
         public static string UriMethod(this Uri url, int number) =>
-            url.ToString() + number;
-    }
+            throw new InvalidOperationException();
+        public static void VoidMethod(this Uri url, int number) =>
+            throw new InvalidOperationException();
+}
 }
