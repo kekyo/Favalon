@@ -27,10 +27,12 @@ using System.Diagnostics;
 namespace Favalet.Expressions
 {
     public interface ILambdaExpression :
-        ICallableExpression
+        IExpression
     {
         IExpression Parameter { get; }
         IExpression Body { get; }
+
+        IExpression Invoke(IReduceContext context, IExpression argument);
     }
 
     public sealed class LambdaExpression :
@@ -300,7 +302,7 @@ namespace Favalet.Expressions
             }
         }
 
-        public IExpression Call(IReduceContext context, IExpression argument) =>
+        public IExpression Invoke(IReduceContext context, IExpression argument) =>
             (this.Parameter is IBoundVariableTerm bound ?
                 context.Bind(bound, argument) :
                 context).

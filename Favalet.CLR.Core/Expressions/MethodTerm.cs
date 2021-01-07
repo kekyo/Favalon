@@ -145,10 +145,10 @@ namespace Favalet.Expressions
             }
         }
 
-        public IExpression Call(IReduceContext context, IExpression argument)
+        public IExpression Call(IReduceContext context, IExpression reducedArgument)
         {
             object? result;
-            switch (argument)
+            switch (reducedArgument)
             {
                 case IConstantTerm constant:
                     result = this.Call(new[] {constant.Value});
@@ -157,7 +157,7 @@ namespace Favalet.Expressions
                     result = this.Call(closure.Arguments.Memoize());
                     break;
                 default:
-                    throw new ArgumentException(argument.GetPrettyString(PrettyStringTypes.Readable));
+                    throw new ArgumentException(reducedArgument.GetPrettyString(PrettyStringTypes.Readable));
             }
 
             if (this.RuntimeMethod is MethodInfo method &&
@@ -298,9 +298,9 @@ namespace Favalet.Expressions
         protected override IExpression Reduce(IReduceContext context) =>
             this;
 
-        public IExpression Call(IReduceContext context, IExpression argument)
+        public IExpression Call(IReduceContext context, IExpression reducedArgument)
         {
-            if (argument is IConstantTerm constant)
+            if (reducedArgument is IConstantTerm constant)
             {
                 var closure = new MethodPartialClosureExpression(this.Method);
                 closure.Arguments.Add(constant.Value);
@@ -308,7 +308,7 @@ namespace Favalet.Expressions
             }
             else
             {
-                throw new ArgumentException(argument.GetPrettyString(PrettyStringTypes.Readable));
+                throw new ArgumentException(reducedArgument.GetPrettyString(PrettyStringTypes.Readable));
             }
         }
 
@@ -375,9 +375,9 @@ namespace Favalet.Expressions
         protected override IExpression Reduce(IReduceContext context) =>
             throw new InvalidOperationException();
         
-        public IExpression Call(IReduceContext context, IExpression argument)
+        public IExpression Call(IReduceContext context, IExpression reducedArgument)
         {
-            if (argument is IConstantTerm constant)
+            if (reducedArgument is IConstantTerm constant)
             {
                 // TODO: insert better position directly with instance/static/extension method knowleges.
                 this.Arguments.Add(constant.Value);
@@ -394,7 +394,7 @@ namespace Favalet.Expressions
             }
             else
             {
-                throw new ArgumentException(argument.GetPrettyString(PrettyStringTypes.Readable));
+                throw new ArgumentException(reducedArgument.GetPrettyString(PrettyStringTypes.Readable));
             }
         }
 

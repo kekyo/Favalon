@@ -32,7 +32,7 @@ namespace Favalet.Expressions
 {
     public interface ICallableExpression : IExpression
     {
-        IExpression Call(IReduceContext context, IExpression argument);
+        IExpression Call(IReduceContext context, IExpression reducedArgument);
     }
 
     public interface IApplyExpression : IExpression
@@ -308,7 +308,7 @@ namespace Favalet.Expressions
                 // Apply with left outermost strategy at lambda expression.
                 if (currentFunction is ILambdaExpression lambda)
                 {
-                    var result = lambda.Call(context, this.Argument);
+                    var result = lambda.Invoke(context, this.Argument);
                     return context.Reduce(result);
                 }
 
@@ -316,8 +316,8 @@ namespace Favalet.Expressions
                 // because maybe cannot analyze inside of the function.
                 if (currentFunction is ICallableExpression callable)
                 {
-                    var argument = context.Reduce(this.Argument);
-                    return callable.Call(context, argument);
+                    var reducedArgument = context.Reduce(this.Argument);
+                    return callable.Call(context, reducedArgument);
                 }
 
                 var reducedFunction = context.Reduce(currentFunction);
