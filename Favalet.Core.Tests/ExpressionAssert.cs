@@ -114,47 +114,60 @@ namespace Favalet
                 }
             }
 
-            switch (lhs, rhs)
+            if (lhs is UnspecifiedTerm)
             {
-                case (UnspecifiedTerm _, _):   // Only expected expression
-                case (ILambdaExpression(UnspecifiedTerm _, UnspecifiedTerm _), _):
-                    return Results.Ignore;
-                case (DeadEndTerm _, _):
-                    return Results.Ignore;
-                case (FourthTerm _, FourthTerm _):
-                    return Results.Ignore;
-                case (_, DeadEndTerm _):
-                    return Trap(false);
-                case (IPairExpression le, IPairExpression re)
-                    when le.IdentityType.Equals(re.IdentityType):
-                    var p1 = Equals(le.Left, re.Left, indexes);
-                    var b1 = Equals(le.Right, re.Right, indexes);
-                    if (p1 != Results.Negate && b1 != Results.Negate)
+                return Results.Ignore;
+            }
+            else if (lhs is ILambdaExpression(UnspecifiedTerm _, UnspecifiedTerm _))
+            {
+                return Results.Ignore;
+            }
+            else if (lhs is DeadEndTerm)
+            {
+                return Results.Ignore;
+            }
+            else if (lhs is FourthTerm && rhs is FourthTerm)
+            {
+                return Results.Ignore;
+            }
+            else if (rhs is DeadEndTerm)
+            {
+                return Trap(false);
+            }
+            else if (lhs is IPairExpression le &&
+                     rhs is IPairExpression re &&
+                     le.IdentityType.Equals(re.IdentityType))
+            {
+                var p1 = Equals(le.Left, re.Left, indexes);
+                var b1 = Equals(le.Right, re.Right, indexes);
+                if (p1 != Results.Negate && b1 != Results.Negate)
+                {
+                    if (p1 == Results.Assert && b1 == Results.Assert)
                     {
-                        if (p1 == Results.Assert && b1 == Results.Assert)
-                        {
-                            return Equals(lhs.HigherOrder, rhs.HigherOrder, indexes);
-                        }
-                        return Results.Assert;
+                        return Equals(lhs.HigherOrder, rhs.HigherOrder, indexes);
                     }
-                    else
+                    return Results.Assert;
+                }
+                else
+                {
+                    return Results.Negate;
+                }
+            }
+            else
+            {
+                if (Trap(lhs.Equals(rhs)) is { } r &&
+                    r != Results.Negate)
+                {
+                    if (r == Results.Assert)
                     {
-                        return Results.Negate;
+                        return Equals(lhs.HigherOrder, rhs.HigherOrder, indexes);
                     }
-                default:
-                    if (Trap(lhs.Equals(rhs)) is Results r &&
-                        r != Results.Negate)
-                    {
-                        if (r == Results.Assert)
-                        {
-                            return Equals(lhs.HigherOrder, rhs.HigherOrder, indexes);
-                        }
-                        return Results.Assert;
-                    }
-                    else
-                    {
-                        return Results.Negate;
-                    }
+                    return Results.Assert;
+                }
+                else
+                {
+                    return Results.Negate;
+                }
             }
         }
 

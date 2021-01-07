@@ -17,11 +17,11 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+using Favalet.Internal;
+using Favalet.Ranges;
 using System;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Text;
-using Favalet.Ranges;
 
 namespace Favalet.Lexers
 {
@@ -33,7 +33,7 @@ namespace Favalet.Lexers
         private TextPosition start;
         private int currentLine;
         private int currentColumn;
-        private readonly StringBuilder tokenBuffer = new StringBuilder();
+        private readonly StringBuilder tokenBuffer = new();
 
         private LexRunnerContext(Uri uri) =>
             this.Uri = uri;
@@ -43,6 +43,14 @@ namespace Favalet.Lexers
         public void SetStringLastInput(Input? input) =>
             this.StringLastInput = input;
 
+        public void ResetAndNextLine()
+        {
+            this.StringLastInput = null;
+            currentColumn = 0;
+            this.currentLine++;
+            this.tokenBuffer.Clear();
+        }
+        
         public void Append(char inch)
         {
             this.currentColumn++;

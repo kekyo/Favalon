@@ -167,7 +167,7 @@ namespace Favalet.Contexts
                 attributes,
                 symbol,
                 expression,
-                true);
+                false);
 
             return newContext;
         }

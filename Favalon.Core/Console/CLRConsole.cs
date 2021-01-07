@@ -21,6 +21,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 
+#if NET35
+using ManualResetEventSlim = System.Threading.ManualResetEvent;
+#endif
+
 namespace Favalon.Console
 {
     public interface IConsole :
@@ -46,27 +50,48 @@ namespace Favalon.Console
 
     public sealed class CLRConsole : IConsole
     {
-        private readonly Queue<ConsoleKeyInfo> queue = new Queue<ConsoleKeyInfo>();
-        private readonly ManualResetEventSlim gate = new ManualResetEventSlim();
+        private readonly Queue<ConsoleKeyInfo> queue = new();
+        private readonly ManualResetEventSlim gate = new(false);
         private readonly Thread thread;
-        private readonly Stack<ConsoleColor> colors = new Stack<ConsoleColor>();
+        private readonly Stack<ConsoleColor> colors = new();
         private volatile bool abort;
 
-        public CLRConsole()
+        private CLRConsole()
         {
             this.thread = new Thread(() =>
             {
-                while (!this.abort)
+                System.Console.TreatControlCAsInput = true;
+                
+                try
                 {
-                    var keyInfo = System.Console.ReadKey(true);
-                    lock (this.queue)
+                    while (!this.abort)
                     {
-                        this.queue.Enqueue(keyInfo);
-                        if (this.queue.Count == 1)
+                        var keyInfo = System.Console.ReadKey(true);
+                        lock (this.queue)
                         {
-                            this.gate.Set();
+                            while (true)
+                            {
+                                this.ColumnPosition = System.Console.CursorLeft;
+                            
+                                this.queue.Enqueue(keyInfo);
+                                if (this.queue.Count == 1)
+                                {
+                                    this.gate.Set();
+                                }
+
+                                if (!System.Console.KeyAvailable)
+                                {
+                                    break;
+                                }
+                            
+                                keyInfo = System.Console.ReadKey(true);
+                            }
                         }
                     }
+                }
+                finally
+                {
+                    System.Console.TreatControlCAsInput = false;
                 }
             });
             this.thread.IsBackground = true;
@@ -76,8 +101,7 @@ namespace Favalon.Console
         public void Dispose() =>
             this.abort = true;
 
-        public int ColumnPosition =>
-            System.Console.CursorLeft;
+        public int ColumnPosition { get; private set; }
 
         public void ClearScreen() =>
             System.Console.Clear();
@@ -91,8 +115,11 @@ namespace Favalon.Console
         public void WriteLine(string str) =>
             System.Console.WriteLine(str);
 
-        public void SetColumnPosition(int column) =>
+        public void SetColumnPosition(int column)
+        {
+            this.ColumnPosition = column;
             System.Console.SetCursorPosition(column, System.Console.CursorTop);
+        }
 
         private sealed class ColorDisposable : IDisposable
         {

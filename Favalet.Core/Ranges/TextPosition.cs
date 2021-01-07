@@ -74,10 +74,8 @@ namespace Favalet.Ranges
         public static TextPosition Create(int line, int column) =>
             new TextPosition(line, column);
 
-#if !NET40
         public static implicit operator TextPosition((int line, int column) position) =>
             Create(position.line, position.column);
-#endif
         
         public static bool operator <(TextPosition lhs, TextPosition rhs) =>
             lhs.CompareTo(rhs) < 0;

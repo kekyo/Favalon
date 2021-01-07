@@ -19,6 +19,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Favalet.Ranges;
 
 namespace Favalet.Tokens
@@ -29,6 +30,9 @@ namespace Favalet.Tokens
     {
         public new readonly string Identity;
 
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private IdentityToken(string identity, TextRange range) :
             base(range) =>
             this.Identity = identity;
@@ -53,6 +57,9 @@ namespace Favalet.Tokens
             range = this.Range;
         }
 
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static IdentityToken Create(string identity, TextRange range) =>
             new IdentityToken(identity, range);
     }

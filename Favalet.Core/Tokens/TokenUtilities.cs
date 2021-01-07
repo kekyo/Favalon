@@ -27,12 +27,13 @@ using Favalet.Internal;
 
 namespace Favalet.Tokens
 {
+    [DebuggerStepThrough]
     internal static class TokenUtilities
     {
         private static readonly Dictionary<char, ParenthesisPair> openParenthesis;
         private static readonly Dictionary<char, ParenthesisPair> closeParenthesis;
 
-        internal static readonly HashSet<char> operatorChars = new HashSet<char>
+        internal static readonly HashSet<char> operatorChars = new()
         {
             '!'/* , '"' */, '#', '$', '%', '&' /* , ''' */, /* '(', ')', */
             '*', '+', ',', '-'/* , '.'*/, '/'/*, ':' */, ';', '<', '=', '>', '?',
@@ -63,10 +64,9 @@ namespace Favalet.Tokens
             closeParenthesis.Add('}', new ParenthesisPair('{', '}'));
         }
         
-#if NET45 || NETSTANDARD1_1
+#if !NET35 && !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        [DebuggerStepThrough]
         public static NumericalSignes? IsNumericSign(char ch) =>
             ch switch
             {
@@ -75,24 +75,21 @@ namespace Favalet.Tokens
                 _ => null
             };
 
-#if NET45 || NETSTANDARD1_1
+#if !NET35 && !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        [DebuggerStepThrough]
         public static ParenthesisPair? IsOpenParenthesis(char ch) =>
             openParenthesis.TryGetValue(ch, out var p) ? (ParenthesisPair?)p : null;
 
-#if NET45 || NETSTANDARD1_1
+#if !NET35 && !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        [DebuggerStepThrough]
         public static ParenthesisPair? IsCloseParenthesis(char ch) =>
             closeParenthesis.TryGetValue(ch, out var p) ? (ParenthesisPair?)p : null;
 
-#if NET45 || NETSTANDARD1_1
+#if !NET35 && !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        [DebuggerStepThrough]
         public static bool IsOperator(char ch) =>
             operatorChars.Contains(ch);
     }

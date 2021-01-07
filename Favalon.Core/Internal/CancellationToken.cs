@@ -1,0 +1,74 @@
+﻿/////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Favalon - An Interactive Shell Based on a Typed Lambda Calculus.
+// Copyright (c) 2018-2020 Kouji Matsui (@kozy_kekyo, @kekyo2)
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+#if NET35
+
+using System.Diagnostics;
+
+namespace System.Threading
+{
+    [DebuggerStepThrough]
+    public struct CancellationToken
+    {
+        private readonly ManualResetEvent? cancel;
+
+        internal CancellationToken(ManualResetEvent cancel) =>
+            this.cancel = cancel;
+
+        internal WaitHandle? Handle =>
+            this.cancel;
+
+        public void ThrowIfCancellationRequested()
+        {
+            if (this.cancel?.WaitOne(0) ?? false)
+            {
+                throw new OperationCanceledException();
+            }
+        }
+    }
+
+    [DebuggerStepThrough]
+    public sealed class CancellationTokenSource :
+        IDisposable
+    {
+        private readonly ManualResetEvent cancel = new(false);
+
+        public void Dispose() =>
+            this.cancel.Close();
+
+        public CancellationToken Token =>
+            new CancellationToken(this.cancel);
+
+        public bool IsCancellationRequested =>
+            this.cancel.WaitOne(0);
+
+        public void Cancel() =>
+            this.cancel.Set();
+    }
+}
+
+#else
+
+using System.Runtime.CompilerServices;
+using System.Threading;
+
+[assembly: TypeForwardedTo(typeof(CancellationToken))]
+[assembly: TypeForwardedTo(typeof(CancellationTokenSource))]
+
+#endif

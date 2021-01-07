@@ -36,7 +36,7 @@ namespace Favalet.Internal
             public static readonly T[] Empty = new T[0];
         }
 
-#if !NET40
+#if !NET35 && !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static T[] Empty<T>() =>

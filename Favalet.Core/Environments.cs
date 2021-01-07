@@ -87,7 +87,7 @@ namespace Favalet
         
         public void Reset()
         {
-            this.CopyInRegistry(null, true);
+            this.CopyInDefaultRegistry(null, true);
             this.placeholderIndex = -1;
         }
 
@@ -193,7 +193,7 @@ namespace Favalet
             BoundAttributes attributes,
             IBoundVariableTerm symbol,
             IExpression expression) =>
-            base.MutableBind(attributes, symbol, expression, true);
+            base.MutableBind(attributes, symbol, expression, false);
 
         [DebuggerStepThrough]
         public static Environments Create(
@@ -275,9 +275,9 @@ namespace Favalet
                 TextRange.Internal, FourthTerm.Instance);
 
             // Type kind symbol.
-            environments.MutableBind(
-                BoundAttributes.PrefixLeftToRight, "*",
-                TextRange.Internal, TypeKindTerm.Instance);
+            //environments.MutableBind(
+            //    BoundAttributes.PrefixLeftToRight, "*",
+            //    TextRange.Internal, TypeKindTerm.Instance);
 
             // Lambda operator.
             environments.MutableBind(

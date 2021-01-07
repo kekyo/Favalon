@@ -18,8 +18,10 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using System;
+using System.Text;
 using Favalet.Contexts;
 using Favalet.Expressions;
+using Favalet.Expressions.Specialized;
 using NUnit.Framework;
 
 using static Favalet.CLRGenerator;
@@ -347,5 +349,154 @@ namespace Favalet.Inferring
             AssertLogicalEqual(expression, expected, actual);
         }
         #endregion
+
+        #region From delegate
+        [Test]
+        public void StaticMethodDelegate1()
+        {
+            var environments = CLREnvironments();
+
+            // int.Parse
+            var expression =
+                Delegate<string, int>(int.Parse);
+
+            var actual = environments.Infer(expression);
+
+            // int.Parse:(string -> int)
+            var expectedHigherOrder =
+                Lambda(
+                    Type<string>(),
+                    Type<int>());
+
+            AssertLogicalEqual(expression, expectedHigherOrder, actual.HigherOrder);
+        }
+
+        public static void VoidMethod(StringBuilder sb, int value) =>
+            throw new InvalidOperationException();
+        
+        [Test]
+        public void StaticMethodDelegate2()
+        {
+            var environments = CLREnvironments();
+
+            // VoidMethod
+            var expression =
+                Delegate<StringBuilder, int>(VoidMethod);
+
+            var actual = environments.Infer(expression);
+
+            // VoidMethod:(StringBuilder -> int -> unit)
+            var expectedHigherOrder =
+                Lambda(
+                    Type<StringBuilder>(),
+                    Lambda(
+                        Type<int>(),
+                        UnitType()));
+
+            AssertLogicalEqual(expression, expectedHigherOrder, actual.HigherOrder);
+        }
+        
+        [Test]
+        public void InstanceMethodDelegate1()
+        {
+            var environments = CLREnvironments();
+
+            // DateTime.Now.Add
+            var now = DateTime.Now;
+            var expression =
+                Delegate<TimeSpan, DateTime>(now.Add);
+
+            var actual = environments.Infer(expression);
+
+            // DateTime.Add:(TimeSpan -> DateTime)
+            var expectedHigherOrder =
+                Lambda(
+                    Type<TimeSpan>(),
+                    Type<DateTime>());
+
+            AssertLogicalEqual(expression, expectedHigherOrder, actual.HigherOrder);
+        }
+
+        public sealed class InstanceMethodDelegateTest
+        {
+            public InstanceMethodDelegateTest()
+            {
+            }
+
+            public void VoidMethod(int value) =>
+                throw new InvalidOperationException();
+        }
+          
+        [Test]
+        public void InstanceMethodDelegate2()
+        {
+            var environments = CLREnvironments();
+
+            // instance.VoidMethod
+            var instance = new InstanceMethodDelegateTest();
+            var expression =
+                Delegate<int>(instance.VoidMethod);
+
+            var actual = environments.Infer(expression);
+
+            // InstanceMethodDelegateTest.VoidMethod:(int -> unit)
+            var expectedHigherOrder =
+                Lambda(
+                    Type<int>(),
+                    UnitType());
+
+            AssertLogicalEqual(expression, expectedHigherOrder, actual.HigherOrder);
+        }
+      
+        [Test]
+        public void ExtensionMethodDelegate1()
+        {
+            var environments = CLREnvironments();
+
+            // uri.UriMethod
+            var uri = new Uri("https://example.com/", UriKind.RelativeOrAbsolute);
+            var expression =
+                Delegate<int, string>(uri.UriMethod);
+
+            var actual = environments.Infer(expression);
+
+            // <closure>:(int -> string)
+            var expectedHigherOrder =
+                Lambda(
+                    Type<int>(),
+                    Type<string>());
+
+            AssertLogicalEqual(expression, expectedHigherOrder, actual.HigherOrder);
+        }
+      
+        [Test]
+        public void ExtensionMethodDelegate2()
+        {
+            var environments = CLREnvironments();
+
+            // uri.VoidMethod
+            var uri = new Uri("https://example.com/", UriKind.RelativeOrAbsolute);
+            var expression =
+                Delegate<int>(uri.VoidMethod);
+
+            var actual = environments.Infer(expression);
+
+            // <closure>:(int -> unit)
+            var expectedHigherOrder =
+                Lambda(
+                    Type<int>(),
+                    UnitType());
+
+            AssertLogicalEqual(expression, expectedHigherOrder, actual.HigherOrder);
+        }
+        #endregion
     }
+
+    internal static class ExtensionMethodDelegateTest
+    {
+        public static string UriMethod(this Uri url, int number) =>
+            throw new InvalidOperationException();
+        public static void VoidMethod(this Uri url, int number) =>
+            throw new InvalidOperationException();
+}
 }

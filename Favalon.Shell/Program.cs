@@ -25,6 +25,8 @@ using Favalon.Console;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
+using Favalet.Expressions.Specialized;
 
 namespace Favalon
 {
@@ -34,6 +36,14 @@ namespace Favalon
         {
             // Step 1: Building reactive console host.
             var console = CLRConsole.Create();
+
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+#if NET35
+                console.WriteLine($"fash [{Thread.CurrentThread.ManagedThreadId}] : {e.ExceptionObject}");
+#else
+                console.WriteLine($"fash [{Thread.CurrentThread.ManagedThreadId}/{(System.Threading.Tasks.Task.CurrentId?.ToString() ?? "?")}] : {e.ExceptionObject}");
+#endif
+
             var consoleHost = InteractiveConsoleHost.Create(
                 console, "fash> ");
 
@@ -48,32 +58,28 @@ namespace Favalon
             
             // Step 4: Create type environment.
             var environments = CLREnvironments.Create();
+            
+            // Step 5: Add some shell related commands.
+            environments.MutableBindDelegate("reset", environments.Reset);
+            environments.MutableBindDelegate("clear", consoleHost.ClearScreen);
+            environments.MutableBindDelegate("exit", consoleHost.ShutdownAsynchronously);
 
             // TODO: test
-            environments.MutableBindMembers(typeof(Test));
+            environments.MutableBindTypeAndMembers(typeof(Test));
 
-            // Step 5: Building final receiver.
+            // Step 6: Building final receiver.
             using (parsed.Subscribe(
                 // We will get something parsed expression.
                 Observer.Create<IExpression>(expression =>
                 {
                     try
                     {
-                        // Step 6: Reduce the expression.
+                        // Step 7: Reduce the expression.
                         var reduced = environments.Reduce(expression);
                         
-                        // Step 7: Render result.
+                        // Step 8: Render result.
                         switch (reduced)
                         {
-                            case IVariableTerm("reset"):
-                                environments.Reset();
-                                break;
-                            case IVariableTerm("clear"):
-                                consoleHost.ClearScreen();
-                                break;
-                            case IVariableTerm("exit"):
-                                consoleHost.ShutdownAsynchronously();
-                                break;
                             case IConstantTerm({ } value)
                                 when value.GetType().IsPrimitive || value is string:
                                 console.WriteLine(value.ToString()!);
@@ -83,6 +89,8 @@ namespace Favalon
                                 {
                                     console.WriteLine(line);
                                 }
+                                break;
+                            case UnitTerm _:
                                 break;
                             default:
                                 console.WriteLine(reduced.GetPrettyString(PrettyStringTypes.Readable));

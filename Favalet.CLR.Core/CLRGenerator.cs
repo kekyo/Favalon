@@ -18,7 +18,9 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using Favalet.Expressions;
+using Favalet.Expressions.Specialized;
 using Favalet.Ranges;
+using Favalet.Internal;
 using System;
 using System.Diagnostics;
 using System.Reflection;
@@ -48,6 +50,11 @@ namespace Favalet
             TextRange(type.GetTypeInfo().Assembly);
 #endif
 
+        public static UnitTerm Unit() =>
+            UnitTerm.Instance;
+        public static UnitTypeTerm UnitType() =>
+            UnitTypeTerm.Instance;
+
         public static ITerm Type<T>() =>
             TypeTerm.From(typeof(T), TextRange(typeof(T)));
         public static ITerm Type(Type runtimeType) =>
@@ -55,6 +62,31 @@ namespace Favalet
 
         public static IExpression Method(MethodBase runtimeMethod) =>
             MethodTerm.From(runtimeMethod, TextRange(runtimeMethod));
+        
+        public static IExpression Delegate(Delegate d) =>
+            MethodTerm.From(d, TextRange(d.GetMethodInfo()));
+        
+        public static IExpression Delegate(Action d) =>
+            MethodTerm.From(d, TextRange(d.GetMethodInfo()));
+        public static IExpression Delegate<T1>(Action<T1> d) =>
+            MethodTerm.From(d, TextRange(d.GetMethodInfo()));
+        public static IExpression Delegate<T1, T2>(Action<T1, T2> d) =>
+            MethodTerm.From(d, TextRange(d.GetMethodInfo()));
+        public static IExpression Delegate<T1, T2, T3>(Action<T1, T2, T3> d) =>
+            MethodTerm.From(d, TextRange(d.GetMethodInfo()));
+        public static IExpression Delegate<T1, T2, T3, T4>(Action<T1, T2, T3, T4> d) =>
+            MethodTerm.From(d, TextRange(d.GetMethodInfo()));
+        
+        public static IExpression Delegate<TR>(Func<TR> d) =>
+            MethodTerm.From(d, TextRange(d.GetMethodInfo()));
+        public static IExpression Delegate<T1, TR>(Func<T1, TR> d) =>
+            MethodTerm.From(d, TextRange(d.GetMethodInfo()));
+        public static IExpression Delegate<T1, T2, TR>(Func<T1, T2, TR> d) =>
+            MethodTerm.From(d, TextRange(d.GetMethodInfo()));
+        public static IExpression Delegate<T1, T2, T3, TR>(Func<T1, T2, T3, TR> d) =>
+            MethodTerm.From(d, TextRange(d.GetMethodInfo()));
+        public static IExpression Delegate<T1, T2, T3, T4, TR>(Func<T1, T2, T3, T4, TR> d) =>
+            MethodTerm.From(d, TextRange(d.GetMethodInfo()));
 
         public static IExpression Property(PropertyInfo runtimeProperty) =>
             PropertyTerm.From(runtimeProperty, TextRange(runtimeProperty));

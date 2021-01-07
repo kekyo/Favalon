@@ -58,14 +58,28 @@ namespace Favalet.Internal
         {
             foreach (var value in enumerable)
             {
-                if (predicate(value) is U v)
+                if (predicate(value) is { } v)
                 {
                     yield return v;
                 }
             }
         }
 
-#if NET40 || NET45 || NETSTANDARD1_1
+        public static IEnumerable<U> Collect<T, U>(
+            this IEnumerable<T> enumerable,
+            Func<T, U?> predicate)
+            where U : struct
+        {
+            foreach (var value in enumerable)
+            {
+                if (predicate(value) is { } v)
+                {
+                    yield return v;
+                }
+            }
+        }
+
+#if NET35 || NET40 || NET45 || NETSTANDARD1_1
         public static IEnumerable<T> Append<T>(
             this IEnumerable<T> enumerable,
             T value)

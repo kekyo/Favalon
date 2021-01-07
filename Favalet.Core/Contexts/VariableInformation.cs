@@ -18,14 +18,11 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using Favalet.Expressions;
-using Favalet.Expressions.Specialized;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 namespace Favalet.Contexts
 {
+    [DebuggerDisplay("{Readable}")]
     [DebuggerStepThrough]
     public readonly struct VariableInformation
     {
@@ -44,83 +41,19 @@ namespace Favalet.Contexts
             this.SymbolHigherOrder = symbolHigherOrder;
             this.Expression = expression;
         }
-
-        public override string ToString() =>
+        
+        public string Readable =>
 #if DEBUG
             $"{this.Symbol}:{this.SymbolHigherOrder.GetPrettyString(PrettyStringTypes.Readable)} --> {this.Expression.GetPrettyString(PrettyStringTypes.Readable)}";
 #else
             $"{this.SymbolHigherOrder.GetPrettyString(PrettyStringTypes.Readable)} --> {this.Expression.GetPrettyString(PrettyStringTypes.Readable)}";
 #endif
+
+        public override string ToString() =>
+            this.Readable;
+        
         public static VariableInformation Create(
             string symbol, IExpression symbolHigherOrder, IExpression expression) =>
             new VariableInformation(symbol, symbolHigherOrder, expression);
-    }
-    
-    [DebuggerStepThrough]
-    public sealed class VariableInformationRegistry
-    {
-        private readonly Dictionary<string, (BoundAttributes attributes, List<VariableInformation> list)> variables;
-
-        private VariableInformationRegistry(
-            Dictionary<string, (BoundAttributes attributes, List<VariableInformation> list)> variables) =>
-            this.variables = variables;
-
-        public VariableInformationRegistry Clone() =>
-            new VariableInformationRegistry(
-                new Dictionary<string, (BoundAttributes attributes, List<VariableInformation> list)>(this.variables));
-
-        internal void CopyIn(VariableInformationRegistry originateFrom)
-        {
-            foreach (var entry in originateFrom.variables)
-            {
-                this.variables[entry.Key] = entry.Value;
-            }
-        }
-        
-        internal void Register(
-            BoundAttributes attributes,
-            IBoundVariableTerm variable,
-            IExpression expression,
-            bool checkDuplicate)
-        {
-            if (!this.variables.TryGetValue(variable.Symbol, out var entry))
-            {
-                entry = (attributes, new List<VariableInformation>());
-                this.variables.Add(variable.Symbol, entry);
-            }
-
-            if (entry.attributes != attributes)
-            {
-                throw new ArgumentException(
-                    $"Couldn't change bound attributes: {entry.attributes} --> {attributes}");
-            }
-
-            var vi = VariableInformation.Create(
-                variable.Symbol,
-                variable.HigherOrder,
-                expression);
-
-            if (checkDuplicate)
-            {
-                if (!entry.list.Any(vi_ => vi_.Equals(vi)))
-                {
-                    entry.list.Add(vi);
-                }
-            }
-            else
-            {
-                Debug.Assert(!entry.list.Any(vi_ => vi_.Equals(vi)));
-                entry.list.Add(vi);
-            }
-        }
-
-        internal (BoundAttributes attributes, List<VariableInformation> vis)? Lookup(string symbol) =>
-            this.variables.TryGetValue(symbol, out var entry) ?
-                entry :
-                default((BoundAttributes attributes, List<VariableInformation> vis)?);
-        
-        internal static VariableInformationRegistry Create() =>
-            new VariableInformationRegistry(
-                new Dictionary<string, (BoundAttributes attributes, List<VariableInformation> list)>());
     }
 }

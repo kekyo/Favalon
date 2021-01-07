@@ -21,6 +21,7 @@ using Favalet;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Favalon
 {
@@ -54,7 +55,11 @@ namespace Favalon
         [AliasName("dump")]
         public static string Dump(IEnumerable<string> stdin)
         {
+#if NET35
+            var joined = string.Join(Environment.NewLine, stdin.ToArray());
+#else
             var joined = string.Join(Environment.NewLine, stdin);
+#endif
             return joined;
         }
 

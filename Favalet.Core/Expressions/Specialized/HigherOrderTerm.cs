@@ -34,7 +34,7 @@ namespace Favalet.Expressions.Specialized
             base(range)
         { }
 
-        public bool Equals(TTerm rhs) =>
+        public bool Equals(TTerm? rhs) =>
             rhs != null;
 
         public override bool Equals(IExpression? other) =>

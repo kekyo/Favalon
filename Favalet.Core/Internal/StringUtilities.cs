@@ -19,17 +19,36 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace Favalet.Internal
 {
     [DebuggerStepThrough]
     internal static class StringUtilities
     {
+#if NET35
+        public static void Clear(this StringBuilder sb) =>
+            sb.Remove(0, sb.Length);
+        
+        public static string Join(string separator, IEnumerable<string> values) =>
+            string.Join(separator, values.Memoize());
+
+        public static bool IsNullOrWhiteSpace(string? str) =>
+            string.IsNullOrEmpty(str) || str!.All(char.IsWhiteSpace);
+#else
 #if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static string Join(string separator, IEnumerable<string> values) =>
             string.Join(separator, values);
+
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static bool IsNullOrWhiteSpace(string? str) =>
+            string.IsNullOrEmpty(str);
+#endif
     }
 }

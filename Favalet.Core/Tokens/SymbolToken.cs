@@ -19,6 +19,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Favalet.Ranges;
 
 namespace Favalet.Tokens
@@ -27,6 +28,9 @@ namespace Favalet.Tokens
     public abstract class SymbolToken :
         Token
     {
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private protected SymbolToken(TextRange range) :
             base(range)
         { }

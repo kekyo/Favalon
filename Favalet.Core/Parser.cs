@@ -66,7 +66,7 @@ namespace Favalet
                             context.Current is IExpression currentTerm)
                         {
                             observer.OnNext(currentTerm);
-                            context.Reset();
+                            context.ClearCurrent();
                             runner = factory.Waiting;
                         }
                     }

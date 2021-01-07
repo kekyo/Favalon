@@ -18,6 +18,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Favalet.Ranges;
 
 namespace Favalet.Tokens
@@ -26,6 +27,9 @@ namespace Favalet.Tokens
     public sealed class CloseParenthesisToken :
         ParenthesisToken
     {
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private CloseParenthesisToken(ParenthesisPair parenthesis, TextRange range) :
             base(parenthesis, range)
         { }
@@ -33,6 +37,9 @@ namespace Favalet.Tokens
         public override char Symbol =>
             this.Pair.Close;
  
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static CloseParenthesisToken Create(ParenthesisPair parenthesis, TextRange range) =>
             new CloseParenthesisToken(parenthesis, range);
     }
