@@ -22,11 +22,12 @@ using Favalet.Expressions;
 using Favalet.Contexts;
 using Favalet.Reactive;
 using Favalon.Console;
+using Favalet.Expressions.Specialized;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
-using Favalet.Expressions.Specialized;
 
 namespace Favalon
 {
@@ -63,6 +64,15 @@ namespace Favalon
             environments.MutableBindDelegate("reset", environments.Reset);
             environments.MutableBindDelegate("clear", consoleHost.ClearScreen);
             environments.MutableBindDelegate("exit", consoleHost.ShutdownAsynchronously);
+            environments.MutableBindDelegate("history",
+                () =>
+                {
+                    foreach (var entry in consoleHost.History.
+                        Select((line, index) => new {index, line}))
+                    {
+                        console.WriteLine($"{entry.index,5:D}  {entry.line}");
+                    }
+                });
 
             // TODO: test
             environments.MutableBindTypeAndMembers(typeof(Test));

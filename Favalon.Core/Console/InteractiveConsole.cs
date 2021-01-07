@@ -21,6 +21,7 @@ using Favalet.Lexers;
 using Favalet.Internal;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Text;
 using System.Threading;
 
@@ -65,6 +66,9 @@ namespace Favalon.Console
             this.prompt = prompt;
         }
 
+        public ReadOnlyCollection<string> History =>
+            this.history.AsReadOnly();
+
         protected abstract void OnArrivalInput(Input input);
 
         protected ConsoleKeyInfo ReadKey(CancellationToken token) =>
@@ -78,6 +82,12 @@ namespace Favalon.Console
             this.console.ClearScreen();
             this.line.Clear();
             this.currentColumn = 0;
+        }
+
+        public void ClearHistory()
+        {
+            this.history.Clear();
+            this.historyIndex = 0;
         }
 
         public void ResetLine()
@@ -100,6 +110,7 @@ namespace Favalon.Console
             if (!StringUtilities.IsNullOrWhiteSpace(line))
             {
                 this.history.Add(line);
+                this.historyIndex = this.history.Count;
 
                 foreach (var inch in line)
                 {
@@ -238,15 +249,15 @@ namespace Favalon.Console
 
         public bool InputOlder()
         {
-            if (this.historyIndex < this.history.Count)
+            if (this.historyIndex >= 1)
             {
                 this.console.SetColumnPosition(this.prompt.Length);
                 this.console.Write(new string(' ', this.line.Length));
                 this.console.SetColumnPosition(this.prompt.Length);
 
-                this.historyIndex++;
+                this.historyIndex--;
 
-                var line = this.history[this.history.Count - this.historyIndex];
+                var line = this.history[this.historyIndex];
                 this.line.Clear();
                 this.line.Append(line);
                 
@@ -264,34 +275,30 @@ namespace Favalon.Console
 
         public bool InputNewer()
         {
-            if (this.historyIndex >= 2)
+            if (this.historyIndex < this.history.Count)
             {
                 this.console.SetColumnPosition(this.prompt.Length);
                 this.console.Write(new string(' ', this.line.Length));
                 this.console.SetColumnPosition(this.prompt.Length);
 
-                this.historyIndex--;
+                this.historyIndex++;
 
-                var line = this.history[this.history.Count - this.historyIndex];
-                this.line.Clear();
-                this.line.Append(line);
+                if (this.historyIndex < this.history.Count)
+                {
+                    var line = this.history[this.historyIndex];
+                    this.line.Clear();
+                    this.line.Append(line);
                 
-                this.console.Write(line);
-                this.currentColumn = line.Length;
+                    this.console.Write(line);
+                    this.currentColumn = line.Length;
+                }
+                else
+                {
+                    // TODO: do resurrect last partial input line.
+                    this.line.Clear();
+                    this.currentColumn = 0;
+                }
                 
-                return true;
-            }
-            else if (this.historyIndex == 1)
-            {
-                this.console.SetColumnPosition(this.prompt.Length);
-                this.console.Write(new string(' ', this.line.Length));
-                this.console.SetColumnPosition(this.prompt.Length);
-
-                this.historyIndex--;
-
-                this.line.Clear();
-
-                this.currentColumn = 0;
                 return true;
             }
             else
