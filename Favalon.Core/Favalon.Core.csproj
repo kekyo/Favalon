@@ -32,4 +32,15 @@
     <ProjectReference Include="..\Favalet.Core\Favalet.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(OS)' != 'Windows_NT'">
+    <Content Include="$(OutDir)Favalon.Interop.so">
+      <Link>Favalon.Interop.so</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <Target Condition="'$(OS)' != 'Windows_NT'" Name="BuildInterop" BeforeTargets="Build">
+    <Exec WorkingDirectory="$(OutDir)" Command="gcc -shared -O2 -o Favalon.Interop.so $(ProjectDir)Internal/Interop.c" />
+  </Target>
+
 </Project>

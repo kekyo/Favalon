@@ -89,7 +89,7 @@ namespace Favalet.Expressions
             get => this.Value switch
             {
                 string value => $"\"{value}\"",
-                _ => this.Value.ToString()
+                _ => this.Value.ToString()!
             };
         }
 

@@ -31,35 +31,25 @@ namespace Favalon.Internal
         OtherExecute = 0x1,
     }
 
-    [StructLayout(LayoutKind.Sequential)]
-    internal readonly struct PosixStat
-    {
-        public readonly ulong st_dev;
-        public readonly ulong st_ino;
-        public readonly PosixPermissions st_mode;
-        private readonly uint _padding_;
-        public readonly ulong st_nlink;
-        public readonly uint st_uid;
-        public readonly uint st_gid;
-        public readonly ulong st_rdev;
-        public readonly long st_size;
-        public readonly long st_blksize;
-        public readonly long st_blocks;
-        public readonly long st_atime;
-        public readonly long st_mtime;
-        public readonly long st_ctime;
-    }
-
     internal static class NativeMethods
     {
-        [DllImport("libc")]
-        private static extern int stat(string path, out PosixStat sb);
+        [DllImport("Favalon.Interop", EntryPoint="Favalon_Internal_NativeMethods_stat")]
+        private static extern int stat(string path, out uint mode);
 
         public static bool IsWindows =>
             Environment.OSVersion.VersionString.Contains("Windows");
-        
-        public static PosixPermissions GetPosixPermissions(string path) =>
-            (stat(path, out var s) == 0) ?
-                s.st_mode : PosixPermissions.Nothing;
+
+        public static PosixPermissions GetPosixPermissions(string path)
+        {
+            var r = stat(path, out var mode);
+            if (r == 0)
+            {
+                return (PosixPermissions)mode;
+            }
+            else
+            {
+                return PosixPermissions.Nothing;
+            }
+        }
     }
 }

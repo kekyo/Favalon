@@ -20,12 +20,12 @@
 using Favalet.Contexts;
 using Favalet.Expressions;
 using Favalet.Expressions.Specialized;
+using Favalet.Ranges;
 using System;
 using System.Collections;
 using System.Diagnostics;
 using System.Threading;
 using System.Xml.Linq;
-using Favalet.Ranges;
 
 namespace Favalet
 {
