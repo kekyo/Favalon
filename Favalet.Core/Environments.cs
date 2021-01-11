@@ -32,24 +32,12 @@ using System.Threading;
 
 namespace Favalet
 {
-    [Flags]
-    public enum BoundAttributes
-    {
-        PrefixLeftToRight = 0x00,
-        PrefixRightToLeft = 0x02,
-        InfixLeftToRight = 0x01,
-        InfixRightToLeft = 0x03,
-
-        InfixMask = 0x01,
-        RightToLeftMask = 0x02,
-    }
-    
     public interface IEnvironments :
         IScopeContext
     {
         ITopology? LastTopology { get; }
         
-        void MutableBind(BoundAttributes attributes, IBoundVariableTerm symbol, IExpression expression);
+        void MutableBind(IBoundVariableTerm symbol, IExpression expression);
     }
 
     public class Environments :
@@ -190,10 +178,9 @@ namespace Favalet
 
         [DebuggerStepThrough]
         public void MutableBind(
-            BoundAttributes attributes,
             IBoundVariableTerm symbol,
             IExpression expression) =>
-            base.MutableBind(attributes, symbol, expression, false);
+            base.MutableBind(symbol, expression, false);
 
         [DebuggerStepThrough]
         public static Environments Create(
@@ -220,8 +207,7 @@ namespace Favalet
             string symbol,
             IExpression expression) =>
             environments.MutableBind(
-                attributes,
-                BoundVariableTerm.Create(symbol, TextRange.Unknown),
+                BoundVariableTerm.Create(symbol, attributes, TextRange.Unknown),
                 expression);
         
         public static void MutableBind(
@@ -231,8 +217,7 @@ namespace Favalet
             TextRange range,
             IExpression expression) =>
             environments.MutableBind(
-                attributes,
-                BoundVariableTerm.Create(symbol, range),
+                BoundVariableTerm.Create(symbol, attributes, range),
                 expression);
         
         public static void MutableBind(
@@ -240,25 +225,26 @@ namespace Favalet
             IBoundVariableTerm symbol,
             IExpression expression) =>
             environments.MutableBind(
-                BoundAttributes.PrefixLeftToRight,
                 symbol,
                 expression);
         
         public static void MutableBind(
             this IEnvironments environment,
             string symbol,
+            BoundAttributes attributes,
             IExpression expression) =>
             environment.MutableBind(
-                BoundVariableTerm.Create(symbol, TextRange.Unknown),
+                BoundVariableTerm.Create(symbol, attributes, TextRange.Unknown),
                 expression);
         
         public static void MutableBind(
             this IEnvironments environment,
             string symbol,
+            BoundAttributes attributes,
             TextRange range,
             IExpression expression) =>
             environment.MutableBind(
-                BoundVariableTerm.Create(symbol, range),
+                BoundVariableTerm.Create(symbol, attributes, range),
                 expression);
          
         public static void MutableBindDefaults(
@@ -266,22 +252,22 @@ namespace Favalet
         {
             // Unspecified symbol.
             environments.MutableBind(
-                BoundAttributes.PrefixLeftToRight, "_",
+                BoundAttributes.PrefixLeftToRight(BoundPrecedences.Neutral), "_",
                 TextRange.Internal, UnspecifiedTerm.Instance);
 
             // Type fourth symbol.
             environments.MutableBind(
-                BoundAttributes.PrefixLeftToRight, "#",
+                BoundAttributes.PrefixLeftToRight(BoundPrecedences.Neutral), "#",
                 TextRange.Internal, FourthTerm.Instance);
 
             // Type kind symbol.
             //environments.MutableBind(
-            //    BoundAttributes.PrefixLeftToRight, "*",
+            //    BoundAttributes.PrefixLeftToRight(BoundPrecedences.Neutral), "*",
             //    TextRange.Internal, TypeKindTerm.Instance);
 
             // Lambda operator.
             environments.MutableBind(
-                BoundAttributes.InfixMask | BoundAttributes.RightToLeftMask, "->",
+                BoundAttributes.InfixRightToLeft(BoundPrecedences.Lambda), "->",
                 TextRange.Internal, LambdaOperatorExpression.Instance);
         }
     }

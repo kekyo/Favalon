@@ -111,7 +111,7 @@ namespace Favalet.Expressions
                 return new VariableTerm(
                     this.Symbol,
                     higherOrder,
-                    BoundAttributes.PrefixLeftToRight,
+                    BoundAttributes.PrefixLeftToRight(BoundPrecedences.Neutral),
                     this.candidates,
                     this.Range);
             }
@@ -293,20 +293,10 @@ namespace Favalet.Expressions
                 new XAttribute("symbol", this.Symbol),
                 this.Attributes is {} attributes ? new XAttribute("attributes", attributes) : null };
 
-        private static string ToString(PrettyStringTypes type, BoundAttributes? attributes) =>
-            (type >= PrettyStringTypes.Strict, type >= PrettyStringTypes.Readable, attributes) switch
-            {
-                (true, _, BoundAttributes.PrefixLeftToRight) => "@PL",
-                (_, true, BoundAttributes.PrefixRightToLeft) => "@PR",
-                (_, true, BoundAttributes.InfixLeftToRight) => "@IL",
-                (_, true, BoundAttributes.InfixRightToLeft) => "@IR",
-                _ => ""
-            };
-
         protected override string GetPrettyString(IPrettyStringContext context) =>
             context.FinalizePrettyString(
                 this,
-                $"{this.Symbol}{ToString(context.Type, this.Attributes)}");
+                $"{this.Symbol}{this.Attributes?.ToString(context.Type) ?? string.Empty}");
 
         [DebuggerStepThrough]
         public static VariableTerm Create(string symbol, IExpression higherOrder, TextRange range) =>

@@ -57,9 +57,9 @@ namespace Favalet.Inferring
             // a = 123
             // a = 123.456
             // a = x -> x
-            environments.MutableBind("a", Constant(123));
-            environments.MutableBind("a", Constant(123.456));
-            environments.MutableBind("a",
+            environments.MutableBind("a", BoundAttributes.Neutral, Constant(123));
+            environments.MutableBind("a", BoundAttributes.Neutral, Constant(123.456));
+            environments.MutableBind("a", BoundAttributes.Neutral,
                 Lambda(
                     "x",
                     Variable("x")));
@@ -85,9 +85,9 @@ namespace Favalet.Inferring
             // a = 123
             // a = 123.456
             // a = x -> x
-            environments.MutableBind("a", Constant(123));
-            environments.MutableBind("a", Constant(123.456));
-            environments.MutableBind("a",
+            environments.MutableBind("a", BoundAttributes.Neutral, Constant(123));
+            environments.MutableBind("a", BoundAttributes.Neutral, Constant(123.456));
+            environments.MutableBind("a", BoundAttributes.Neutral,
                 Lambda(
                     "x",
                     Variable("x")));
@@ -112,8 +112,8 @@ namespace Favalet.Inferring
             
             // a = [object]
             // a = 123
-            environments.MutableBind("a", Constant(new object()));
-            environments.MutableBind("a", Constant(123));
+            environments.MutableBind("a", BoundAttributes.Neutral, Constant(new object()));
+            environments.MutableBind("a", BoundAttributes.Neutral, Constant(123));
 
             // a:int
             var expression =
@@ -135,8 +135,8 @@ namespace Favalet.Inferring
             
             // a = [object]
             // a = 123
-            environments.MutableBind("a", Constant(new object()));
-            environments.MutableBind("a", Constant(123));
+            environments.MutableBind("a", BoundAttributes.Neutral, Constant(new object()));
+            environments.MutableBind("a", BoundAttributes.Neutral, Constant(123));
 
             // a:object
             var expression =
@@ -158,8 +158,8 @@ namespace Favalet.Inferring
             
             // a = [object]
             // a = 123
-            environments.MutableBind("a", Constant(new object()));
-            environments.MutableBind("a", Constant(123));
+            environments.MutableBind("a", BoundAttributes.Neutral, Constant(new object()));
+            environments.MutableBind("a", BoundAttributes.Neutral, Constant(123));
 
             // a:IFormattable
             var expression =
@@ -184,9 +184,9 @@ namespace Favalet.Inferring
             // a = 123
             // a = 123.456
             // a = x -> x
-            environments.MutableBind("a", Constant(123));
-            environments.MutableBind("a", Constant(123.456));
-            environments.MutableBind("a",
+            environments.MutableBind("a", BoundAttributes.Neutral, Constant(123));
+            environments.MutableBind("a", BoundAttributes.Neutral, Constant(123.456));
+            environments.MutableBind("a", BoundAttributes.Neutral,
                 Lambda(
                     "x",
                     Variable("x")));
@@ -220,9 +220,9 @@ namespace Favalet.Inferring
             // a = 123
             // a = 123.456
             // a = x -> x
-            environments.MutableBind("a", Constant(123));
-            environments.MutableBind("a", Constant(123.456));
-            environments.MutableBind("a",
+            environments.MutableBind("a", BoundAttributes.Neutral, Constant(123));
+            environments.MutableBind("a", BoundAttributes.Neutral, Constant(123.456));
+            environments.MutableBind("a", BoundAttributes.Neutral,
                 Lambda(
                     "x",
                     Variable("x")));
@@ -258,9 +258,9 @@ namespace Favalet.Inferring
             // a = 123
             // a = 123.456
             // a = x -> x
-            environments.MutableBind("a", Constant(123));
-            environments.MutableBind("a", Constant(123.456));
-            environments.MutableBind("a",
+            environments.MutableBind("a", BoundAttributes.Neutral, Constant(123));
+            environments.MutableBind("a", BoundAttributes.Neutral, Constant(123.456));
+            environments.MutableBind("a", BoundAttributes.Neutral,
                 Lambda(
                     "x",
                     Variable("x")));
@@ -294,9 +294,9 @@ namespace Favalet.Inferring
             // a = 123
             // a = 123.456
             // a = x -> x
-            environments.MutableBind("a", Constant(123));
-            environments.MutableBind("a", Constant(123.456));
-            environments.MutableBind("a",
+            environments.MutableBind("a", BoundAttributes.Neutral, Constant(123));
+            environments.MutableBind("a", BoundAttributes.Neutral, Constant(123.456));
+            environments.MutableBind("a", BoundAttributes.Neutral,
                 Lambda(
                     "x",
                     Variable("x")));
@@ -322,7 +322,7 @@ namespace Favalet.Inferring
             AssertLogicalEqual(expression, expected, actual);
         }
         
-        //[Test]
+        //[Test]  TODO: overload calculation
         public void ApplyComplexOverloadingMatch1()
         {
             var environments = CLREnvironments();

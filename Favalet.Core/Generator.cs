@@ -54,9 +54,13 @@ namespace Favalet
             VariableTerm.Create(symbol, higherOrder, TextRange.Unknown);
 
         public static BoundVariableTerm BoundVariable(string symbol) =>
-            BoundVariableTerm.Create(symbol, TextRange.Unknown);
+            BoundVariableTerm.Create(symbol, BoundAttributes.Neutral, TextRange.Unknown);
+        public static BoundVariableTerm BoundVariable(string symbol, BoundAttributes attributes) =>
+            BoundVariableTerm.Create(symbol, attributes, TextRange.Unknown);
         public static BoundVariableTerm BoundVariable(string symbol, IExpression higherOrder) =>
-            BoundVariableTerm.Create(symbol, higherOrder, TextRange.Unknown);
+            BoundVariableTerm.Create(symbol, BoundAttributes.Neutral, higherOrder, TextRange.Unknown);
+        public static BoundVariableTerm BoundVariable(string symbol, BoundAttributes attributes, IExpression higherOrder) =>
+            BoundVariableTerm.Create(symbol, attributes, higherOrder, TextRange.Unknown);
 
         public static LogicalExpression Logical(IBinaryExpression operand) =>
             LogicalExpression.Create(operand, TextRange.Unknown);
@@ -83,10 +87,38 @@ namespace Favalet
             LambdaExpression.Create(parameter, body, TextRange.Unknown);
         public static LambdaExpression Lambda(
             string parameter, IExpression body) =>
-            LambdaExpression.Create(BoundVariableTerm.Create(parameter, TextRange.Unknown), body, TextRange.Unknown);
+            LambdaExpression.Create(
+                BoundVariableTerm.Create(parameter, BoundAttributes.Neutral, TextRange.Unknown),
+                body,
+                TextRange.Unknown);
+        public static LambdaExpression Lambda(
+            string parameter, BoundAttributes attributes, IExpression body) =>
+            LambdaExpression.Create(
+                BoundVariableTerm.Create(parameter, attributes, TextRange.Unknown),
+                body,
+                TextRange.Unknown);
 
         public static ApplyExpression Apply(
             IExpression function, IExpression argument) =>
             ApplyExpression.Create(function, argument, TextRange.Unknown);
+
+        public static BoundAttributes Neutral() =>
+            BoundAttributes.Neutral;
+        public static BoundAttributes PrefixLeftToRight(BoundPrecedences precedence = BoundPrecedences.Neutral) =>
+            BoundAttributes.PrefixLeftToRight(precedence);
+        public static BoundAttributes InfixLeftToRight(BoundPrecedences precedence = BoundPrecedences.Neutral) =>
+            BoundAttributes.InfixLeftToRight(precedence);
+        public static BoundAttributes PrefixRightToLeft(BoundPrecedences precedence = BoundPrecedences.Neutral) =>
+            BoundAttributes.PrefixRightToLeft(precedence);
+        public static BoundAttributes InfixRightToLeft(BoundPrecedences precedence = BoundPrecedences.Neutral) =>
+            BoundAttributes.InfixRightToLeft(precedence);
+        public static BoundAttributes PrefixLeftToRight(int precedence) =>
+            BoundAttributes.PrefixLeftToRight(precedence);
+        public static BoundAttributes InfixLeftToRight(int precedence) =>
+            BoundAttributes.InfixLeftToRight(precedence);
+        public static BoundAttributes PrefixRightToLeft(int precedence) =>
+            BoundAttributes.PrefixRightToLeft(precedence);
+        public static BoundAttributes InfixRightToLeft(int precedence) =>
+            BoundAttributes.InfixRightToLeft(precedence);
     }
 }

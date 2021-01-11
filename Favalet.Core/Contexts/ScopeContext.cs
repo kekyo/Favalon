@@ -127,14 +127,10 @@ namespace Favalet.Contexts
 
         [DebuggerStepThrough]
         protected internal void MutableBind(
-            BoundAttributes attributes,
             IBoundVariableTerm symbol,
             IExpression expression,
-            bool ignoreDuplicate)
-        {
-            this.PrepareRegistry().
-                Register(attributes, symbol, expression, ignoreDuplicate);
-        }
+            bool ignoreDuplicate) =>
+            this.PrepareRegistry().Register(symbol, expression, ignoreDuplicate);
 
         [DebuggerStepThrough]
         public BoundVariables? LookupVariables(string symbol)

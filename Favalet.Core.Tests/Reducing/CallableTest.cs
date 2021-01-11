@@ -53,7 +53,7 @@ namespace Favalet.Reducing
             var environment = Environments();
 
             // let ABC = XYZ
-            environment.MutableBind("ABC", Variable("XYZ"));
+            environment.MutableBind("ABC", BoundAttributes.Neutral, Variable("XYZ"));
 
             // ABC
             var expression =
@@ -128,7 +128,7 @@ namespace Favalet.Reducing
 
             // inner = arg1 -> arg1 && B
             environment.MutableBind(
-                "inner",
+                "inner", BoundAttributes.Neutral,
                 Lambda(
                     "arg1",
                     And(
@@ -165,7 +165,7 @@ namespace Favalet.Reducing
 
             // inner = arg -> arg && B
             environment.MutableBind(
-                "inner",
+                "inner", BoundAttributes.Neutral,
                 Lambda(
                     "arg",
                     And(
@@ -202,7 +202,7 @@ namespace Favalet.Reducing
 
             // inner = arg1 -> arg2 -> arg2 && arg1
             environment.MutableBind(
-                "inner",
+                "inner", BoundAttributes.Neutral,
                 Lambda(
                     "arg1",
                     Lambda(
@@ -239,7 +239,7 @@ namespace Favalet.Reducing
 
             // inner = arg2 -> arg1 -> arg2 && arg1
             environment.MutableBind(
-                "inner",
+                "inner", BoundAttributes.Neutral,
                 Lambda(
                     "arg2",
                     Lambda(
@@ -302,7 +302,7 @@ namespace Favalet.Reducing
 
             // logical = Logical
             environment.MutableBind(
-                "logical",
+                "logical", BoundAttributes.Neutral,
                 Logical());
 
             // logical (A && (B && A))

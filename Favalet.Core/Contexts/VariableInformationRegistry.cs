@@ -21,7 +21,6 @@ using Favalet.Expressions;
 using Favalet.Expressions.Specialized;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 
 namespace Favalet.Contexts
@@ -55,21 +54,21 @@ namespace Favalet.Contexts
         }
         
         internal void Register(
-            BoundAttributes attributes,
             IBoundVariableTerm variable,
             IExpression expression,
             bool ignoreDuplicate)
         {
             if (!this.variables.TryGetValue(variable.Symbol, out var entry))
             {
-                entry = (attributes, new HashSet<VariableInformation>());
+                entry = (variable.Attributes, new HashSet<VariableInformation>());
                 this.variables.Add(variable.Symbol, entry);
             }
 
-            if (entry.attributes != attributes)
+            // TODO: will fix with overload term.
+            if (!entry.attributes.Equals(variable.Attributes))
             {
                 throw new ArgumentException(
-                    $"Couldn't change bound attributes: {entry.attributes} --> {attributes}");
+                    $"Couldn't change bound attributes: {entry.attributes} --> {variable.Attributes}");
             }
 
             var vi = VariableInformation.Create(

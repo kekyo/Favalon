@@ -157,14 +157,14 @@ namespace Favalet.Expressions
                 do
                 {
                     var current = enumerator.Current!;
-                    if (!firstNode && current is IVariableTerm(_, BoundAttributes.InfixLeftToRight or BoundAttributes.InfixRightToLeft))
+                    if (!firstNode && current is IVariableTerm(_, (BoundPositions.Infix, _, _)))
                     {
                         yield return current;
                     }
                     else
                     {
                         // Will make first node in the expression by RTL.
-                        firstNode = last is IVariableTerm(_, BoundAttributes.PrefixRightToLeft or BoundAttributes.InfixRightToLeft);
+                        firstNode = last is IVariableTerm(_, (_, BoundAssociativities.RightToLeft, _));
                         
                         yield return last;
                         last = current;
@@ -205,7 +205,7 @@ namespace Favalet.Expressions
                     do
                     {
                         var current = enumerator.Current!;
-                        if (last2 is IVariableTerm(_, BoundAttributes.PrefixRightToLeft or BoundAttributes.InfixRightToLeft))
+                        if (last2 is IVariableTerm(_, (_, BoundAssociativities.RightToLeft, _)))
                         {
                             rtls.Push(applied);
                             applied = current;

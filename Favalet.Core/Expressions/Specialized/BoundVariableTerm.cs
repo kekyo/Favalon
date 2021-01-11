@@ -18,10 +18,12 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using Favalet.Contexts;
+using Favalet.Ranges;
+using Favalet.Internal;
 using System.Collections;
 using System.Diagnostics;
+using System.Linq;
 using System.Xml.Linq;
-using Favalet.Ranges;
 
 namespace Favalet.Expressions.Specialized
 {
@@ -29,19 +31,27 @@ namespace Favalet.Expressions.Specialized
         ITerm
     {
         string Symbol { get; }
+        
+        BoundAttributes Attributes { get; }
     }
 
     public sealed class BoundVariableTerm :
         Expression, IBoundVariableTerm
     {
         public readonly string Symbol;
-
+        public readonly BoundAttributes Attributes;
+        
         [DebuggerStepThrough]
-        private BoundVariableTerm(string symbol, IExpression higherOrder, TextRange range) :
+        private BoundVariableTerm(
+            string symbol,
+            BoundAttributes attributes,
+            IExpression higherOrder,
+            TextRange range) :
             base(range)
         {
             this.HigherOrder = higherOrder;
             this.Symbol = symbol;
+            this.Attributes = attributes;
         }
 
         public override IExpression HigherOrder { get; }
@@ -53,15 +63,24 @@ namespace Favalet.Expressions.Specialized
             get => this.Symbol;
         }
 
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        BoundAttributes IBoundVariableTerm.Attributes
+        {
+            [DebuggerStepThrough]
+            get => this.Attributes;
+        }
+
         protected override IExpression Transpose(ITransposeContext context) =>
             new BoundVariableTerm(
                 this.Symbol,
+                this.Attributes,
                 context.Transpose(this.HigherOrder),
                 this.Range);
 
         protected override IExpression MakeRewritable(IMakeRewritableContext context) =>
             new BoundVariableTerm(
                 this.Symbol,
+                this.Attributes,
                 context.MakeRewritableHigherOrder(this.HigherOrder),
                 this.Range);
 
@@ -75,7 +94,7 @@ namespace Favalet.Expressions.Specialized
             }
             else
             {
-                return new BoundVariableTerm(this.Symbol, higherOrder, this.Range);
+                return new BoundVariableTerm(this.Symbol, this.Attributes, higherOrder, this.Range);
             }
         }
 
@@ -89,7 +108,7 @@ namespace Favalet.Expressions.Specialized
             }
             else
             {
-                return new BoundVariableTerm(this.Symbol, higherOrder, this.Range);
+                return new BoundVariableTerm(this.Symbol, this.Attributes, higherOrder, this.Range);
             }
         }
 
@@ -106,7 +125,8 @@ namespace Favalet.Expressions.Specialized
             other is IBoundVariableTerm rhs && this.Equals(rhs);
 
         protected override IEnumerable GetXmlValues(IXmlRenderContext context) =>
-            new[] { new XAttribute("symbol", this.Symbol) };
+            this.Attributes.GetXmlValues(context).
+                Prepend(new XAttribute("symbol", this.Symbol));
 
         protected override string GetPrettyString(IPrettyStringContext context) =>
             context.FinalizePrettyString(
@@ -114,10 +134,17 @@ namespace Favalet.Expressions.Specialized
                 this.Symbol);
 
         [DebuggerStepThrough]
-        public static BoundVariableTerm Create(string symbol, IExpression higherOrder, TextRange range) =>
-            new BoundVariableTerm(symbol, higherOrder, range);
+        public static BoundVariableTerm Create(
+            string symbol,
+            BoundAttributes attributes,
+            IExpression higherOrder,
+            TextRange range) =>
+            new BoundVariableTerm(symbol, attributes, higherOrder, range);
         [DebuggerStepThrough]
-        public static BoundVariableTerm Create(string symbol, TextRange range) =>
-            new BoundVariableTerm(symbol, UnspecifiedTerm.Instance, range);
+        public static BoundVariableTerm Create(
+            string symbol,
+            BoundAttributes attributes,
+            TextRange range) =>
+            new BoundVariableTerm(symbol, attributes, UnspecifiedTerm.Instance, range);
     }
 }

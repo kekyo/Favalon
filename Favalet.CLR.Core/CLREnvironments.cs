@@ -48,9 +48,9 @@ namespace Favalet
                 // Always typeof(void) makes result with UnitTypeTerm.
                 // So it makes registering "void" symbol manually.
                 environments.MutableBind(
-                    BoundAttributes.PrefixLeftToRight,
                     BoundVariableTerm.Create(
                         "void",
+                        BoundAttributes.Neutral,
                         UnitTypeTerm.Instance.HigherOrder,
                         UnitTypeTerm.Instance.Range),
                     UnitTypeTerm.Instance,
@@ -104,13 +104,11 @@ namespace Favalet
         private static void MutableBind(
             ICLREnvironments environments,
             IBoundVariableTerm bound,
-            bool isInfix,
             IExpression expression)
         {
             if (environments is Environments re)
             {
                 re.MutableBind(
-                    isInfix ? BoundAttributes.InfixLeftToRight : BoundAttributes.PrefixLeftToRight,
                     bound,
                     expression,
                     true);
@@ -118,7 +116,6 @@ namespace Favalet
             else
             {
                 environments.MutableBind(
-                    isInfix ? BoundAttributes.InfixLeftToRight : BoundAttributes.PrefixLeftToRight,
                     bound,
                     expression);
             }
@@ -136,13 +133,12 @@ namespace Favalet
                 {
                     MutableBind(
                         environments,
-                        BoundVariableTerm.Create(name.Name, expression.HigherOrder, range),
-                        false, // TODO: become attribute
+                        BoundVariableTerm.Create(name.Name, name.Attributes, expression.HigherOrder, range),
                         expression);
                 }
             }
         }
-                
+
         ////////////////////////////////////////////////////////////////////////////////
         // Properties
 
@@ -161,9 +157,9 @@ namespace Favalet
                 environments,
                 BoundVariableTerm.Create(
                     name,
+                    BoundAttributes.Neutral,
                     propertyTerm.HigherOrder,
                     range),
-                false,
                 propertyTerm);
 
             MutableBindMembersByAliasNames(environments, property, propertyTerm, range);
@@ -191,17 +187,16 @@ namespace Favalet
                 environments,
                 BoundVariableTerm.Create(
                     name,
+                    BoundAttributes.Neutral,
                     methodTerm.HigherOrder,
                     range),
-                    false,
                 methodTerm);
             
             if (SharpSymbols.OperatorSymbols.TryGetValue(method.Name, out var s))
             {
                 MutableBind(
                     environments,
-                    BoundVariableTerm.Create(s.symbol, methodTerm.HigherOrder, range),
-                    s.isInfix,
+                    BoundVariableTerm.Create(s.symbol, s.attributes, methodTerm.HigherOrder, range),
                     methodTerm);
             }
 
@@ -227,17 +222,16 @@ namespace Favalet
                 environments,
                 BoundVariableTerm.Create(
                     symbol,
+                    BoundAttributes.Neutral,
                     methodTerm.HigherOrder,
                     methodTerm.Range),
-                false,
                 methodTerm);
                        
             if (SharpSymbols.OperatorSymbols.TryGetValue(method.Name, out var s))
             {
                 MutableBind(
                     environments,
-                    BoundVariableTerm.Create(s.symbol, methodTerm.HigherOrder, methodTerm.Range),
-                    s.isInfix,
+                    BoundVariableTerm.Create(s.symbol, s.attributes, methodTerm.HigherOrder, methodTerm.Range),
                     methodTerm);
             }
 
@@ -287,16 +281,14 @@ namespace Favalet
             var typeTerm = TypeTerm.From(type, range);
             MutableBind(
                 environments,
-                BoundVariableTerm.Create(type.GetFullName(), typeTerm.HigherOrder, range),
-                false,
+                BoundVariableTerm.Create(type.GetFullName(), BoundAttributes.Neutral, typeTerm.HigherOrder, range),
                 typeTerm);
 
             if (SharpSymbols.ReadableTypeNames.TryGetValue(type, out var name))
             {
                 MutableBind(
                     environments,
-                    BoundVariableTerm.Create(name, typeTerm.HigherOrder, range),
-                    false,
+                    BoundVariableTerm.Create(name, BoundAttributes.Neutral, typeTerm.HigherOrder, range),
                     typeTerm);
             }
             

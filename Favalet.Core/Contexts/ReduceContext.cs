@@ -42,7 +42,6 @@ namespace Favalet.Contexts
         IExpression Infer(IExpression expression);
     
         IInferContext Bind(
-            BoundAttributes attributes,
             IBoundVariableTerm parameter,
             IExpression expression);
 
@@ -67,7 +66,6 @@ namespace Favalet.Contexts
         IExpression Reduce(IExpression expression);
     
         IReduceContext Bind(
-            BoundAttributes attributes,
             IBoundVariableTerm parameter,
             IExpression expression);
     }
@@ -154,7 +152,6 @@ namespace Favalet.Contexts
             expression is Expression expr ? expr.InternalReduce(this) : expression;
 
         private ReduceContext Bind(
-            BoundAttributes attributes,
             IBoundVariableTerm symbol,
             IExpression expression)
         {
@@ -164,7 +161,6 @@ namespace Favalet.Contexts
                 this.unifyContext);
             
             newContext.MutableBind(
-                attributes,
                 symbol,
                 expression,
                 false);
@@ -174,16 +170,14 @@ namespace Favalet.Contexts
 
         [DebuggerStepThrough]
         IInferContext IInferContext.Bind(
-            BoundAttributes attributes,
             IBoundVariableTerm symbol,
             IExpression expression) =>
-            this.Bind(attributes, symbol, expression);
+            this.Bind(symbol, expression);
         [DebuggerStepThrough]
         IReduceContext IReduceContext.Bind(
-            BoundAttributes attributes,
             IBoundVariableTerm symbol,
             IExpression expression) =>
-            this.Bind(attributes, symbol, expression);
+            this.Bind(symbol, expression);
 
         [DebuggerStepThrough]
         public void Unify(
@@ -219,18 +213,5 @@ namespace Favalet.Contexts
             ScopeContext parentScope,
             UnifyContext unifyContext) =>
             new ReduceContext(rootScope, parentScope, unifyContext);
-    }
-
-    public static class ReduceContextExtension
-    {
-        [DebuggerStepThrough]
-        public static IInferContext Bind(
-            this IInferContext context, IBoundVariableTerm symbol, IExpression expression) =>
-            context.Bind(BoundAttributes.PrefixLeftToRight, symbol, expression);
-        
-        [DebuggerStepThrough]
-        public static IReduceContext Bind(
-            this IReduceContext context, IBoundVariableTerm symbol, IExpression expression) =>
-            context.Bind(BoundAttributes.PrefixLeftToRight, symbol, expression);
     }
 }

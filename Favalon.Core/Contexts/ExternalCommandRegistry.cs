@@ -20,6 +20,7 @@
 using Favalet;
 using Favalet.Contexts;
 using Favalet.Expressions;
+using Favalet.Expressions.Specialized;
 using Favalet.Internal;
 using Favalon.Internal;
 using System;
@@ -27,7 +28,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Favalet.Expressions.Specialized;
 
 namespace Favalon.Contexts
 {
@@ -97,7 +97,7 @@ namespace Favalon.Contexts
                         var pathConstant = CLRGenerator.Constant(path);
                         var expression = Generator.Apply(executor, pathConstant);
                         
-                        return (BoundAttributes.PrefixLeftToRight,
+                        return (BoundAttributes.Neutral,
                             new[] { VariableInformation.Create(
                                 symbol, UnspecifiedTerm.Instance, expression) });
                     }

@@ -115,6 +115,7 @@ namespace Favalet.Inferring
             // a = x -> x
             environments.MutableBind(
                 "a",
+                BoundAttributes.Neutral,
                 Lambda(
                     "x",
                     Variable("x")));
@@ -580,8 +581,10 @@ namespace Favalet.Inferring
             // Y = f -> f (Y f)
             environments.MutableBind(
                 "Y",
+                BoundAttributes.Neutral,
                 Lambda(
                     "f",
+                    BoundAttributes.Neutral,
                     Apply(
                         Variable("f"),
                         Apply(

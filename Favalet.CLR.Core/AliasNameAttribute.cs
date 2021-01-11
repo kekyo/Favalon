@@ -25,8 +25,32 @@ namespace Favalet
     public sealed class AliasNameAttribute : Attribute
     {
         public readonly string Name;
+        public readonly BoundAttributes Attributes;
 
-        public AliasNameAttribute(string name) =>
+        public AliasNameAttribute(string name)
+        {
             this.Name = name;
+            this.Attributes = BoundAttributes.Neutral;
+        }
+
+        public AliasNameAttribute(
+            string name,
+            BoundPositions position,
+            BoundAssociativities associativity,
+            BoundPrecedences precedence)
+        {
+            this.Name = name;
+            this.Attributes = BoundAttributes.Create(position, associativity, precedence);
+        }
+
+        public AliasNameAttribute(
+            string name,
+            BoundPositions position,
+            BoundAssociativities associativity,
+            int precedence)
+        {
+            this.Name = name;
+            this.Attributes = BoundAttributes.Create(position, associativity, precedence);
+        }
     }
 }

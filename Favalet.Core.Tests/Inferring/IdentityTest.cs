@@ -56,6 +56,7 @@ namespace Favalet.Inferring
 
             environment.MutableBind(
                 "true",
+                BoundAttributes.Neutral,
                 Constant(true));
 
             // true
@@ -78,9 +79,11 @@ namespace Favalet.Inferring
 
             environment.MutableBind(
                 "true",
+                BoundAttributes.Neutral,
                 Constant(true));
             environment.MutableBind(
                 "false",
+                BoundAttributes.Neutral,
                 Constant(false));
 
             // true && false
@@ -170,8 +173,7 @@ namespace Favalet.Inferring
             
             // $$$ @ PREFIX|LTR = a -> a
             environment.MutableBind(
-                BoundAttributes.PrefixLeftToRight,
-                BoundVariable("$$$"),
+                BoundVariable("$$$", PrefixLeftToRight()),
                 Lambda(
                     "a",
                     Variable("a")));
@@ -200,8 +202,7 @@ namespace Favalet.Inferring
             
             // $$$ @ PREFIX|LTR = a -> a
             environment.MutableBind(
-                BoundAttributes.PrefixLeftToRight,
-                BoundVariable("$$$"),
+                BoundVariable("$$$", PrefixLeftToRight()),
                 Lambda(
                     "a",
                     Variable("a")));
@@ -238,8 +239,7 @@ namespace Favalet.Inferring
             
             // $$$ @ PREFIX|LTR = a -> a
             environment.MutableBind(
-                BoundAttributes.PrefixLeftToRight,
-                BoundVariable("$$$"),
+                BoundVariable("$$$", PrefixLeftToRight()),
                 Lambda(
                     "a",
                     Variable("a")));
@@ -282,8 +282,7 @@ namespace Favalet.Inferring
             
             // $$$ @ INFIX|LTR = a -> a
             environment.MutableBind(
-                BoundAttributes.InfixLeftToRight,
-                BoundVariable("$$$"),
+                BoundVariable("$$$", InfixLeftToRight()),
                 Lambda(
                     "a",
                     Variable("a")));
@@ -312,8 +311,7 @@ namespace Favalet.Inferring
             
             // $$$ @ INFIX|LTR = a -> a
             environment.MutableBind(
-                BoundAttributes.InfixLeftToRight,
-                BoundVariable("$$$"),
+                BoundVariable("$$$", InfixLeftToRight()),
                 Lambda(
                     "a",
                     Variable("a")));
@@ -350,8 +348,7 @@ namespace Favalet.Inferring
             
             // $$$ @ INFIX|LTR = a -> a
             environment.MutableBind(
-                BoundAttributes.InfixLeftToRight,
-                BoundVariable("$$$"),
+                BoundVariable("$$$", InfixLeftToRight()),
                 Lambda(
                     "a",
                     Variable("a")));
@@ -392,8 +389,7 @@ namespace Favalet.Inferring
             
             // $$$ @ INFIX|LTR = a -> a
             environment.MutableBind(
-                BoundAttributes.InfixLeftToRight,
-                BoundVariable("$$$"),
+                BoundVariable("$$$", InfixLeftToRight()),
                 Lambda(
                     "a",
                     Variable("a")));
@@ -434,8 +430,7 @@ namespace Favalet.Inferring
             
             // $$$ @ INFIX|LTR = a -> a
             environment.MutableBind(
-                BoundAttributes.InfixLeftToRight,
-                BoundVariable("$$$"),
+                BoundVariable("$$$", InfixLeftToRight()),
                 Lambda(
                     "a",
                     Variable("a")));
@@ -470,8 +465,7 @@ namespace Favalet.Inferring
             
             // $$$ @ PREFIX|RTL = a -> a
             environment.MutableBind(
-                BoundAttributes.PrefixRightToLeft,
-                BoundVariable("$$$"),
+                BoundVariable("$$$", PrefixRightToLeft()),
                 Lambda(
                     "a",
                     Variable("a")));
@@ -500,8 +494,7 @@ namespace Favalet.Inferring
             
             // $$$ @ PREFIX|RTL = a -> a
             environment.MutableBind(
-                BoundAttributes.PrefixRightToLeft,
-                BoundVariable("$$$"),
+                BoundVariable("$$$", PrefixRightToLeft()),
                 Lambda(
                     "a",
                     Variable("a")));
@@ -534,8 +527,7 @@ namespace Favalet.Inferring
             
             // $$$ @ PREFIX|RTL = a -> a
             environment.MutableBind(
-                BoundAttributes.PrefixRightToLeft,
-                BoundVariable("$$$"),
+                BoundVariable("$$$", PrefixRightToLeft()),
                 Lambda(
                     "a",
                     Variable("a")));
@@ -572,8 +564,7 @@ namespace Favalet.Inferring
             
             // $$$ @ PREFIX|RTL = a -> a
             environment.MutableBind(
-                BoundAttributes.PrefixRightToLeft,
-                BoundVariable("$$$"),
+                BoundVariable("$$$", PrefixRightToLeft()),
                 Lambda(
                     "a",
                     Variable("a")));
@@ -606,8 +597,7 @@ namespace Favalet.Inferring
             
             // $$$ @ PREFIX|RTL = a -> a
             environment.MutableBind(
-                BoundAttributes.PrefixRightToLeft,
-                BoundVariable("$$$"),
+                BoundVariable("$$$", PrefixRightToLeft()),
                 Lambda(
                     "a",
                     Variable("a")));
@@ -644,8 +634,7 @@ namespace Favalet.Inferring
             
             // $$$ @ PREFIX|RTL = a -> a
             environment.MutableBind(
-                BoundAttributes.PrefixRightToLeft,
-                BoundVariable("$$$"),
+                BoundVariable("$$$", PrefixRightToLeft()),
                 Lambda(
                     "a",
                     Variable("a")));
@@ -686,8 +675,7 @@ namespace Favalet.Inferring
             
             // $$$ @ PREFIX|RTL = a -> a
             environment.MutableBind(
-                BoundAttributes.PrefixRightToLeft,
-                BoundVariable("$$$"),
+                BoundVariable("$$$", PrefixRightToLeft()),
                 Lambda(
                     "a",
                     Variable("a")));
@@ -728,8 +716,7 @@ namespace Favalet.Inferring
             
             // $$$ @ PREFIX|RTL = a -> a
             environment.MutableBind(
-                BoundAttributes.PrefixRightToLeft,
-                BoundVariable("$$$"),
+                BoundVariable("$$$", PrefixRightToLeft()),
                 Lambda(
                     "a",
                     Variable("a")));
@@ -774,8 +761,7 @@ namespace Favalet.Inferring
             
             // $$$ @ PREFIX|RTL = a -> a
             environment.MutableBind(
-                BoundAttributes.PrefixRightToLeft,
-                BoundVariable("$$$"),
+                BoundVariable("$$$", PrefixRightToLeft()),
                 Lambda(
                     "a",
                     Variable("a")));
@@ -826,8 +812,7 @@ namespace Favalet.Inferring
             
             // $$$ @ INFIX|RTL = a -> a
             environment.MutableBind(
-                BoundAttributes.InfixRightToLeft,
-                BoundVariable("$$$"),
+                BoundVariable("$$$", InfixRightToLeft()),
                 Lambda(
                     "a",
                     Variable("a")));
@@ -858,8 +843,7 @@ namespace Favalet.Inferring
             
             // $$$ @ INFIX|RTL = a -> a
             environment.MutableBind(
-                BoundAttributes.InfixRightToLeft,
-                BoundVariable("$$$"),
+                BoundVariable("$$$", InfixRightToLeft()),
                 Lambda(
                     "a",
                     Variable("a")));
@@ -894,8 +878,7 @@ namespace Favalet.Inferring
             
             // $$$ @ INFIX|RTL = a -> a
             environment.MutableBind(
-                BoundAttributes.InfixRightToLeft,
-                BoundVariable("$$$"),
+                BoundVariable("$$$", InfixRightToLeft()),
                 Lambda(
                     "a",
                     Variable("a")));
@@ -934,8 +917,7 @@ namespace Favalet.Inferring
             
             // $$$ @ INFIX|RTL = a -> a
             environment.MutableBind(
-                BoundAttributes.InfixRightToLeft,
-                BoundVariable("$$$"),
+                BoundVariable("$$$", InfixRightToLeft()),
                 Lambda(
                     "a",
                     Variable("a")));
@@ -968,8 +950,7 @@ namespace Favalet.Inferring
             
             // $$$ @ INFIX|RTL = a -> a
             environment.MutableBind(
-                BoundAttributes.InfixRightToLeft,
-                BoundVariable("$$$"),
+                BoundVariable("$$$", InfixRightToLeft()),
                 Lambda(
                     "a",
                     Variable("a")));
@@ -1006,8 +987,7 @@ namespace Favalet.Inferring
             
             // $$$ @ INFIX|RTL = a -> a
             environment.MutableBind(
-                BoundAttributes.InfixRightToLeft,
-                BoundVariable("$$$"),
+                BoundVariable("$$$", InfixRightToLeft()),
                 Lambda(
                     "a",
                     Variable("a")));
@@ -1048,8 +1028,7 @@ namespace Favalet.Inferring
             
             // $$$ @ INFIX|RTL = a -> a
             environment.MutableBind(
-                BoundAttributes.InfixRightToLeft,
-                BoundVariable("$$$"),
+                BoundVariable("$$$", InfixRightToLeft()),
                 Lambda(
                     "a",
                     Variable("a")));
@@ -1092,8 +1071,7 @@ namespace Favalet.Inferring
             
             // $$$ @ INFIX|RTL = a -> a
             environment.MutableBind(
-                BoundAttributes.InfixRightToLeft,
-                BoundVariable("$$$"),
+                BoundVariable("$$$", InfixRightToLeft()),
                 Lambda(
                     "a",
                     Variable("a")));
@@ -1138,8 +1116,7 @@ namespace Favalet.Inferring
             
             // $$$ @ INFIX|RTL = a -> a
             environment.MutableBind(
-                BoundAttributes.InfixRightToLeft,
-                BoundVariable("$$$"),
+                BoundVariable("$$$", InfixRightToLeft()),
                 Lambda(
                     "a",
                     Variable("a")));

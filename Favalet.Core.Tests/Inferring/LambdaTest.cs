@@ -738,6 +738,7 @@ namespace Favalet.Inferring
             // a = c:int
             environments.MutableBind(
                 "a",
+                BoundAttributes.Neutral,
                 Variable("c", Type<int>()));
 
             // a -> a:bool
@@ -794,6 +795,7 @@ namespace Favalet.Inferring
             // b = 123:int
             environments.MutableBind(
                 "b",
+                BoundAttributes.Neutral,
                 Constant(123));
 
             // a:bool -> b
@@ -822,6 +824,7 @@ namespace Favalet.Inferring
             // b = 123:int
             environments.MutableBind(
                 "b",
+                BoundAttributes.Neutral,
                 Constant(123));
 
             // a -> b
