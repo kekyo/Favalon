@@ -135,101 +135,91 @@ namespace Favalet.Expressions
             }
         }
 
-        private static IEnumerable<IExpression> TransposeInfix(IEnumerable<IExpression> expressions)
+        private static IExpression TransposeCore(IEnumerable<IExpression> expressions)
         {
             var enumerator = expressions.GetEnumerator();
             try
             {
-                var mn = enumerator.MoveNext();
-                Debug.Assert(mn);
-                var last = enumerator.Current!;
+                var f = enumerator.MoveNext();
+                Debug.Assert(f);
 
-                mn = enumerator.MoveNext();
-                Debug.Assert(mn);
+                var stack = new Stack<(BoundPrecedences p, IExpression ex)>();
+                var queue = new LinkedList<IExpression>();
+
+                var next = enumerator.Current!;
+                queue.AddLast(next);
+                var lastPrecedence = next is IVariableTerm(_, (_, _, { } p0)) ?
+                    p0 : BoundPrecedences.Neutral;
+
+                while (enumerator.MoveNext())
+                {
+                    next = enumerator.Current!;
+
+                    switch (next)
+                    {
+                        case IVariableTerm(_, (BoundPositions.Infix, { } a, { } p)):
+                            if (p <= lastPrecedence)
+                            {
+                                if (stack.Count >= 1 &&
+                                    stack.Peek() is ({ } sp, { } se) &&
+                                    p <= sp)
+                                {
+                                    stack.Pop();
+                                    var folded = queue.Aggregate((l, r) => Create(l, r, l.Range.Combine(r.Range)));
+                                    var combined = Create(se, folded, se.Range.Combine(folded.Range));
+                                    queue.Clear();
+                                    queue.AddLast(next);
+                                    queue.AddLast(combined);
+                                }
+                                else
+                                {
+                                    if (queue.Count >= 2)
+                                    {
+                                        var folded = queue.Aggregate((l, r) => Create(l, r, l.Range.Combine(r.Range)));
+                                        queue.Clear();
+                                        queue.AddLast(next);
+                                        queue.AddLast(folded);
+                                    }
+                                    else
+                                    {
+                                        queue.AddFirst(next);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                if (queue.Count >= 2)
+                                {
+                                    var last = queue.Last!;
+                                    queue.RemoveLast();
+                                    var folded = queue.Aggregate((l, r) => Create(l, r, l.Range.Combine(r.Range)));
+                                    stack.Push((lastPrecedence, folded));
+                                    queue.Clear();
+                                    queue.AddLast(next);
+                                    queue.AddLast(last);
+                                }
+                                else
+                                {
+                                    queue.AddFirst(next);
+                                }
+                            }
+                            lastPrecedence = p;
+                            break;
+
+                        default:
+                            queue.AddLast(next);
+                            break;
+                    }
+                }
+
+                var final = queue.Aggregate((l, r) => Create(l, r, l.Range.Combine(r.Range)));
+                while (stack.Count >= 1)
+                {
+                    var (_, left) = stack.Pop();
+                    final = Create(left, final, left.Range.Combine(final.Range));
+                }
                 
-                // In this place, the first node is [last].
-                // ex: '$$$' is PREFIX|RTL
-                //  [last]
-                //     v
-                //   ($$$ abc) (($$$ def) 123)
-                //    Fst        Fst
-                var firstNode = false;
-                do
-                {
-                    var current = enumerator.Current!;
-                    if (!firstNode && current is IVariableTerm(_, (BoundPositions.Infix, _, _)))
-                    {
-                        yield return current;
-                    }
-                    else
-                    {
-                        // Will make first node in the expression by RTL.
-                        firstNode = last is IVariableTerm(_, (_, BoundAssociativities.RightToLeft, _));
-                        
-                        yield return last;
-                        last = current;
-                    }
-                }
-                while (enumerator.MoveNext());
-
-                yield return last;
-            }
-            finally
-            {
-                if (enumerator is IDisposable d)
-                {
-                    d.Dispose();
-                }
-            }
-        }
-
-        private static IExpression TransposeRtl(IEnumerable<IExpression> expressions)
-        {
-            var enumerator = expressions.GetEnumerator();
-            try
-            {
-                var mn = enumerator.MoveNext();
-                Debug.Assert(mn);
-                var last2 = enumerator.Current!;
-
-                mn = enumerator.MoveNext();
-                Debug.Assert(mn);
-
-                var last1 = enumerator.Current!;
-                IExpression applied = new ApplyExpression(last2, last1, UnspecifiedTerm.Instance,
-                    last2.Range.Combine(last1.Range));
-                    
-                if (enumerator.MoveNext())
-                {
-                    var rtls = new Stack<IExpression>();
-                    do
-                    {
-                        var current = enumerator.Current!;
-                        if (last2 is IVariableTerm(_, (_, BoundAssociativities.RightToLeft, _)))
-                        {
-                            rtls.Push(applied);
-                            applied = current;
-                        }
-                        else
-                        {
-                            applied = new ApplyExpression(applied, current, UnspecifiedTerm.Instance,
-                                applied.Range.Combine(current.Range));
-                        }
-
-                        last2 = last1;
-                        last1 = current;
-                    }
-                    while (enumerator.MoveNext());
-
-                    while (rtls.Count >= 1)
-                    {
-                        var rtl = rtls.Pop();
-                        applied = new ApplyExpression(rtl, applied, UnspecifiedTerm.Instance,
-                            rtl.Range.Combine(applied.Range));
-                    }
-                }
-
-                return applied;
+                return final;
             }
             finally
             {
@@ -244,11 +234,10 @@ namespace Favalet.Expressions
         {
 #if DEBUG
             var seq = this.EnumerateRecursively(context).Memoize();
-            var tiseq = TransposeInfix(seq).Memoize();
-            var result = TransposeRtl(tiseq);
+            var result = TransposeCore(seq);
             return result;
 #else
-            return TransposeRtl(TransposeInfix(this.EnumerateRecursively(context)));
+            return TransposeCore(this.EnumerateRecursively(context));
 #endif
         }
 

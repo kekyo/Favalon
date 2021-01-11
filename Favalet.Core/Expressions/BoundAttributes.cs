@@ -18,22 +18,13 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using Favalet.Contexts;
-using Favalet.Expressions;
-using Favalet.Expressions.Operators;
-using Favalet.Expressions.Specialized;
-using Favalet.Contexts.Unifiers;
-using Favalet.Ranges;
-using Favalet.Internal;
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
-using System.Threading;
+using System.Runtime.CompilerServices;
 using System.Xml.Linq;
 
-namespace Favalet
+namespace Favalet.Expressions
 {
     public enum BoundPositions
     {
@@ -49,17 +40,20 @@ namespace Favalet
         
     public enum BoundPrecedences
     {
-        Binder = -10000,
-        Composer = -8000,
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        Bottom = int.MinValue,
+        Binder = -7000,
+        Composer = -6000,
         Lambda = -5000,
-        LogicalOperators = -3000,
-        Comparer = -2000,
-        BitOperators = -1500,
+        LogicalOperators = -4000,
+        Comparer = -3000,
+        BitOperators = -2000,
         Addition = -1000,
         Multiply = -900,
         Neutral = 0,
-        Apply = 100,
-        PrefixOperators = 1000
+        PrefixOperators = 2000,
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        Top = int.MaxValue
     }
 
     [DebuggerStepThrough]
@@ -70,6 +64,9 @@ namespace Favalet
         public readonly BoundAssociativities Associativity;
         public readonly BoundPrecedences Precedence;
 
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private BoundAttributes(
             BoundPositions position,
             BoundAssociativities associativity,
@@ -81,12 +78,16 @@ namespace Favalet
         }
 
         public string Strict =>
-            (this.Position, this.Associativity) switch
+            (this.Position, this.Associativity, this.Precedence) switch
             {
-                (BoundPositions.Prefix, BoundAssociativities.LeftToRight) => $"PREFIX|LTR|{this.Precedence}",
-                (BoundPositions.Prefix, BoundAssociativities.RightToLeft) => $"PREFIX|RTL|{this.Precedence}",
-                (BoundPositions.Infix, BoundAssociativities.LeftToRight) => $"INFIX|LTR|{this.Precedence}",
-                (BoundPositions.Infix, BoundAssociativities.RightToLeft) => $"INFIX|RTL|{this.Precedence}",
+                (BoundPositions.Prefix, BoundAssociativities.LeftToRight, BoundPrecedences.Neutral) => $"PREFIX|LTR",
+                (BoundPositions.Prefix, BoundAssociativities.RightToLeft, BoundPrecedences.Neutral) => $"PREFIX|RTL",
+                (BoundPositions.Infix, BoundAssociativities.LeftToRight, BoundPrecedences.Neutral) => $"INFIX|LTR",
+                (BoundPositions.Infix, BoundAssociativities.RightToLeft, BoundPrecedences.Neutral) => $"INFIX|RTL",
+                (BoundPositions.Prefix, BoundAssociativities.LeftToRight, _) => $"PREFIX|LTR|{this.Precedence}",
+                (BoundPositions.Prefix, BoundAssociativities.RightToLeft, _) => $"PREFIX|RTL|{this.Precedence}",
+                (BoundPositions.Infix, BoundAssociativities.LeftToRight, _) => $"INFIX|LTR|{this.Precedence}",
+                (BoundPositions.Infix, BoundAssociativities.RightToLeft, _) => $"INFIX|RTL|{this.Precedence}",
                 _ => string.Empty
             };
 
@@ -97,10 +98,10 @@ namespace Favalet
                 (BoundPositions.Prefix, BoundAssociativities.RightToLeft, BoundPrecedences.Neutral) => $"PR",
                 (BoundPositions.Infix, BoundAssociativities.LeftToRight, BoundPrecedences.Neutral) => $"IL",
                 (BoundPositions.Infix, BoundAssociativities.RightToLeft, BoundPrecedences.Neutral) => $"IR",
-                (BoundPositions.Prefix, BoundAssociativities.LeftToRight, _) => $"PL{(int)this.Precedence}",
-                (BoundPositions.Prefix, BoundAssociativities.RightToLeft, _) => $"PR{(int)this.Precedence}",
-                (BoundPositions.Infix, BoundAssociativities.LeftToRight, _) => $"IL{(int)this.Precedence}",
-                (BoundPositions.Infix, BoundAssociativities.RightToLeft, _) => $"IR{(int)this.Precedence}",
+                (BoundPositions.Prefix, BoundAssociativities.LeftToRight, _) => $"PL{this.Precedence}",
+                (BoundPositions.Prefix, BoundAssociativities.RightToLeft, _) => $"PR{this.Precedence}",
+                (BoundPositions.Infix, BoundAssociativities.LeftToRight, _) => $"IL{this.Precedence}",
+                (BoundPositions.Infix, BoundAssociativities.RightToLeft, _) => $"IR{this.Precedence}",
                 _ => string.Empty
             };
         
@@ -123,6 +124,9 @@ namespace Favalet
         public override string ToString() =>
             this.Strict;
 
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public void Deconstruct(
             out BoundPositions position,
             out BoundAssociativities associativity,
@@ -136,32 +140,62 @@ namespace Favalet
         public static readonly BoundAttributes Neutral =
             new BoundAttributes(BoundPositions.Prefix, BoundAssociativities.LeftToRight, BoundPrecedences.Neutral);
 
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static BoundAttributes Create(
             BoundPositions position,
             BoundAssociativities associativity,
             BoundPrecedences precedence) =>
             new BoundAttributes(position, associativity, precedence);
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static BoundAttributes Create(
             BoundPositions position,
             BoundAssociativities associativity,
             int precedence) =>
             new BoundAttributes(position, associativity, (BoundPrecedences)precedence);
 
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static BoundAttributes PrefixLeftToRight(BoundPrecedences precedence) =>
             new BoundAttributes(BoundPositions.Prefix, BoundAssociativities.LeftToRight, precedence);
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static BoundAttributes PrefixRightToLeft(BoundPrecedences precedence) =>
             new BoundAttributes(BoundPositions.Prefix, BoundAssociativities.RightToLeft, precedence);
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static BoundAttributes InfixLeftToRight(BoundPrecedences precedence) =>
             new BoundAttributes(BoundPositions.Infix, BoundAssociativities.LeftToRight, precedence);
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static BoundAttributes InfixRightToLeft(BoundPrecedences precedence) =>
             new BoundAttributes(BoundPositions.Infix, BoundAssociativities.RightToLeft, precedence);
         
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static BoundAttributes PrefixLeftToRight(int precedence) =>
             new BoundAttributes(BoundPositions.Prefix, BoundAssociativities.LeftToRight, (BoundPrecedences)precedence);
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static BoundAttributes PrefixRightToLeft(int precedence) =>
             new BoundAttributes(BoundPositions.Prefix, BoundAssociativities.RightToLeft, (BoundPrecedences)precedence);
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static BoundAttributes InfixLeftToRight(int precedence) =>
             new BoundAttributes(BoundPositions.Infix, BoundAssociativities.LeftToRight, (BoundPrecedences)precedence);
+#if !NET35 && !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static BoundAttributes InfixRightToLeft(int precedence) =>
             new BoundAttributes(BoundPositions.Infix, BoundAssociativities.RightToLeft, (BoundPrecedences)precedence);
     }

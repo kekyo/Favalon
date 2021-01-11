@@ -108,12 +108,7 @@ namespace Favalet.Expressions
             }
             else
             {
-                return new VariableTerm(
-                    this.Symbol,
-                    higherOrder,
-                    BoundAttributes.PrefixLeftToRight(BoundPrecedences.Neutral),
-                    this.candidates,
-                    this.Range);
+                return this;
             }
         }
 
@@ -289,9 +284,8 @@ namespace Favalet.Expressions
         }
 
         protected override IEnumerable GetXmlValues(IXmlRenderContext context) =>
-            new[] {
-                new XAttribute("symbol", this.Symbol),
-                this.Attributes is {} attributes ? new XAttribute("attributes", attributes) : null };
+            this.Attributes?.GetXmlValues(context).Prepend(new XAttribute("symbol", this.Symbol)) ??
+            ArrayEx.Empty<XAttribute>();
 
         protected override string GetPrettyString(IPrettyStringContext context) =>
             context.FinalizePrettyString(

@@ -165,7 +165,121 @@ namespace Favalet.Inferring
          
         ////////////////////////////////////////////////////////////////////////////////////
 
-        #region Attributes
+        #region Attributes (Precedences)
+        [Test]
+        public void BoundVariableWithPrecedences1()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ PREFIX|LTR|-10000 = a -> a
+            environment.MutableBind(
+                BoundVariable("$$$", PrefixLeftToRight(-10000)),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // echo "abc" $$$ 123
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable("echo"),
+                            Constant("abc")),
+                        Variable("$$$")),
+                    Constant(123));
+
+            var actual = environment.Infer(expression);
+
+            // ((echo "abc") $$$) 123
+            var expected =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable("echo"),
+                            Constant("abc")),
+                        Variable("$$$")),
+                    Constant(123));
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
+        
+        [Test]
+        public void BoundVariableWithPrecedences2()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ PREFIX|RTL|-10000 = a -> a
+            environment.MutableBind(
+                BoundVariable("$$$", PrefixRightToLeft(-10000)),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // echo "abc" $$$ 123
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable("echo"),
+                            Constant("abc")),
+                        Variable("$$$")),
+                    Constant(123));
+
+            // TODO: cause error?
+            var actual = environment.Infer(expression);
+
+            // ((echo "abc") $$$) 123
+            var expected =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable("echo"),
+                            Constant("abc")),
+                        Variable("$$$")),
+                    Constant(123));
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
+        
+        [Test]
+        public void BoundVariableWithPrecedences3()
+        {
+            var environment = CLREnvironments();
+            
+            // $$$ @ INFIX|LTR|-10000 = a -> a
+            environment.MutableBind(
+                BoundVariable("$$$", InfixLeftToRight(-10000)),
+                Lambda(
+                    "a",
+                    Variable("a")));
+
+            // echo "abc" $$$ 123
+            var expression =
+                Apply(
+                    Apply(
+                        Apply(
+                            Variable("echo"),
+                            Constant("abc")),
+                        Variable("$$$")),
+                    Constant(123));
+
+            var actual = environment.Infer(expression);
+
+            // ($$$ (echo "abc")) 123
+            var expected =
+                Apply(
+                    Apply(
+                        Variable("$$$"),
+                        Apply(
+                            Variable("echo"),
+                            Constant("abc"))),
+                    Constant(123));
+
+            AssertLogicalEqual(expression, expected, actual);
+        }
+        #endregion
+        
+        #region Attributes (Positions and associativities)
         [Test]
         public void BoundVariableWithPrefixAttributes1()
         {
@@ -328,14 +442,14 @@ namespace Favalet.Inferring
             
             var actual = environment.Infer(expression);
 
-            // ((abc $$$) 123) 456
+            // ($$$ (abc 123)) 456
             var expected =
                 Apply(
                     Apply(
+                        Variable("$$$"),
                         Apply(
                             Variable("abc"),
-                            Variable("$$$")),
-                        Constant(123)),
+                            Constant(123))),
                     Constant(456));
             
             AssertLogicalEqual(expression, expected, actual);
@@ -367,17 +481,17 @@ namespace Favalet.Inferring
             
             var actual = environment.Infer(expression);
 
-            // (((abc $$$) 123) $$$) 456
+            // $$$ (($$$ (abc 123)) 456)
             var expected =
                 Apply(
+                    Variable("$$$"),
                     Apply(
                         Apply(
+                            Variable("$$$"),
                             Apply(
                                 Variable("abc"),
-                                Variable("$$$")),
-                            Constant(123)),
-                        Variable("$$$")),
-                    Constant(456));
+                                Constant(123))),
+                        Constant(456)));
             
             AssertLogicalEqual(expression, expected, actual);
         }
@@ -408,16 +522,16 @@ namespace Favalet.Inferring
             
             var actual = environment.Infer(expression);
 
-            // (((abc $$$) $$$) 123) 456
+            // ($$$ ($$$ (abc 123))) 456
             var expected =
                 Apply(
                     Apply(
+                        Variable("$$$"),
                         Apply(
+                            Variable("$$$"),
                             Apply(
                                 Variable("abc"),
-                                Variable("$$$")),
-                            Variable("$$$")),
-                        Constant(123)),
+                                Constant(123)))),
                     Constant(456));
             
             AssertLogicalEqual(expression, expected, actual);

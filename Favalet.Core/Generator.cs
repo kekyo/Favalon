@@ -64,9 +64,6 @@ namespace Favalet
 
         public static LogicalExpression Logical(IBinaryExpression operand) =>
             LogicalExpression.Create(operand, TextRange.Unknown);
-#if !NET35 && !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static LogicalOperator Logical() =>
             LogicalOperator.Instance;
 
