@@ -167,7 +167,7 @@ namespace Favalet.Contexts
                     {
                         // TODO: The bound attributes can be applicable only one.
                         Debug.Assert(combined.Length == 1);
-                        
+
                         return BoundVariables.Create(combined[0].attr, combined[0].vis.Distinct().Memoize());
                     }
                 }

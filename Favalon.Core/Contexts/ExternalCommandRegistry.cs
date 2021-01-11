@@ -39,6 +39,7 @@ namespace Favalon.Contexts
             Path.GetInvalidPathChars().
             Concat(Path.GetInvalidFileNameChars()).
             Distinct().
+            Concat(new[] { '*', '?' }).
             Memoize();
        private static readonly IExpression executor =
             CLRGenerator.Delegate<string, Stream, Stream>(ExternalCommandExecutor.Execute);

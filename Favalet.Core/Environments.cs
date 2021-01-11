@@ -203,37 +203,18 @@ namespace Favalet
     {
         public static void MutableBind(
             this IEnvironments environments,
-            BoundAttributes attributes,
             string symbol,
             IExpression expression) =>
             environments.MutableBind(
-                BoundVariableTerm.Create(symbol, attributes, TextRange.Unknown),
+                BoundVariableTerm.Create(symbol, BoundAttributes.Neutral, TextRange.Unknown),
                 expression);
         
         public static void MutableBind(
             this IEnvironments environments,
-            BoundAttributes attributes,
-            string symbol,
-            TextRange range,
-            IExpression expression) =>
-            environments.MutableBind(
-                BoundVariableTerm.Create(symbol, attributes, range),
-                expression);
-        
-        public static void MutableBind(
-            this IEnvironments environments,
-            IBoundVariableTerm symbol,
-            IExpression expression) =>
-            environments.MutableBind(
-                symbol,
-                expression);
-        
-        public static void MutableBind(
-            this IEnvironments environment,
             string symbol,
             BoundAttributes attributes,
             IExpression expression) =>
-            environment.MutableBind(
+            environments.MutableBind(
                 BoundVariableTerm.Create(symbol, attributes, TextRange.Unknown),
                 expression);
         
@@ -252,23 +233,31 @@ namespace Favalet
         {
             // Unspecified symbol.
             environments.MutableBind(
-                BoundAttributes.PrefixLeftToRight(BoundPrecedences.Neutral), "_",
-                TextRange.Internal, UnspecifiedTerm.Instance);
+                "_",
+                BoundAttributes.PrefixLeftToRight(BoundPrecedences.Neutral),
+                TextRange.Internal,
+                UnspecifiedTerm.Instance);
 
             // Type fourth symbol.
             environments.MutableBind(
-                BoundAttributes.PrefixLeftToRight(BoundPrecedences.Neutral), "#",
-                TextRange.Internal, FourthTerm.Instance);
+                "#",
+                BoundAttributes.PrefixLeftToRight(BoundPrecedences.Neutral),
+                TextRange.Internal,
+                FourthTerm.Instance);
 
             // Type kind symbol.
             //environments.MutableBind(
-            //    BoundAttributes.PrefixLeftToRight(BoundPrecedences.Neutral), "*",
-            //    TextRange.Internal, TypeKindTerm.Instance);
+            //    "*",
+            //    BoundAttributes.PrefixLeftToRight(BoundPrecedences.Neutral),
+            //    TextRange.Internal,
+            //    TypeKindTerm.Instance);
 
             // Lambda operator.
             environments.MutableBind(
-                BoundAttributes.InfixRightToLeft(BoundPrecedences.Lambda), "->",
-                TextRange.Internal, LambdaOperatorExpression.Instance);
+                "->",
+                BoundAttributes.InfixRightToLeft(BoundPrecedences.Lambda),
+                TextRange.Internal,
+                LambdaOperatorExpression.Instance);
         }
     }
 }
