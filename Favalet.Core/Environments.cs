@@ -234,14 +234,14 @@ namespace Favalet
             // Unspecified symbol.
             environments.MutableBind(
                 "_",
-                BoundAttributes.PrefixLeftToRight(BoundPrecedences.Neutral),
+                BoundAttributes.Prefix(BoundPrecedences.Neutral),
                 TextRange.Internal,
                 UnspecifiedTerm.Instance);
 
             // Type fourth symbol.
             environments.MutableBind(
                 "#",
-                BoundAttributes.PrefixLeftToRight(BoundPrecedences.Neutral),
+                BoundAttributes.Prefix(BoundPrecedences.Neutral),
                 TextRange.Internal,
                 FourthTerm.Instance);
 

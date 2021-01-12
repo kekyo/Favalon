@@ -137,95 +137,24 @@ namespace Favalet.Expressions
 
         private static IExpression TransposeCore(IEnumerable<IExpression> expressions)
         {
-            var enumerator = expressions.GetEnumerator();
-            try
+            var arguments = new LinkedList<IExpression>();
+            var stack = new LinkedList<IExpression>();
+
+            foreach (var expr in expressions)
             {
-                var f = enumerator.MoveNext();
-                Debug.Assert(f);
-
-                var stack = new Stack<(BoundPrecedences p, IExpression ex)>();
-                var queue = new LinkedList<IExpression>();
-
-                var next = enumerator.Current!;
-                queue.AddLast(next);
-                var lastPrecedence = next is IVariableTerm(_, (_, _, { } p0)) ?
-                    p0 : BoundPrecedences.Neutral;
-
-                while (enumerator.MoveNext())
+                switch (expr)
                 {
-                    next = enumerator.Current!;
+                    case IVariableTerm(_, ({} position, {} associativity, {} precedence)):
+                        IExpression? current = expr;
+                        while (current != null)
+                        {
+                            
+                        }
+                        break;
 
-                    switch (next)
-                    {
-                        case IVariableTerm(_, (BoundPositions.Infix, { } a, { } p)):
-                            if (p <= lastPrecedence)
-                            {
-                                if (stack.Count >= 1 &&
-                                    stack.Peek() is ({ } sp, { } se) &&
-                                    p <= sp)
-                                {
-                                    stack.Pop();
-                                    var folded = queue.Aggregate((l, r) => Create(l, r, l.Range.Combine(r.Range)));
-                                    var combined = Create(se, folded, se.Range.Combine(folded.Range));
-                                    queue.Clear();
-                                    queue.AddLast(next);
-                                    queue.AddLast(combined);
-                                }
-                                else
-                                {
-                                    if (queue.Count >= 2)
-                                    {
-                                        var folded = queue.Aggregate((l, r) => Create(l, r, l.Range.Combine(r.Range)));
-                                        queue.Clear();
-                                        queue.AddLast(next);
-                                        queue.AddLast(folded);
-                                    }
-                                    else
-                                    {
-                                        queue.AddFirst(next);
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                if (queue.Count >= 2)
-                                {
-                                    var last = queue.Last!;
-                                    queue.RemoveLast();
-                                    var folded = queue.Aggregate((l, r) => Create(l, r, l.Range.Combine(r.Range)));
-                                    stack.Push((lastPrecedence, folded));
-                                    queue.Clear();
-                                    queue.AddLast(next);
-                                    queue.AddLast(last);
-                                }
-                                else
-                                {
-                                    queue.AddFirst(next);
-                                }
-                            }
-                            lastPrecedence = p;
-                            break;
-
-                        default:
-                            queue.AddLast(next);
-                            break;
-                    }
-                }
-
-                var final = queue.Aggregate((l, r) => Create(l, r, l.Range.Combine(r.Range)));
-                while (stack.Count >= 1)
-                {
-                    var (_, left) = stack.Pop();
-                    final = Create(left, final, left.Range.Combine(final.Range));
-                }
-                
-                return final;
-            }
-            finally
-            {
-                if (enumerator is IDisposable d)
-                {
-                    d.Dispose();
+                    default:
+                        arguments.AddFirst(expr);
+                        break;
                 }
             }
         }

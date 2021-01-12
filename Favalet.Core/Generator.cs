@@ -101,20 +101,26 @@ namespace Favalet
 
         public static BoundAttributes Neutral() =>
             BoundAttributes.Neutral;
-        public static BoundAttributes PrefixLeftToRight(BoundPrecedences precedence = BoundPrecedences.Neutral) =>
-            BoundAttributes.PrefixLeftToRight(precedence);
+        
+        public static BoundAttributes None(BoundPrecedences precedence = BoundPrecedences.Neutral) =>
+            BoundAttributes.None(precedence);
+        public static BoundAttributes Prefix(BoundPrecedences precedence = BoundPrecedences.Neutral) =>
+            BoundAttributes.Prefix(precedence);
+        public static BoundAttributes Postfix(BoundPrecedences precedence = BoundPrecedences.Neutral) =>
+            BoundAttributes.Postfix(precedence);
         public static BoundAttributes InfixLeftToRight(BoundPrecedences precedence = BoundPrecedences.Neutral) =>
             BoundAttributes.InfixLeftToRight(precedence);
-        public static BoundAttributes PrefixRightToLeft(BoundPrecedences precedence = BoundPrecedences.Neutral) =>
-            BoundAttributes.PrefixRightToLeft(precedence);
         public static BoundAttributes InfixRightToLeft(BoundPrecedences precedence = BoundPrecedences.Neutral) =>
             BoundAttributes.InfixRightToLeft(precedence);
-        public static BoundAttributes PrefixLeftToRight(int precedence) =>
-            BoundAttributes.PrefixLeftToRight(precedence);
+
+        public static BoundAttributes None(int precedence) =>
+            BoundAttributes.None(precedence);
+        public static BoundAttributes Prefix(int precedence) =>
+            BoundAttributes.Prefix(precedence);
+        public static BoundAttributes Postfix(int precedence) =>
+            BoundAttributes.Postfix(precedence);
         public static BoundAttributes InfixLeftToRight(int precedence) =>
             BoundAttributes.InfixLeftToRight(precedence);
-        public static BoundAttributes PrefixRightToLeft(int precedence) =>
-            BoundAttributes.PrefixRightToLeft(precedence);
         public static BoundAttributes InfixRightToLeft(int precedence) =>
             BoundAttributes.InfixRightToLeft(precedence);
     }

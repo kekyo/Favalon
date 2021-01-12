@@ -173,7 +173,7 @@ namespace Favalet.Inferring
             
             // $$$ @ PREFIX|LTR|-10000 = a -> a
             environment.MutableBind(
-                BoundVariable("$$$", PrefixLeftToRight(-10000)),
+                BoundVariable("$$$", Prefix(-10000)),
                 Lambda(
                     "a",
                     Variable("a")));
@@ -287,7 +287,7 @@ namespace Favalet.Inferring
             
             // $$$ @ PREFIX|LTR = a -> a
             environment.MutableBind(
-                BoundVariable("$$$", PrefixLeftToRight()),
+                BoundVariable("$$$", Prefix()),
                 Lambda(
                     "a",
                     Variable("a")));
@@ -316,7 +316,7 @@ namespace Favalet.Inferring
             
             // $$$ @ PREFIX|LTR = a -> a
             environment.MutableBind(
-                BoundVariable("$$$", PrefixLeftToRight()),
+                BoundVariable("$$$", Prefix()),
                 Lambda(
                     "a",
                     Variable("a")));
@@ -353,7 +353,7 @@ namespace Favalet.Inferring
             
             // $$$ @ PREFIX|LTR = a -> a
             environment.MutableBind(
-                BoundVariable("$$$", PrefixLeftToRight()),
+                BoundVariable("$$$", Prefix()),
                 Lambda(
                     "a",
                     Variable("a")));
