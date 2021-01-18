@@ -203,6 +203,7 @@ namespace Favalet.Inferring
             AssertLogicalEqual(expression, expected, actual);
         }
         
+        /*
         [Test]
         public void BoundVariableWithPrecedences2()
         {
@@ -240,6 +241,7 @@ namespace Favalet.Inferring
 
             AssertLogicalEqual(expression, expected, actual);
         }
+        */
         
         [Test]
         public void BoundVariableWithPrecedences3()
@@ -571,7 +573,8 @@ namespace Favalet.Inferring
         }
 
         //////////////////////////////////////////////////////////
-                  
+                 
+        /*
         [Test]
         public void BoundVariableWithPrefixRightToLeftAttributes1()
         {
@@ -916,6 +919,7 @@ namespace Favalet.Inferring
             
             AssertLogicalEqual(expression, expected, actual);
         }
+        */
 
         //////////////////////////////////////////////////////////
                   

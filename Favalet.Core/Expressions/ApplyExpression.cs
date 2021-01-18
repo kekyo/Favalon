@@ -114,6 +114,9 @@ namespace Favalet.Expressions
         public override bool Equals(IExpression? other) =>
             other is IApplyExpression rhs && this.Equals(rhs);
 
+        private static readonly IVariableTerm pseudoApplyTerm =
+            VariableTerm.Create("#APP", BoundAttributes.None(BoundPrecedences.Apply));
+        
         private IEnumerable<IExpression> EnumerateRecursively(ITransposeContext context)
         {
             var stack = new Stack<IExpression>();
@@ -137,26 +140,85 @@ namespace Favalet.Expressions
 
         private static IExpression TransposeCore(IEnumerable<IExpression> expressions)
         {
-            var arguments = new LinkedList<IExpression>();
-            var stack = new LinkedList<IExpression>();
+            var stack = new Stack<IExpression>();
+            var arguments = new Stack<IExpression>();
 
-            foreach (var expr in expressions)
-            {
-                switch (expr)
+            bool IsCombinable(IExpression expr1, IExpression expr2) =>
+                (expr1, expr2) switch
                 {
-                    case IVariableTerm(_, ({} position, {} associativity, {} precedence)):
-                        IExpression? current = expr;
-                        while (current != null)
+                    (IVariableTerm(_, (_, { } ps)), IVariableTerm(_, (_, { } pc)))
+                        when ps < pc => true,
+                    (IVariableTerm(_, (_, { } ps)), IVariableTerm(_, (BoundTypes.Postfix, { } pc)))
+                        when ps == pc => true,
+                    (IVariableTerm(_, (_, { } ps)), IVariableTerm(_, (BoundTypes.InfixLeftToRight, { } pc)))
+                        when ps == pc => true,
+                    (_, IVariableTerm(_, (_, { } pc)))
+                        when BoundPrecedences.Apply < pc => true,
+                    (_, IVariableTerm(_, (BoundTypes.Postfix, { } pc)))
+                        when BoundPrecedences.Apply == pc => true,
+                    (_, IVariableTerm(_, (BoundTypes.InfixLeftToRight, { } pc)))
+                        when BoundPrecedences.Apply == pc => true,
+                    _ => false
+                };
+
+            foreach (var expression in expressions)
+            {
+                switch (expression)
+                {
+                    case IVariableTerm(_, { }) variable:
+                        while (arguments.Count >= 1)
                         {
-                            
+                            var last = arguments.Peek();
+                            if (!IsCombinable(last, variable))
+                            {
+                                break;
+                            }
+
+                            switch (last)
+                            {
+                                case IVariableTerm(_, (BoundTypes.Prefix, _)):
+                                    var arg0 = arguments.Pop();
+                                    var arg1 = arguments.Pop();
+                                    arguments.Push(arg0);
+                                    arguments.Push(last);
+                                    continue;
+                                
+                                case IVariableTerm(_, (BoundTypes.Postfix, _)):
+#if DEBUG
+                                    arg0 = arguments.Pop();
+                                    arg1 = arguments.Pop();
+                                    arguments.Push(arg1);
+                                    arguments.Push(last);
+#else
+                                    arg0 = arguments.Pop();
+                                    arguments.Push(last);
+#endif
+                                    continue;
+                                
+                                case IVariableTerm(_, (BoundTypes.InfixLeftToRight, _)):
+                                case IVariableTerm(_, (BoundTypes.InfixRightToLeft, _)):
+                                    arg0 = arguments.Pop();
+                                    arg1 = arguments.Pop();
+                                    var arg2 = arguments.Pop();
+                                    arguments.Push(arg0);
+                                    arguments.Push(arg2);
+                                    arguments.Push(last);
+                                    continue;
+                            }
+                            break;
                         }
                         break;
 
                     default:
-                        arguments.AddFirst(expr);
+                        arguments.Push(expression);
                         break;
                 }
             }
+
+            var final = arguments.
+                Reverse().
+                Aggregate((l, r) => Create(l, r, l.Range.Combine(r.Range)));
+            return final;
         }
 
         protected override IExpression Transpose(ITransposeContext context)

@@ -36,22 +36,20 @@ namespace Favalet
 
         public AliasNameAttribute(
             string name,
-            BoundPositions position,
-            BoundAssociativities associativity,
+            BoundTypes type,
             BoundPrecedences precedence)
         {
             this.Name = name;
-            this.Attributes = BoundAttributes.Create(position, associativity, precedence);
+            this.Attributes = BoundAttributes.Create(type, precedence);
         }
 
         public AliasNameAttribute(
             string name,
-            BoundPositions position,
-            BoundAssociativities associativity,
+            BoundTypes type,
             int precedence)
         {
             this.Name = name;
-            this.Attributes = BoundAttributes.Create(position, associativity, precedence);
+            this.Attributes = BoundAttributes.Create(type, precedence);
         }
     }
 }

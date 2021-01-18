@@ -39,6 +39,7 @@ namespace Favalet.Expressions
     {
         [EditorBrowsable(EditorBrowsableState.Never)]
         Bottom = int.MinValue,
+        Apply = -10000,
         Binder = -7000,
         Composer = -6000,
         Lambda = -5000,

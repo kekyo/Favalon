@@ -92,7 +92,6 @@ namespace Favalet.Expressions
 
         protected override IExpression Transpose(ITransposeContext context)
         {
-            Debug.Assert(this.Attributes == null);
             Debug.Assert(this.candidates == null);
 
             var higherOrder = context.Transpose(this.HigherOrder);
@@ -298,6 +297,10 @@ namespace Favalet.Expressions
         [DebuggerStepThrough]
         public static VariableTerm Create(string symbol, TextRange range) =>
             new VariableTerm(symbol, UnspecifiedTerm.Instance, default, default, range);
+
+        [DebuggerStepThrough]
+        internal static VariableTerm Create(string symbol, BoundAttributes attributes) =>
+            new VariableTerm(symbol, UnspecifiedTerm.Instance, attributes, default, TextRange.Internal);
     }
 
     [DebuggerStepThrough]
